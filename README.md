@@ -120,7 +120,7 @@ Multiscale Identification Algorithm for Chromatin Jets
 
 **Examples**
 ```
-python -m generate_features /nfs/turbo/umms-minjilab/mingjiay/GSE199059_wt_selected_30_new.hic \
+python -m miajet /nfs/turbo/umms-minjilab/mingjiay/GSE199059_wt_selected_30_new.hic \
     --chrom "chr1" --normalization "KR" --resolution 50000 --window_size 6000000 \
     --data_type "observed" --thresholds 0.01 0.05 --rem_k_strata 3 \
     --scale_range 1 7 24 1.5 --scale_range_mode "logspace" --gamma 0.75 --ridge_method 1 \
@@ -129,7 +129,7 @@ python -m generate_features /nfs/turbo/umms-minjilab/mingjiay/GSE199059_wt_selec
     --num_cores 6 --verbose true
 ```
 ```
-python -m generate_features /nfs/turbo/umms-minjilab/downloaded_data/Repli-HiC_K562_WT_totalS.hic \
+python -m miajet /nfs/turbo/umms-minjilab/downloaded_data/Repli-HiC_K562_WT_totalS.hic \
     --chrom "chr1" --normalization "VC_SQRT" --resolution 25000 --window_size 6000000 \
     --data_type "observed" --thresholds 0.01 0.05 --rem_k_strata 3 \
     --scale_range 1 7 24 1.5 --scale_range_mode "logspace" --gamma 0.75 --ridge_method 1 \

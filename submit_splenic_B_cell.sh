@@ -32,5 +32,5 @@ chromosomes=(
 )
 
 for chrom in "${chromosomes[@]}"; do
-  sbatch --job-name="B cell entropy threshold 0 ${chrom}" --export=CHROM=${chrom} job_splenic_B_cell.sbat
+  sbatch --job-name="B cell ${chrom}" --export=CHROM=${chrom} job_splenic_B_cell.sbat
 done

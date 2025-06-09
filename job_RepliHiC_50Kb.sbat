@@ -14,12 +14,12 @@ my_job_header
 conda activate jet-env
 
 # Use the CHROM environment variable passed by the wrapper
-python -m generate_features /nfs/turbo/umms-minjilab/downloaded_data/Repli-HiC_K562_WT_totalS.hic \
+python -m miajet /nfs/turbo/umms-minjilab/downloaded_data/Repli-HiC_K562_WT_totalS.hic \
   --chrom "${CHROM}" \
   --exp_type "replihic" \
   --resolution 50000 \
   --alpha 0.1 0.05 0.01 \
-  --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/finding_jets/output" \
+  --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_output" \
   --num_cores 4 \
   --verbose \
   # --normalization "VC_SQRT" \

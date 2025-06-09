@@ -9,28 +9,29 @@
 #SBATCH --mail-type=NONE 
 
 chromosomes=(
-  # "chr1"
+  "chr1"
   "chr2"
   "chr3"
   "chr4"
-  # "chr5"
+  "chr5"
   "chr6"
-  # "chr7"
-  # "chr8"
-  # "chr9"
-  # "chr10"
-  # "chr11"
-  # "chr12"
-  # "chr13"
+  "chr7"
+  "chr8"
+  "chr9"
+  "chr10"
+  "chr11"
+  "chr12"
+  "chr13"
   "chr14"
-  # "chr15"
-  # "chr16"
+  "chr15"
+  "chr16"
   "chr17"
-  # "chr18"
+  "chr18"
   "chr19"
-  # "chrX"
+  "chrX"
 )
 
 for chrom in "${chromosomes[@]}"; do
-  sbatch --job-name="Guo et al. NE Tests p-val ${chrom}" --export=CHROM=${chrom} job_DP_thymocyte_50Kb.sbat
+  sbatch --job-name="Guo et al. mm10 ${chrom}" --export=CHROM=${chrom} job_DP_thymocyte_50Kb.sbat
+  sbatch --job-name="Guo et al. mm9 ${chrom}" --export=CHROM=${chrom} job_DP_thymocyte-mm9_50Kb.sbat
 done

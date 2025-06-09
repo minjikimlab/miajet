@@ -19,10 +19,10 @@ python -m generate_features /nfs/turbo/umms-minjilab/mingjiay/GSE199059_wt_selec
   --exp_type "hic" \
   --resolution 50000 \
   --alpha 0.1 0.05 0.01 \
-  --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/finding_jets/output" \
+  --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_output" \
   --num_cores 4 \
   --verbose \
-  --folder_name "TEST_T" \
+  # --folder_name "TEST_T" \
   # --normalization "KR" \
   # --window_size 6000000 \
   # --data_type "oe" \

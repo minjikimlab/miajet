@@ -2,19 +2,19 @@
 
 #SBATCH --account=minjilab0 
 #SBATCH --partition=standard 
-#SBATCH --cpus-per-task=6
+#SBATCH --cpus-per-task=4
 #SBATCH --mem=30g 
 #SBATCH --gpus=0 
 #SBATCH --profile=all
 #SBATCH --time=2:00:00  
-#SBATCH --mail-type=END,FAIL 
+#SBATCH --mail-type=FAIL 
 
 my_job_header
 
 conda activate jet-env
 
 # Use the CHROM environment variable passed by the wrapper
-python -m miajet /nfs/turbo/umms-minjilab/jetfinder/data/splenic-B-cell_WT_insitu-hic_GSE82144_mm9.hic \
+python -m miajet /nfs/turbo/umms-minjilab/downloaded_data/GSE199059_CD69negDPWTR1R2R3R4_merged.hic \
   --chrom "${CHROM}" \
   --exp_type "hic" \
   --resolution 50000 \
@@ -56,5 +56,8 @@ python -m miajet /nfs/turbo/umms-minjilab/jetfinder/data/splenic-B-cell_WT_insit
   # --rmse 0.01 \
   # --eig2_trim 0 \
   # --whiten 0.01 \
+
+
+  
 
 

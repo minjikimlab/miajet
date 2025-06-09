@@ -275,7 +275,7 @@ def plot_distribution_diagnostic(
 
 
 from utils.plotting import plot_p_value_basics, plot_p_value_observed_null
-from generate_features.compute_p_value import compute_test_statistic, compute_test_statistic_quantities
+from miajet.compute_p_value import compute_test_statistic, compute_test_statistic_quantities
 
 
 def plot_top_k_diagnostic(df_agg, df_features, K, im, im_p_value, corr_im_p_value, I, D, A, W1, W2, R, C, ranking, resolution, chromosome, scale_range, window_size, save_path,

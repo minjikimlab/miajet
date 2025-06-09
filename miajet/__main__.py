@@ -197,7 +197,7 @@ def main():
     if config.verbose: print("Computing p-values...")
     t0 = time.time()
     df_agg = compute_significance(df_agg=df_agg, df_features=df_features, im_p_value=im_p_value, corr_im_p_value=corr_im_p_value, 
-                                  agg="mean", statistic=1, factor_lr=1, # hard-code aggregation function and statistic
+                                  agg="median", statistic=1, factor_lr=1, # hard-code aggregation function and statistic
                                   num_cores=config.num_cores, verbose=config.verbose)     
     total_time += time.time() - t0
     if config.verbose: print(f"Computing p-values... {time.time() - t0:.0f}s Done")
