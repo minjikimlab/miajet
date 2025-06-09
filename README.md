@@ -4,7 +4,7 @@
 
 Multiscale Identification Algorithm for Chromatin Jets
 
-## Note: README is not up to date
+### Note: README is not up to date
 
 
 1. **Generating expanded table**
