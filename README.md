@@ -1,5 +1,5 @@
 # MIA-Jet
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/OWNER/REPO)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/sion23/miajet)
 
 Multiscale Identification Algorithm for Chromatin Jets
 
