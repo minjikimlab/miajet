@@ -1,0 +1,42 @@
+name: jet-env
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - bioframe
+  - cvxpy
+  - cython
+  - gsl
+  - ipykernel
+  - jupyterlab
+  - matplotlib
+  - numpy
+  - opencv
+  - pandas
+  - plotly
+  - scikit-image
+  - scikit-learn
+  - scipy
+  - tqdm
+  - python=3.11
+  - nodejs
+  - ipywidgets
+  - pytorch
+  - torchaudio
+  - torchvision
+  - tk
+  - openjdk==11.0.23
+  - pyimagej
+  - nb_conda_kernels
+  - maven==3.9.9
+  - statsmodels
+  - shapely
+  - seaborn
+  - pygame
+  - pyranges
+  - pybedtools
+  - hic-straw
+  - pybigwig
+  - pillow
+  - ipympl

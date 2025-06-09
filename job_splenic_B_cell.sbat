@@ -1,0 +1,48 @@
+#!/bin/bash
+
+#SBATCH --account=minjilab0 
+#SBATCH --partition=standard 
+#SBATCH --cpus-per-task=6
+#SBATCH --mem=30g 
+#SBATCH --gpus=0 
+#SBATCH --profile=all
+#SBATCH --time=2:00:00  
+#SBATCH --mail-type=END,FAIL 
+
+my_job_header
+
+conda activate jet-env
+
+# Use the CHROM environment variable passed by the wrapper
+python -m generate_features /nfs/turbo/umms-minjilab/jetfinder/data/splenic-B-cell_WT_insitu-hic_GSE82144_mm9.hic \
+  --chrom "${CHROM}" \
+  --normalization "KR" \
+  --resolution 50000 \
+  --window_size 6000000 \
+  --data_type "observed" \
+  --rem_k_strata 3 \
+  --thresholds 0.01 0.05 \
+  --scale_range 1 7 24 1.5 \
+  --scale_range_mode "logspace" \
+  --gamma 0.75 \
+  --ridge_method 1 \
+  --rotation_padding "nearest" \
+  --convolution_padding "nearest" \
+  --scale_selection "min_scale" \
+  --angle_range 80 100 \
+  --noise_consec "" \
+  --noise_alt "" \
+  --sum_cond "a-r" \
+  --agg "sum" \
+  --top_k 100 \
+  --num_cores 6 \
+  --verbose true \
+  --num_bins 10 \
+  --points_min 0 \
+  --points_max 0.04 \
+  --eps_r 0.0005 \
+  --eps_c1 0.1 \
+  --eps_c2 1e-5
+  # --entropy_thresh 0.5 \
+
+
