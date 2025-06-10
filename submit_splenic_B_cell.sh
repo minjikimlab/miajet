@@ -33,4 +33,5 @@ chromosomes=(
 
 for chrom in "${chromosomes[@]}"; do
   sbatch --job-name="B cell ${chrom}" --export=CHROM=${chrom} job_splenic_B_cell.sbat
+  sleep 1
 done

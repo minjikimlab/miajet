@@ -37,4 +37,5 @@ chromosomes=(
 
 for chrom in "${chromosomes[@]}"; do
   sbatch --job-name="RepliHiC_${chrom}" --export=CHROM=${chrom} job_RepliHiC_50Kb.sbat
+  sleep 1
 done

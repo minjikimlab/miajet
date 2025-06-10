@@ -4,7 +4,7 @@ import argparse
 def parse_args():
 
     # Instantiate the argument parser
-    parser = argparse.ArgumentParser(prog="MIA_jet", description="Find jets in Hi-C or Repli Hi-C data")  
+    parser = argparse.ArgumentParser(prog="miajet", description="Find jets in Hi-C or Repli Hi-C data")  
 
 
     # Command line interface option

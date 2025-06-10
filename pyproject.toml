@@ -1,0 +1,15 @@
+[project]
+name = "miajet"
+dynamic = ["version"]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel", "setuptools_scm"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+# write the version into this file at build time
+write_to = "miajet/_version.py"
+
+[tool.setuptools.packages.find]
+# only include the miajet package and any sub-modules under it
+include = ["miajet", "miajet.*"]

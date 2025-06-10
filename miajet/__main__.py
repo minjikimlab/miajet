@@ -1,3 +1,5 @@
+from miajet._version import __version__
+
 from .cli import parse_args
 from .config import assign_defaults, process_args, print_parameters
 from .hic_image import generate_hic_image, generate_hic_corr_image, check_im_vmin_vmax, check_im_corner_vmin_vmax
@@ -27,6 +29,7 @@ def main():
     args = assign_defaults(args) # assign based on experiment type
     config = process_args(args) # make config dictionary to be used in the rest of the code
     set_logging_file(config) # log output to unique file 
+    print(f"miajet version: {__version__}") # print versions
     print_parameters(config) # print parameters if verbose
     
     # GENERATE HI-C IMAGE
