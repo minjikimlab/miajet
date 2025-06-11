@@ -7,7 +7,7 @@
 #SBATCH --gpus=0 
 #SBATCH --profile=all
 #SBATCH --time=2:00:00  
-#SBATCH --mail-type=END,FAIL 
+#SBATCH --mail-type=FAIL 
 
 my_job_header
 

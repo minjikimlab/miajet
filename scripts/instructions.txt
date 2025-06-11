@@ -1,0 +1,4 @@
+1. Make a keypairs.json file (use the example in https://data.4dnucleome.org/help/user-guide/downloading-files) 
+2. Make the miajet_data_download.sh executable: `chmod +x miajet_data_download.sh`
+3. Ensure that you have curl, wget, jq 
+4. Run: `./miajet_data_download.sh` 
