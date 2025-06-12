@@ -14,7 +14,7 @@ my_job_header
 conda activate jet-env
 
 # Use the CHROM environment variable passed by the wrapper
-python -m miajet /nfs/turbo/umms-minjilab/jetfinder/data/splenic-B-cell_WT_insitu-hic_GSE82144_mm9.hic \
+python -m miajet /nfs/turbo/umms-minjilab/downloaded_data/splenic-B-cell_WT_insitu-hic_Kieffer-Kwon-2018_GSE82144_mm9.hic \
   --chrom "${CHROM}" \
   --exp_type "hic" \
   --resolution 50000 \

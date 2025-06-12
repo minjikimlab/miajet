@@ -14,7 +14,7 @@ my_job_header
 conda activate jet-env
 
 # Use the CHROM environment variable passed by the wrapper
-python -m miajet /nfs/turbo/umms-minjilab/mingjiay/GSE199059_wt_selected_30_new.hic \
+python -m miajet /nfs/turbo/umms-minjilab/downloaded_data/	DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped.hic \
   --chrom "${CHROM}" \
   --exp_type "hic" \
   --resolution 50000 \

@@ -26,3 +26,9 @@ notebooks/
 _version.py
 
 scripts/keypairs.json
+
+# packaging artifacts
+*.egg-info/
+dist/
+build/
+*.egg
