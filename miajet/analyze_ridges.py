@@ -1705,7 +1705,8 @@ def make_bed(df_pos_all, N, chromosome, window_size, resolution, x_label, y_labe
 from utils.file_io import save_csv
 
 def format_summary_table(df_agg_in, df_features_in, chromosome, resolution, ranking, scale_range,
-                         contour_label="Contour Number", x_label="X_(px)_orig"):
+                         window_size, N, 
+                         contour_label="Contour Number", x_label="X_(px)_orig", y_label="Y_(px)_orig"):
     """
     Format summary table for results
     * Combines chromosome, Contour Number and s_imagej into a single unique identifier
@@ -1723,12 +1724,17 @@ def format_summary_table(df_agg_in, df_features_in, chromosome, resolution, rank
     df_agg["unique_id"] = chromosome + "_" + df_agg[contour_label].astype(str) + "_" + scale_index_agg.astype(str)
     df_features["unique_id"] = chromosome + "_" + df_features[contour_label].astype(str) + "_" + scale_index_features.astype(str)
 
+    # convert the coordinates from rectangle to square 
+    window_size_bin = np.ceil(window_size / resolution).astype(int)
+    coords = rect_to_square(N, window_size_bin, df_features[[y_label, x_label]].values)
+    rows, cols = coords[:, 0], coords[:, 1]
+    df_features["x (bp)"] = cols * resolution
+
     df_agg["chrom"] = chromosome
     df_agg["p-val_raw"] = df_agg["p-val"]
 
-    factor = resolution / np.sqrt(2)
-    agg = df_features.groupby("unique_id").agg(start=(x_label, lambda x : np.min(x) * factor),
-                                               end=(x_label, lambda x : np.max(x) * factor),
+    agg = df_features.groupby("unique_id").agg(start=("x (bp)", lambda x : np.min(x) * resolution),
+                                               end=("x (bp)", lambda x : np.max(x) * resolution),
                                                length=(x_label, lambda x : x.count() * resolution)).reset_index()
 
     # ensure that other columns are kept in the summary table (e.g. ks)
@@ -1866,7 +1872,8 @@ def save_results(df_agg, df_features, K, ranking, save_path, chromosome, N_remov
     # Save summary table
     save_name = os.path.join(save_path, f"{root}_summary_table.csv")
     df_agg_topK = format_summary_table(df_agg_topK, df_features, chromosome, resolution, ranking, scale_range,
-                                       contour_label=contour_label, x_label=x_label)
+                                       contour_label=contour_label, x_label=x_label, y_label=y_label,
+                                       window_size=window_size, N=N)
     save_csv(df_agg_topK, save_name, root, parameter_str, dp=3)
 
     # Plot top K
