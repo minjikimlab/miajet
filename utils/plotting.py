@@ -197,160 +197,313 @@ def plot_hic(A, title, resolution, genomic_shift=0, savepath=None, show=True, lo
         
 
         
-def plot_n_hic(H, titles, suptitle, resolution, ppr=5, genomic_shift=0, savepath=None, show=False, supxlabel=None, supylabel=None, figsize=None, cmap_label="Intensity", dpi=100, num_ticks=5, show_cbar=True, vcenter=None, cmap="viridis", vmax=None, **kwargs):
-    """
-    Plots n Hi-C plots with max plots per row `ppr`, each with its own colorbar.
-        genomic_shift : starting genomic coordinates of Hi-C region,
-        either a number or a list of the number of Hi-C plots
+# def plot_n_hic(H, titles, suptitle, resolution, ppr=5, genomic_shift=0, savepath=None, show=False, supxlabel=None, supylabel=None, figsize=None, cmap_label="Intensity", dpi=100, num_ticks=5, show_cbar=True, vcenter=None, cmap="viridis", vmax=None, **kwargs):
+#     """
+#     Plots n Hi-C plots with max plots per row `ppr`, each with its own colorbar.
+#         genomic_shift : starting genomic coordinates of Hi-C region,
+#         either a number or a list of the number of Hi-C plots
     
-    """
+#     """
     
-    if isinstance(H, np.ndarray):
-        if H.ndim == 3:  
-            H = list(H)  
-        else:
-            raise ValueError("Numpy array H must be 3-dimensional with shape (num_matrices, dim1, dim2)")
+#     if isinstance(H, np.ndarray):
+#         if H.ndim == 3:  
+#             H = list(H)  
+#         else:
+#             raise ValueError("Numpy array H must be 3-dimensional with shape (num_matrices, dim1, dim2)")
             
-    if isinstance(H, list):
-        closest_multiple = ppr - len(H) % ppr if len(H) % ppr != 0 else 0
+#     if isinstance(H, list):
+#         closest_multiple = ppr - len(H) % ppr if len(H) % ppr != 0 else 0
         
-        num_rows = (len(H) + closest_multiple) // ppr 
-        num_cols = min(len(H), ppr)
+#         num_rows = (len(H) + closest_multiple) // ppr 
+#         num_cols = min(len(H), ppr)
             
-        if figsize is not None:
+#         if figsize is not None:
             
-            if isinstance(genomic_shift, list) or isinstance(genomic_shift, np.ndarray):
-                fig, axs = plt.subplots(num_rows, num_cols, figsize=figsize, layout='constrained', dpi=dpi)
-            else:
-                fig, axs = plt.subplots(num_rows, num_cols, figsize=figsize, layout='constrained',
-                                        sharex='all', sharey='all', dpi=dpi)
-        else:
-            if isinstance(genomic_shift, list) or isinstance(genomic_shift, np.ndarray):
-                fig, axs = plt.subplots(num_rows, num_cols, figsize=(4.2 * num_cols, 3 * num_rows + 1), layout='constrained', dpi=dpi)
-            else:
-                fig, axs = plt.subplots(num_rows, num_cols, figsize=(4.2 * num_cols, 3 * num_rows + 1), layout='constrained',
-                                        sharex='all', sharey='all', dpi=dpi)
+#             if isinstance(genomic_shift, list) or isinstance(genomic_shift, np.ndarray):
+#                 fig, axs = plt.subplots(num_rows, num_cols, figsize=figsize, layout='constrained', dpi=dpi)
+#             else:
+#                 fig, axs = plt.subplots(num_rows, num_cols, figsize=figsize, layout='constrained',
+#                                         sharex='all', sharey='all', dpi=dpi)
+#         else:
+#             if isinstance(genomic_shift, list) or isinstance(genomic_shift, np.ndarray):
+#                 fig, axs = plt.subplots(num_rows, num_cols, figsize=(4.2 * num_cols, 3 * num_rows + 1), layout='constrained', dpi=dpi)
+#             else:
+#                 fig, axs = plt.subplots(num_rows, num_cols, figsize=(4.2 * num_cols, 3 * num_rows + 1), layout='constrained',
+#                                         sharex='all', sharey='all', dpi=dpi)
 
-        for i, ax in enumerate(axs.flat):
-            if i < len(H):
+#         for i, ax in enumerate(axs.flat):
+#             if i < len(H):
                 
-                if isinstance(vmax, np.ndarray) or isinstance(vmax, list):
+#                 if isinstance(vmax, np.ndarray) or isinstance(vmax, list):
                     
-                    if isinstance(cmap, np.ndarray) or isinstance(cmap, list):
-                        if vcenter is None:
-                            im = ax.imshow(H[i], interpolation="none", cmap=cmap[i], vmax=vmax[i], **kwargs)
-                        elif isinstance(vcenter, np.ndarray) or isinstance(vcenter, list):
-                            if vcenter[i] is not None:
-                                im = ax.imshow(H[i], interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter[i], vmax=vmax[i]), cmap=cmap[i], **kwargs)
-                            else:
-                                im = ax.imshow(H[i], interpolation="none", cmap=cmap[i], vmax=vmax[i], **kwargs)
-                        else:
-                            im = ax.imshow(H[i], interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter, vmax=vmax[i]), cmap=cmap[i], **kwargs)
-                    else:
-                        if vcenter is None:
-                            im = ax.imshow(H[i], interpolation="none", cmap=cmap,vmax=vmax[i],  **kwargs)
-                        elif isinstance(vcenter, np.ndarray) or isinstance(vcenter, list):
-                            if vcenter[i] is not None:
-                                im = ax.imshow(H[i], interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter[i], vmax=vmax[i]), cmap=cmap, **kwargs)
-                            else:
-                                im = ax.imshow(H[i], interpolation="none", cmap=cmap, vmax=vmax[i], **kwargs)
-                        else:
-                            im = ax.imshow(H[i], interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter, vmax=vmax[i]), cmap=cmap, **kwargs)                    
+#                     if isinstance(cmap, np.ndarray) or isinstance(cmap, list):
+#                         if vcenter is None:
+#                             im = ax.imshow(H[i], interpolation="none", cmap=cmap[i], vmax=vmax[i], **kwargs)
+#                         elif isinstance(vcenter, np.ndarray) or isinstance(vcenter, list):
+#                             if vcenter[i] is not None:
+#                                 im = ax.imshow(H[i], interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter[i], vmax=vmax[i]), cmap=cmap[i], **kwargs)
+#                             else:
+#                                 im = ax.imshow(H[i], interpolation="none", cmap=cmap[i], vmax=vmax[i], **kwargs)
+#                         else:
+#                             im = ax.imshow(H[i], interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter, vmax=vmax[i]), cmap=cmap[i], **kwargs)
+#                     else:
+#                         if vcenter is None:
+#                             im = ax.imshow(H[i], interpolation="none", cmap=cmap,vmax=vmax[i],  **kwargs)
+#                         elif isinstance(vcenter, np.ndarray) or isinstance(vcenter, list):
+#                             if vcenter[i] is not None:
+#                                 im = ax.imshow(H[i], interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter[i], vmax=vmax[i]), cmap=cmap, **kwargs)
+#                             else:
+#                                 im = ax.imshow(H[i], interpolation="none", cmap=cmap, vmax=vmax[i], **kwargs)
+#                         else:
+#                             im = ax.imshow(H[i], interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter, vmax=vmax[i]), cmap=cmap, **kwargs)                    
                     
-                elif vmax is not None:
-                    # should be a number
-                    # let's NOT interpret it as a percentile
+#                 elif vmax is not None:
+#                     # should be a number
+#                     # let's NOT interpret it as a percentile
 
-                    if isinstance(cmap, np.ndarray) or isinstance(cmap, list):
-                        if vcenter is None:
-                            im = ax.imshow(H[i], interpolation="none", cmap=cmap[i], vmax=vmax, **kwargs)
-                        elif isinstance(vcenter, np.ndarray) or isinstance(vcenter, list):
-                            if vcenter[i] is not None:
-                                im = ax.imshow(H[i], interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter[i], vmax=vmax), cmap=cmap[i], **kwargs)
-                            else:
-                                im = ax.imshow(H[i], interpolation="none", cmap=cmap[i], vmax=vmax, **kwargs)
-                        else:
-                            im = ax.imshow(H[i], interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter, vmax=vmax), cmap=cmap[i], **kwargs)
-                    else:
-                        if vcenter is None:
-                            im = ax.imshow(H[i], interpolation="none", cmap=cmap,vmax=vmax,  **kwargs)
-                        elif isinstance(vcenter, np.ndarray) or isinstance(vcenter, list):
-                            if vcenter[i] is not None:
-                                im = ax.imshow(H[i], interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter[i], vmax=vmax), cmap=cmap, **kwargs)
-                            else:
-                                im = ax.imshow(H[i], interpolation="none", cmap=cmap, vmax=vmax, **kwargs)
-                        else:
-                            im = ax.imshow(H[i], interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter, vmax=vmax), cmap=cmap, **kwargs)
+#                     if isinstance(cmap, np.ndarray) or isinstance(cmap, list):
+#                         if vcenter is None:
+#                             im = ax.imshow(H[i], interpolation="none", cmap=cmap[i], vmax=vmax, **kwargs)
+#                         elif isinstance(vcenter, np.ndarray) or isinstance(vcenter, list):
+#                             if vcenter[i] is not None:
+#                                 im = ax.imshow(H[i], interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter[i], vmax=vmax), cmap=cmap[i], **kwargs)
+#                             else:
+#                                 im = ax.imshow(H[i], interpolation="none", cmap=cmap[i], vmax=vmax, **kwargs)
+#                         else:
+#                             im = ax.imshow(H[i], interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter, vmax=vmax), cmap=cmap[i], **kwargs)
+#                     else:
+#                         if vcenter is None:
+#                             im = ax.imshow(H[i], interpolation="none", cmap=cmap,vmax=vmax,  **kwargs)
+#                         elif isinstance(vcenter, np.ndarray) or isinstance(vcenter, list):
+#                             if vcenter[i] is not None:
+#                                 im = ax.imshow(H[i], interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter[i], vmax=vmax), cmap=cmap, **kwargs)
+#                             else:
+#                                 im = ax.imshow(H[i], interpolation="none", cmap=cmap, vmax=vmax, **kwargs)
+#                         else:
+#                             im = ax.imshow(H[i], interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter, vmax=vmax), cmap=cmap, **kwargs)
                         
-                else:
+#                 else:
 
 
-                    if isinstance(cmap, np.ndarray) or isinstance(cmap, list):
-                        if vcenter is None:
-                            im = ax.imshow(H[i], interpolation="none", cmap=cmap[i], **kwargs)
-                        elif isinstance(vcenter, np.ndarray) or isinstance(vcenter, list):
-                            if vcenter[i] is not None:
-                                im = ax.imshow(H[i], interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter[i]), cmap=cmap[i], **kwargs)
-                            else:
-                                im = ax.imshow(H[i], interpolation="none", cmap=cmap[i], **kwargs)
-                        else:
-                            im = ax.imshow(H[i], interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter), cmap=cmap[i], **kwargs)
-                    else:
-                        if vcenter is None:
-                            im = ax.imshow(H[i], interpolation="none", cmap=cmap, **kwargs)
-                        elif isinstance(vcenter, np.ndarray) or isinstance(vcenter, list):
-                            if vcenter[i] is not None:
-                                im = ax.imshow(H[i], interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter[i]), cmap=cmap, **kwargs)
-                            else:
-                                im = ax.imshow(H[i], interpolation="none", cmap=cmap, **kwargs)
-                        else:
-                            im = ax.imshow(H[i], interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter), cmap=cmap, **kwargs)
+#                     if isinstance(cmap, np.ndarray) or isinstance(cmap, list):
+#                         if vcenter is None:
+#                             im = ax.imshow(H[i], interpolation="none", cmap=cmap[i], **kwargs)
+#                         elif isinstance(vcenter, np.ndarray) or isinstance(vcenter, list):
+#                             if vcenter[i] is not None:
+#                                 im = ax.imshow(H[i], interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter[i]), cmap=cmap[i], **kwargs)
+#                             else:
+#                                 im = ax.imshow(H[i], interpolation="none", cmap=cmap[i], **kwargs)
+#                         else:
+#                             im = ax.imshow(H[i], interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter), cmap=cmap[i], **kwargs)
+#                     else:
+#                         if vcenter is None:
+#                             im = ax.imshow(H[i], interpolation="none", cmap=cmap, **kwargs)
+#                         elif isinstance(vcenter, np.ndarray) or isinstance(vcenter, list):
+#                             if vcenter[i] is not None:
+#                                 im = ax.imshow(H[i], interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter[i]), cmap=cmap, **kwargs)
+#                             else:
+#                                 im = ax.imshow(H[i], interpolation="none", cmap=cmap, **kwargs)
+#                         else:
+#                             im = ax.imshow(H[i], interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter), cmap=cmap, **kwargs)
                     
                 
-                if show_cbar:
-                    cbar = fig.colorbar(im, ax=ax)  # Add a colorbar to each subplot
-                    cbar.set_label(cmap_label, rotation=270)
+#                 if show_cbar:
+#                     cbar = fig.colorbar(im, ax=ax)  # Add a colorbar to each subplot
+#                     cbar.set_label(cmap_label, rotation=270)
                 
-                ax.set_title(titles[i], fontsize=10)
+#                 ax.set_title(titles[i], fontsize=10)
                                 
-                def_xticks = np.arange(0, H[i].shape[1], np.ceil(H[i].shape[1] / num_ticks).astype(int))
-                def_yticks = np.arange(0, H[i].shape[0], np.ceil(H[i].shape[0] / num_ticks).astype(int))
+#                 def_xticks = np.arange(0, H[i].shape[1], np.ceil(H[i].shape[1] / num_ticks).astype(int))
+#                 def_yticks = np.arange(0, H[i].shape[0], np.ceil(H[i].shape[0] / num_ticks).astype(int))
                 
-                if isinstance(genomic_shift, list) or isinstance(genomic_shift, np.ndarray):
-                    ticks_bp_x = [genomic_labels(x) for x in list(genomic_shift[i] + def_xticks * resolution)]
-                    ticks_bp_y = [genomic_labels(x) for x in list(genomic_shift[i] + def_yticks * resolution)]
-                else:
-                    ticks_bp_x = [genomic_labels(x) for x in list(genomic_shift + def_xticks * resolution)]
-                    ticks_bp_y = [genomic_labels(x) for x in list(genomic_shift + def_yticks * resolution)]
+#                 if isinstance(genomic_shift, list) or isinstance(genomic_shift, np.ndarray):
+#                     ticks_bp_x = [genomic_labels(x, N=1) for x in list(genomic_shift[i] + def_xticks * resolution)]
+#                     ticks_bp_y = [genomic_labels(x, N=1) for x in list(genomic_shift[i] + def_yticks * resolution)]
+#                 else:
+#                     ticks_bp_x = [genomic_labels(x, N=1) for x in list(genomic_shift + def_xticks * resolution)]
+#                     ticks_bp_y = [genomic_labels(x, N=1) for x in list(genomic_shift + def_yticks * resolution)]
                 
                 
-                ax.set_xticks(def_xticks)
-                ax.set_xticklabels(ticks_bp_x, fontsize=8, rotation=45)
+#                 ax.set_xticks(def_xticks)
+#                 ax.set_xticklabels(ticks_bp_x, fontsize=8, rotation=45)
                 
-                ax.set_yticks(def_yticks)
-                ax.set_yticklabels(ticks_bp_y, fontsize=8)
+#                 ax.set_yticks(def_yticks)
+#                 ax.set_yticklabels(ticks_bp_y, fontsize=8)
                 
-            else:  # Hide any unused subplots
-                ax.axis('off')
+#             else:  # Hide any unused subplots
+#                 ax.axis('off')
 
-        fig.suptitle(suptitle, fontsize=12.5)
+#         fig.suptitle(suptitle, fontsize=12.5)
 
-        if supxlabel:
-            fig.supxlabel(supxlabel)
-        if supylabel:
-            fig.supylabel(supylabel)
+#         if supxlabel:
+#             fig.supxlabel(supxlabel)
+#         if supylabel:
+#             fig.supylabel(supylabel)
 
-        if savepath is not None:
-            plt.savefig(savepath, dpi=400)
+#         if savepath is not None:
+#             plt.savefig(savepath, dpi=400)
         
-        if show:
-            plt.show()
+#         if show:
+#             plt.show()
+#         else:
+#             plt.close(fig)
+#     else:
+#         print("Please put variables `H`, `titles` into a list for one plot case. Or use `plot_hic`")
+
+
+def plot_n_hic(
+    H,
+    titles,
+    suptitle,
+    resolution,
+    ppr=5,
+    genomic_shift=0,
+    savepath=None,
+    show=False,
+    supxlabel=None,
+    supylabel=None,
+    figsize=None,
+    cmap_label="Intensity",
+    dpi=100,
+    num_ticks=5,
+    show_cbar=True,
+    vcenter=None,
+    cmap="viridis",
+    vmax=None,
+    **kwargs
+):
+    """
+    Plots n Hi-C matrices with ≤ `ppr` plots per row, each with an individual colorbar.
+
+    Parameters
+    ----------
+    H : list | np.ndarray
+        List of 2-D Hi-C matrices or a 3-D array of shape (n, m, m).
+    titles : list[str]
+        Per-matrix subplot titles.
+    suptitle : str
+        Figure-level title.
+    resolution : int | list[int] | np.ndarray
+        Bin size(s) in base-pairs.  If a list/array is given, it must match len(H).
+    ppr : int, default 5
+        Plots per row.
+    genomic_shift : int | list[int] | np.ndarray, default 0
+        Starting coordinate(s) of each Hi-C window.
+    savepath : str | None
+        If given, save figure to this path.
+    show : bool, default False
+        Show figure instead of closing it.
+    *remaining args*
+        See original docstring.
+    """
+
+    # --- ensure H is a list of 2-D arrays -----------------------------------
+    if isinstance(H, np.ndarray):
+        if H.ndim == 3:
+            H = list(H)
         else:
-            plt.close(fig)
+            raise ValueError(
+                "Numpy array H must be 3-dim with shape (n_mats, dim1, dim2)"
+            )
+
+    if not isinstance(H, list):
+        raise TypeError("H must be a list or 3-D numpy array")
+
+    # --- figure/grid setup ---------------------------------------------------
+    closest_multiple = ppr - len(H) % ppr if len(H) % ppr else 0
+    num_rows = (len(H) + closest_multiple) // ppr
+    num_cols = min(len(H), ppr)
+
+    share_xy = not isinstance(genomic_shift, (list, np.ndarray))
+    fig_size = (
+        figsize
+        if figsize is not None
+        else (4.2 * num_cols, 3 * num_rows + 1)
+    )
+
+    fig, axs = plt.subplots(
+        num_rows,
+        num_cols,
+        figsize=fig_size,
+        layout="constrained",
+        sharex="all" if share_xy else False,
+        sharey="all" if share_xy else False,
+        dpi=dpi,
+    )
+
+    # --- iterate over subplots ----------------------------------------------
+    for i, ax in enumerate(axs.flat):
+        if i >= len(H):
+            ax.axis("off")
+            continue
+
+        # pick resolution for this panel
+        res_i = resolution[i] if isinstance(resolution, (list, np.ndarray)) else resolution
+
+        def _choose(val):
+            return val[i] if isinstance(val, (list, np.ndarray)) else val
+
+        cmap_i = _choose(cmap)
+        vmax_i = _choose(vmax)
+        vcenter_i = _choose(vcenter)
+
+        if vcenter_i is None:
+            im = ax.imshow(
+                H[i],
+                interpolation="none",
+                cmap=cmap_i,
+                vmax=vmax_i,
+                **kwargs,
+            )
+        else:
+            im = ax.imshow(
+                H[i],
+                interpolation="none",
+                cmap=cmap_i,
+                norm=colors.TwoSlopeNorm(vcenter=vcenter_i, vmax=vmax_i),
+                **kwargs,
+            )
+
+        if show_cbar:
+            cbar = fig.colorbar(im, ax=ax)
+            cbar.set_label(cmap_label, rotation=270)
+
+        ax.set_title(titles[i], fontsize=10)
+
+        # ticks
+        def_xticks = np.arange(
+            0, H[i].shape[1], np.ceil(H[i].shape[1] / num_ticks).astype(int)
+        )
+        def_yticks = np.arange(
+            0, H[i].shape[0], np.ceil(H[i].shape[0] / num_ticks).astype(int)
+        )
+
+        if isinstance(genomic_shift, (list, np.ndarray)):
+            gshift = genomic_shift[i]
+        else:
+            gshift = genomic_shift
+
+        ticks_bp_x = [genomic_labels(gshift + x * res_i, N=1) for x in def_xticks]
+        ticks_bp_y = [genomic_labels(gshift + y * res_i, N=1) for y in def_yticks]
+
+        ax.set_xticks(def_xticks)
+        ax.set_xticklabels(ticks_bp_x, fontsize=8, rotation=45)
+        ax.set_yticks(def_yticks)
+        ax.set_yticklabels(ticks_bp_y, fontsize=8)
+
+    # --- figure-level labels -------------------------------------------------
+    fig.suptitle(suptitle, fontsize=12.5)
+    if supxlabel:
+        fig.supxlabel(supxlabel)
+    if supylabel:
+        fig.supylabel(supylabel)
+
+    if savepath:
+        plt.savefig(savepath, dpi=400)
+    if show:
+        plt.show()
     else:
-        print("Please put variables `H`, `titles` into a list for one plot case. Or use `plot_hic`")
-
-
+        plt.close(fig)
 
 
 
