@@ -1735,7 +1735,7 @@ def format_summary_table(df_agg_in, df_features_in, chromosome, resolution, rank
 
     agg = df_features.groupby("unique_id").agg(start=("x (bp)", lambda x : np.min(x)),
                                                end=("x (bp)", lambda x : np.max(x)),
-                                               length=(x_label, lambda x : x.count())).reset_index()
+                                               length=(x_label, lambda x : x.count() * resolution)).reset_index()
 
     # ensure that other columns are kept in the summary table (e.g. ks)
     df_agg = df_agg.merge(agg, on="unique_id", how="left")
