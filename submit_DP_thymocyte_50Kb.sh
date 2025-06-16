@@ -32,8 +32,8 @@ chromosomes=(
 )
 
 for chrom in "${chromosomes[@]}"; do
-  # sbatch --job-name="Guo et al. mm10 ${chrom}" --export=CHROM=${chrom} job_DP_thymocyte_50Kb.sbat
-  # sleep 1
+  sbatch --job-name="Guo et al. mm10 ${chrom}" --export=CHROM=${chrom} job_DP_thymocyte_50Kb.sbat
+  sleep 1
   sbatch --job-name="Guo et al. mm9 ${chrom}" --export=CHROM=${chrom} job_DP_thymocyte-mm9_50Kb.sbat
   sleep 1
 done

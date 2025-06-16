@@ -166,19 +166,21 @@ def plot_hic(A, title, resolution, genomic_shift=0, savepath=None, show=True, lo
         
     if cbar:
         plt.colorbar(im, ax=ax)
+
+    if resolution is not None:
+            
+        def_xticks = plt.gca().get_xticks()
+        def_yticks = plt.gca().get_yticks()
         
-    def_xticks = plt.gca().get_xticks()
-    def_yticks = plt.gca().get_yticks()
-    
-    def_xticks = np.array([x for x in def_xticks if x >= 0 and x < A.shape[0]])
-    def_yticks = np.array([x for x in def_yticks if x >= 0 and x < A.shape[1]])
-    
-    # Add lower bound to both x and y because matrix is naturally 0-indexed
-    ticks_bp_x = [genomic_labels(x) for x in list(genomic_shift + def_xticks * resolution)]
-    ticks_bp_y = [genomic_labels(x) for x in list(genomic_shift + def_yticks * resolution)]
-    
-    plt.xticks(ticks=def_xticks, labels=ticks_bp_x, fontsize=8, rotation=30)
-    plt.yticks(ticks=def_yticks, labels=ticks_bp_y, fontsize=8)
+        def_xticks = np.array([x for x in def_xticks if x >= 0 and x < A.shape[0]])
+        def_yticks = np.array([x for x in def_yticks if x >= 0 and x < A.shape[1]])
+        
+        # Add lower bound to both x and y because matrix is naturally 0-indexed
+        ticks_bp_x = [genomic_labels(x) for x in list(genomic_shift + def_xticks * resolution)]
+        ticks_bp_y = [genomic_labels(x) for x in list(genomic_shift + def_yticks * resolution)]
+        
+        plt.xticks(ticks=def_xticks, labels=ticks_bp_x, fontsize=8, rotation=30)
+        plt.yticks(ticks=def_yticks, labels=ticks_bp_y, fontsize=8)
 
     plt.title(title, fontsize=10)
     
@@ -437,8 +439,9 @@ def plot_n_hic(
             ax.axis("off")
             continue
 
-        # pick resolution for this panel
-        res_i = resolution[i] if isinstance(resolution, (list, np.ndarray)) else resolution
+        if resolution is not None:
+            # pick resolution for this panel
+            res_i = resolution[i] if isinstance(resolution, (list, np.ndarray)) else resolution
 
         def _choose(val):
             return val[i] if isinstance(val, (list, np.ndarray)) else val
@@ -483,13 +486,14 @@ def plot_n_hic(
         else:
             gshift = genomic_shift
 
-        ticks_bp_x = [genomic_labels(gshift + x * res_i, N=1) for x in def_xticks]
-        ticks_bp_y = [genomic_labels(gshift + y * res_i, N=1) for y in def_yticks]
+        if resolution is not None:
+            ticks_bp_x = [genomic_labels(gshift + x * res_i, N=1) for x in def_xticks]
+            ticks_bp_y = [genomic_labels(gshift + y * res_i, N=1) for y in def_yticks]
 
-        ax.set_xticks(def_xticks)
-        ax.set_xticklabels(ticks_bp_x, fontsize=8, rotation=45)
-        ax.set_yticks(def_yticks)
-        ax.set_yticklabels(ticks_bp_y, fontsize=8)
+            ax.set_xticks(def_xticks)
+            ax.set_xticklabels(ticks_bp_x, fontsize=8, rotation=45)
+            ax.set_yticks(def_yticks)
+            ax.set_yticklabels(ticks_bp_y, fontsize=8)
 
     # --- figure-level labels -------------------------------------------------
     fig.suptitle(suptitle, fontsize=12.5)
