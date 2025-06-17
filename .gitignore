@@ -25,6 +25,8 @@ dev_code_output/
 _version.py
 
 scripts/keypairs.json
+scripts/slurm-*
+
 
 # packaging artifacts
 *.egg-info/
