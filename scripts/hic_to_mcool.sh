@@ -20,9 +20,9 @@ conda activate jet-env
 
 # .hic Hi-C files to convert to .mcool
 hic_list=(
-  /nfs/turbo/umms-minjilab/downloaded_data/Repli-HiC_K562_WT_totalS.hic
-  /nfs/turbo/umms-minjilab/downloaded_data/DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped.hic
-  /nfs/turbo/umms-minjilab/downloaded_data/GSE199059_CD69negDPWTR1R2R3R4_merged.hic
+  # /nfs/turbo/umms-minjilab/downloaded_data/Repli-HiC_K562_WT_totalS.hic
+  # /nfs/turbo/umms-minjilab/downloaded_data/DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped.hic
+  # /nfs/turbo/umms-minjilab/downloaded_data/GSE199059_CD69negDPWTR1R2R3R4_merged.hic # CONFIRM – is this generated completely via log file?!
   /nfs/turbo/umms-minjilab/downloaded_data/c-elegans-CA1200-L2-L3-JK07-JK08_control-auxin-1hr_hic_Kim-2023_GSE188849_ce10.hic
   /nfs/turbo/umms-minjilab/downloaded_data/c-elegans-JK05-L3_SMC3-auxin-1hr_hic_Kim-2023_GSE237663_ce10.hic
   /nfs/turbo/umms-minjilab/downloaded_data/c-elegans-JK06-L3_WAPL-auxin-1hr_hic_Kim-2023_GSE237663_ce10.hic
