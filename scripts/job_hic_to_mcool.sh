@@ -5,7 +5,7 @@
 #SBATCH --cpus-per-task=6
 #SBATCH --mem=80g 
 #SBATCH --gpus=0 
-#SBATCH --time=72:00:00  
+#SBATCH --time=16:00:00  
 #SBATCH --mail-type=FAIL 
 
 my_job_header
@@ -31,7 +31,7 @@ echo "[$(date)] Processing: $hic -> $out"
 res=$(python3 - <<PYCODE
 from hicstraw import HiCFile
 h = HiCFile("$hic")
-print(min(h.getResolutions()))
+print(max(min(h.getResolutions()), 5000))
 PYCODE
 )
 echo "  Selected resolution: ${res} bp"
