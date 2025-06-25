@@ -1,0 +1,76 @@
+# Config file for ChIP-seq pipeline
+
+# The name of the sequencing run
+# run: "SRR931713"
+run: "SRR931714"
+
+# The type of sequencing run:
+#    "miseq" - around 30 million reads
+#    "hiseq" - around 300 million reads
+#    "pooled" - around 1 billion reads (merged replicates)
+#    "novaseq" – around 300 - 500 million reads
+run_type: "miseq"
+
+# The factor for which the IP was performed
+# E.g., Ser2-Abcam
+ip_factor: "NIPBL"
+
+# Cell type
+# E.g., HCT116-RAD21-AID-6h (<Cell line>-<Factor for depletion>-<Method of depletion>-<Treatment time>)
+cell_type: "dp_thymocytes"
+
+# The parent directory containing the input FASTQ files
+#   Note 1: difference with pbs set-up is that this is simply the path to the fastq folder
+#   not the path to run folder (i.e., need to concatenate `run` variable with `data_dir` variable 
+#   e.g., `data_dir + run`)
+#   Note 2: the pbs set-up used Bash logic to recognize fastq files 
+#   but, this set-up assumes that the config file is static (yaml not Bash)
+#   The functionality for both note 1 and 2 is done in the Snakefile itself via rules
+data_dir: "/nfs/turbo/umms-minjilab/processing/results"
+
+# The name of the primary genome
+# For example: "hg19", "hg38", "dm3", "mm9", "mm10"
+genome: "mm9"
+
+# The reference genome FASTA file for aligning the reads
+# (The same directory must also contain the BWA index files)
+fasta: "/nfs/turbo/umms-minjilab/processing/genomes/mm9/mm9.fa"
+
+# The chrom.sizes file from UCSC Genome browser
+# for the relevant genome build
+chrom_sizes: "/nfs/turbo/umms-minjilab/processing/genomes/mm9/mm9.chrom.sizes"
+
+# The BAM file for the ChIP-seq input control
+# (Required for spp; not required for macs2)
+# If not available, set to "none"
+# input_control: "/nfs/turbo/umms-minjilab/processing/input_controls/hg38/HCT116_input_hg38_CHH0020.bam"
+input_control: "none"
+
+# The peak-calling algorithm ("macs2" or "spp")
+# * "spp" requires input control
+# * "macs2" may call peaks with or without input control
+# If input control is given, then should be set to "spp". "macs2" otherwise
+# peak_caller: "spp"
+peak_caller: "macs2"
+
+# ENCODE blacklist
+# (If not available, set to "none")
+# blacklist: "/nfs/turbo/umms-minjilab/ch-lee-lab_processing/genomes/hg38/hg38_blacklist.bed"
+blacklist: "none"
+
+#### Advanced options ####
+
+# The directory containing the executables for Minji lab
+bin_dir: "/nfs/turbo/umms-minjilab/packages"
+
+# The directory to contain the output folder (output folder is the "run" variable above)
+out_dir_folder: "/nfs/turbo/umms-minjilab/processing/results"
+# out_dir_folder: "" # debug
+
+#### Advanced parameters ####
+
+min_mapq: 30 # samtools_filtering (default is 30)
+
+z_thresh: 6 # peak_caller spp (default is 6)
+
+bwa_threads: 10 # map_reads (default is 20)

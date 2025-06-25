@@ -1,0 +1,20 @@
+#!/bin/bash
+
+#SBATCH --job-name=NIPBL_mapping_diagnostic2
+#SBATCH --account=minjilab0 
+#SBATCH --partition=standard 
+#SBATCH --cpus-per-task=10
+#SBATCH --mem=32g 
+#SBATCH --gpus=0 
+#SBATCH --time=12:00:00  
+#SBATCH --mail-type=END,FAIL 
+
+my_job_header
+
+module load Bioinformatics
+module load bwa/0.7.17-mil4ns7
+module load samtools/1.13-fwwss5n
+
+conda activate chipseq-env 
+# CHANGE -c <CPUs per task> 
+snakemake -s /nfs/turbo/umms-minjilab/chipseq_pipeline/Snakefile -c 10 --rerun-incomplete 

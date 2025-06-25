@@ -86,7 +86,7 @@ PYCODE
     --nproc   "$nproc" \
     --resolutions "${res}N" \
     --balance \
-    -o        "$out" \
+    -o "$out" \
     "$tmp"                              
 
   # ── clean up ──

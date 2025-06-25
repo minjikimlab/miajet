@@ -1740,7 +1740,8 @@ def format_summary_table(df_agg_in, df_features_in, chromosome, resolution, rank
     # ensure that other columns are kept in the summary table (e.g. ks)
     df_agg = df_agg.merge(agg, on="unique_id", how="left")
 
-    keep = ["unique_id", "chrom", "start", "end", "length", "input_mean", "angle_mean", "width_mean", ranking, "ks", "p-val_raw", "p-val_corr"]
+    keep = ["unique_id", "chrom", "start", "end", "length", "input_mean", "angle_mean", "width_mean", ranking, "ks", "p-val_raw", "p-val_corr", 
+            "entropy", "rmse"] # Added in v1.0.16
 
     # sort by ranking
     df_agg.sort_values(ranking, inplace=True, ascending=False, ignore_index=True)
@@ -1823,19 +1824,18 @@ def save_results(df_agg, df_features, K, ranking, save_path, chromosome, N_remov
         String containing formatted parameters of this run
     scale_range : np.ndarray
         Scales generated
-
-    hic_file : str, optional        *(added)*
-        Path to the .hic file for plotting contact maps.
-    normalization : str, optional   *(added)*
-        Normalization method to pass to `plot_top_k`.
-    rotation_padding : int, optional*(added)*
-        Padding (in pixels) used by `plot_top_k` when rotating.
-    im_vmax : float, optional      *(added)*
-        Upper‐bound intensity for image color‐scaling.
-    im_vmin : float, optional      *(added)*
-        Lower‐bound intensity for image color‐scaling.
-    plot : bool, default=False      *(added)*
-        If True, calls `plot_top_k` after saving tables.
+    hic_file : str, optional        
+        Path to the .hic file for plotting contact maps
+    normalization : str, optional   
+        Normalization method to pass to `plot_top_k`
+    rotation_padding : int, optional
+        Padding (in pixels) used by `plot_top_k` when rotating
+    im_vmax : float, optional      
+        Upper‐bound intensity for image color‐scaling
+    im_vmin : float, optional      
+        Lower‐bound intensity for image color‐scaling
+    plot : bool, default=False      
+        If True, calls `plot_top_k` after saving tables
     
     Returns
     -------

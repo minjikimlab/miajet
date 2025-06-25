@@ -805,7 +805,23 @@ def plot_n_rect(H, titles, suptitle, resolution, savepath=None, show=False, supx
         print("Please put variables `H`, `titles` into a list for one plot case. Or use `plot_hic`") 
         
         
-        
+# helper functions for plotting
+from matplotlib.ticker import EngFormatter
+bp_formatter = EngFormatter('b')
+def format_ticks(ax, x=True, y=True, rotate=True):
+    """
+    Format ticks with genomic coordinates as human readable
+    From cooltools
+    """
+    if y:
+        ax.yaxis.set_major_formatter(bp_formatter)
+    if x:
+        ax.xaxis.set_major_formatter(bp_formatter)
+        ax.xaxis.tick_bottom()
+    if rotate:
+        ax.tick_params(axis='x',rotation=45)
+
+
         
 def set_genomic_ticks(ax, num_ticks, resolution, mat_shape, genomic_shift, dp=1):
     

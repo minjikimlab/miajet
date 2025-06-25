@@ -26,10 +26,11 @@ _version.py
 
 scripts/keypairs.json
 scripts/slurm-*
-
+scripts/.snakemake/
 
 # packaging artifacts
 *.egg-info/
 dist/
 build/
 *.egg
+

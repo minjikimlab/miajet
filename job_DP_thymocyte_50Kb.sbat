@@ -22,7 +22,7 @@ python -m miajet /nfs/turbo/umms-minjilab/downloaded_data/DP-thymocytes_WT_hic_G
   --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_output" \
   --num_cores 4 \
   --verbose \
-  # --folder_name "TEST_T" \
+  --folder_name "NEW_SUMMARY" \
   # --normalization "KR" \
   # --window_size 6000000 \
   # --data_type "oe" \
