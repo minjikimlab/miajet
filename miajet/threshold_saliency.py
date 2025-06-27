@@ -23,6 +23,10 @@ def threshold_saliency_q(df_agg, ranking, q, verbose):
     pd.DataFrame
         Updated summary dataframe with ridges above the percentile saliency value
     """
+
+    if df_agg.empty:
+        return df_agg
+
     # get the non-zero saliency values only
     values = df_agg[ranking].values
     non_zero_saliency = values[~np.isclose(values, 0)]

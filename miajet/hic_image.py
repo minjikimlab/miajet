@@ -137,7 +137,12 @@ def generate_hic_image(hic_file, chromosome, resolution, window_size, data_type,
                                        cval=0, 
                                        handle_zero_sum="remove", 
                                        whiten=whiten,
-                                       verbose=False) 
+                                       verbose=verbose) 
+    
+    if im.shape[0] == 0 or im.shape[1] == 0:
+        raise ValueError(f"Empty contact map generated for chromosome {chromosome} with resolution {resolution} and window size {window_size}. "
+                         f"Please check the Hi-C file {hic_file} for coverage and/or parameters")
+    
     
     im_p_value, _, _ = read_hic_rectangle(filename=hic_file, 
                                        chrom=chromosome, 

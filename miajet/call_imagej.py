@@ -28,6 +28,211 @@ def get_free_display(low=1000, high=9999, max_tries=10):
     raise RuntimeError(f"No free display found in {max_tries} tries.")
 
 
+
+# def process_sigma_headless(s, lt, ut, image_path, save_path, root, memory_alloc, macro_path, verbose):
+#     s_str = str(s)
+#     max_attempts = 5
+#     timeout_seconds = 120
+#     attempt = 0
+#     current_ut, current_lt = ut, lt
+#     t0 = time.time()
+
+#     if verbose:
+#         print(f"\tHeadless Fiji: max_attempts={max_attempts}, initial timeout={timeout_seconds}s")
+
+#     while attempt < max_attempts:
+#         args = "|||".join([s_str, image_path, save_path, str(current_ut), str(current_lt), root])
+#         fiji_cmd = [
+#             "/nfs/turbo/umms-minjilab/sionkim/finding_jets/localfiji/ImageJ-linux64",
+#             "--headless",
+#             "--console",
+#             f"--mem={int(memory_alloc / (1024 * 1024))}M",
+#             "-macro", macro_path,
+#             args
+#         ]
+
+#         try:
+#             if verbose:
+#                 print(f"\tAttempt {attempt+1}: s={s:.2f}, ut={current_ut:.2f}, lt={current_lt:.2f}")
+#             subprocess.run(fiji_cmd, timeout=timeout_seconds, check=True)
+#             if verbose:
+#                 print(f"\tFiji finished for s={s:.2f} in {time.time() - t0:.0f}s")
+#             break
+
+#         except subprocess.TimeoutExpired:
+#             print(f"\tTimeout after {timeout_seconds}s on attempt {attempt+1} (s={s:.2f})")
+#             # increase thresholds then retry
+#             current_ut *= 1.5
+#             current_lt *= 1.5
+#             attempt += 1
+#             timeout_seconds += 30
+#             if verbose:
+#                 print(f"\tRetrying with ut={current_ut:.2f}, lt={current_lt:.2f}, new timeout={timeout_seconds}s")
+
+#         except subprocess.CalledProcessError as e:
+#             print(f"\tFiji failed with exit code {e.returncode}")
+#             sys.exit(e.returncode)
+
+#     else:
+#         print("All attempts exhausted; please increase your thresholds or timeout")
+#         sys.exit(1)
+
+from pyvirtualdisplay import Display
+
+def process_sigma_pyvd(s, lt, ut, image_path, save_path, root, memory_alloc, macro_path, verbose):
+    s_str = str(s)
+    max_attempts = 5
+    timeout_seconds = 120
+    attempt = 0
+    current_ut, current_lt = ut, lt
+    t0 = time.time()
+
+    if verbose:
+        print(f"\tFiji-with-Xvfb: max_attempts={max_attempts}, initial timeout={timeout_seconds}s")
+
+    while attempt < max_attempts:
+        args = "|||".join([s_str, image_path, save_path,
+                           str(current_ut), str(current_lt), root])
+        
+        if verbose:
+            print(f"\tAttempt {attempt+1}: s={s:.2f}, ut={current_ut:.2f}, lt={current_lt:.2f}")
+
+        # start an offscreen X server
+        with Display(visible=False, backend="xvfb", size=(100, 100), color_depth=24) as disp:
+
+            try:
+                fiji_cmd = [
+                    "/nfs/turbo/umms-minjilab/sionkim/finding_jets/localfiji/ImageJ-linux64",
+                    "--forbid-single-instance",
+                    "-Dij.no-legacy-single-instance=true",
+                    f"--mem={int(memory_alloc / (1024 * 1024))}M",
+                    # "-batch",
+                    "-macro", macro_path,
+                    # macro_path,
+                    args
+                ]
+
+                subprocess.run(fiji_cmd, timeout=timeout_seconds, check=True)
+
+                if verbose:
+                    elapsed = time.time() - t0
+                    print(f"\tFiji finished for s={s:.2f} in {elapsed:.0f}s")
+
+                break
+
+            except subprocess.TimeoutExpired:
+                print(f"\tTimeout after {timeout_seconds}s on attempt {attempt+1} (s={s:.2f})")
+                current_ut *= 1.5
+                current_lt *= 1.5
+                attempt += 1
+                timeout_seconds += 30
+                if verbose:
+                    print(f"\tRetrying with ut={current_ut:.2f}, lt={current_lt:.2f}, new timeout={timeout_seconds}s")
+
+            except subprocess.CalledProcessError as e:
+                print(f"\tFiji failed with exit code {e.returncode}")
+                sys.exit(e.returncode)
+
+    else:
+        print("All attempts exhausted; please increase your thresholds or timeout.")
+        sys.exit(1)
+
+
+from scyjava import jimport
+
+def process_sigma_pyimagej(
+    s, lt, ut,
+    image_path, save_path, root,
+    memory_alloc,  # in bytes
+    macro_path,
+    verbose=True
+):
+    """
+    Fully headless via PyImageJ. Retries up to 5× on any exception,
+    bumping thresholds by 1.5× each time.
+    """
+    # 1) Convert memory_alloc bytes → megabytes for Fiji's --mem=
+    mem_mb = int(memory_alloc // (1024 * 1024))
+    
+    # 2) Launch Fiji headless with that heap
+    ij = imagej.init('/nfs/turbo/umms-minjilab/sionkim/miajet/localfiji') 
+    # ij = imagej.init('sc.fiji:fiji')
+    
+    # 2) Build a little IJ macro (as a string) that takes parameters
+    macro = f"""
+#@ Float sigma
+#@ Float upper
+#@ Float lower
+#@ String imagePath
+#@ String saveDir
+#@ String root
+#@output Object dummy
+
+open(imagePath);
+run("Source Steger's Algorithm",
+    "detection=[White lines on dark background] "
+    + "line=" + sigma
+    + " maximum=2.5 split minimum=0 correct compute "
+    + "maximum_0=2.5 add=[Only lines] color=Rainbow "
+    + "upper=" + upper + " lower=" + lower
+);
+saveAs("PNG",
+    saveDir + "/" + root
+    + "_imagej_results_s-" + d2s(sigma,3)
+    + "_lt-" + d2s(lower,3)
+    + "_ut-" + d2s(upper,3)
+    + ".png"
+);
+saveAs("Results",
+    saveDir + "/" + root
+    + "_imagej_results_s-" + d2s(sigma,3)
+    + "_table.csv"
+);
+dummy = "ok";
+"""
+
+    # 3) Prepare the Python-side args dict
+    args = {
+        'sigma': float(s),
+        'upper': float(ut),
+        'lower': float(lt),
+        'imagePath': image_path,
+        'saveDir': save_path,
+        'root': root
+    }
+
+    max_attempts = 5
+    timeout = 120
+    attempt = 0
+    start = time.time()
+
+    # 4) Try up to max_attempts
+    while attempt < max_attempts:
+        if verbose:
+            print(f"[Attempt {attempt+1}] sigma={s:.2f}, upper={ut:.2f}, lower={lt:.2f}, timeout={timeout}s")
+
+        try:
+            # run_macro blocks until the macro finishes or errors
+            ij.py.run_macro(macro, args)
+            if verbose:
+                print(f"✔ Done in {time.time() - start:.1f}s")
+            return
+
+        except Exception as e:
+            attempt += 1
+            ut *= 1.5
+            lt *= 1.5
+            timeout += 30
+            if verbose:
+                print(f"⚠ Run failed: {e!r}")
+                print(f"↻ Retrying with upper={ut:.2f}, lower={lt:.2f}, timeout={timeout}s")
+
+    # 5) If we get here, we ran out of retries
+    raise RuntimeError(f"process_sigma failed after {max_attempts} attempts")
+
+
+
+
 def process_sigma(s, lt, ut, image_path, save_path, root, memory_alloc, macro_path, verbose):
     """
     Helper function to run ImageJ in parallel for each scale.
@@ -270,14 +475,18 @@ def call_imagej_scale_space(scale_range, lt, ut, image_path, save_path, root, nu
         # print("\tWARNING: ImageJ parallelization DISABLED")
         # no parallelization
         for s in scale_range:
-            process_sigma(s, lt, ut, image_path, save_path, root, memory_alloc, macro_path, verbose)
+            process_sigma_pyvd(s, lt, ut, image_path, save_path, root, memory_alloc, macro_path, verbose)
+            # process_sigma_pyimagej(s, lt, ut, image_path, save_path, root, memory_alloc, macro_path, verbose)
+            # process_sigma(s, lt, ut, image_path, save_path, root, memory_alloc, macro_path, verbose)
             # process_sigma_python(s, image_path, save_path, memory_alloc, macro_path, verbose)
 
     else:
         # Allocate memory for each core
         args = [(s, lt, ut, image_path, save_path, root, memory_alloc / num_cores, macro_path, verbose) for s in scale_range]
         with Pool(int(num_cores)) as pool:
-            pool.starmap(process_sigma, args)
+            # pool.starmap(process_sigma, args)
+            pool.starmap(process_sigma_pyvd, args)
+            # pool.starmap(process_sigma_pyimagej, args)
 
     print()
 

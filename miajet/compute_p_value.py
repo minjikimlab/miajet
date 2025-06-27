@@ -257,6 +257,82 @@ def init_globals_significance(im_p_value_, corr_im_p_value_, factor_lr_, agg_, s
     x_label = x_label_
     y_label = y_label_
 
+
+def process_significance_single(df_ridge, im_p_value, corr_im_p_value, factor_lr, agg, statistic, x_label, y_label):
+    """
+    Helper function for `compute_significance` to process each ridge in parallel
+
+    Expects df_ridge to have a column '_orig_idx' indicating its position in df_agg
+    Returns tuple: (orig_idx, ks_stat, p_val)
+    """
+    orig_idx = int(df_ridge["_orig_idx"].iloc[0])
+    coords = df_ridge[[x_label, y_label]].values
+    ridge_pts = convert_imagej_coord_to_numpy(coords,
+                                              im_p_value.shape[0],
+                                              flip_y=False,
+                                              start_bin=0)
+    ridge_angles = -df_ridge["angle_imagej"].values - 90
+    ridge_widths = df_ridge["width"].values
+
+    # observed vs. null
+    l_mean_obs, r_mean_obs, c_mean_obs, *_, l_med_obs, r_med_obs, c_med_obs = \
+        compute_test_statistic_quantities(im=im_p_value,
+                                          ridge_points=ridge_pts,
+                                          ridge_angles=ridge_angles,
+                                          width_in=ridge_widths,
+                                          height=1,
+                                          im_shape=im_p_value.shape,
+                                          factor_lr=factor_lr)
+    l_mean_null, r_mean_null, c_mean_null, *_, l_med_null, r_med_null, c_med_null = \
+        compute_test_statistic_quantities(im=corr_im_p_value,
+                                          ridge_points=ridge_pts,
+                                          ridge_angles=ridge_angles,
+                                          width_in=ridge_widths,
+                                          height=1,
+                                          im_shape=im_p_value.shape,
+                                          factor_lr=factor_lr)
+
+    # build mean-based stats
+    mean_CR_sub_obs, mean_CR_ratio_obs, mean_C2R_ratio_obs = compute_test_statistic(
+        l_mean_obs, r_mean_obs, c_mean_obs)
+    mean_CR_sub_null, mean_CR_ratio_null, mean_C2R_ratio_null = compute_test_statistic(
+        l_mean_null, r_mean_null, c_mean_null)
+
+    # build median-based stats
+    med_CR_sub_obs, med_CR_ratio_obs, med_C2R_ratio_obs = compute_test_statistic(
+        l_med_obs, r_med_obs, c_med_obs)
+    med_CR_sub_null, med_CR_ratio_null, med_C2R_ratio_null = compute_test_statistic(
+        l_med_null, r_med_null, c_med_null)
+
+    # select arrays
+    if agg == "mean":
+        if statistic == 1:
+            obs_arr, null_arr = mean_CR_ratio_obs,   mean_CR_ratio_null
+        elif statistic == 2:
+            obs_arr, null_arr = mean_CR_sub_obs,     mean_CR_sub_null
+        elif statistic == 3:
+            obs_arr, null_arr = mean_C2R_ratio_obs,  mean_C2R_ratio_null
+        else:
+            raise ValueError(f"Invalid statistic: {statistic}")
+    else:  # median
+        if statistic == 1:
+            obs_arr, null_arr = med_CR_ratio_obs,    med_CR_ratio_null
+        elif statistic == 2:
+            obs_arr, null_arr = med_CR_sub_obs,      med_CR_sub_null
+        elif statistic == 3:
+            obs_arr, null_arr = med_C2R_ratio_obs,   med_C2R_ratio_null
+        else:
+            raise ValueError(f"Invalid statistic: {statistic}")
+
+    test_statistic, p_val = ks_2samp(obs_arr, null_arr, nan_policy="omit", alternative="less")
+    # test_statistic, p_val = wilcoxon(obs_arr - null_arr, alternative='greater', nan_policy='omit')
+    # test_statistic, p_val = kstest(obs_arr - null_arr, lambda x : np.where(x < 0, 0.0, 1.0), alternative='less', nan_policy='omit')
+    # test_statistic, p_val = ttest_rel(obs_arr, null_arr, alternative='greater', nan_policy='omit') # best for NE
+
+    return orig_idx, test_statistic, p_val
+
+
+
 def process_significance(df_ridge):
     """
     Helper function for `compute_significance` to process each ridge in parallel
@@ -398,7 +474,14 @@ def compute_significance(df_agg, df_features, im_p_value, corr_im_p_value, agg, 
     if num_cores == 1:
         # single-core processing
         for orig_idx, df_ridge in tqdm(gb, disable=not verbose):
-            idx, ks_stat, p_val = process_significance(df_ridge)
+            idx, ks_stat, p_val = process_significance_single(df_ridge, 
+                                                              im_p_value=im_p_value, 
+                                                              corr_im_p_value=corr_im_p_value, 
+                                                              factor_lr=factor_lr,
+                                                              agg=agg,
+                                                              statistic=statistic,
+                                                              x_label=x_label,
+                                                              y_label=y_label)
             ks_stat_arr[idx] = ks_stat
             p_val_arr[idx] = p_val
     else:
@@ -486,7 +569,11 @@ def threshold_significance(df_agg_in, alpha_range, verbose=False):
     """
     n = len(df_agg_in)
 
+    if df_agg_in.empty:
+        return df_agg_in
+
     if not isinstance(alpha_range, list):
+
         # make a copy
         df_agg = df_agg_in.loc[df_agg_in["p-val_corr"] <= alpha_range].reset_index(drop=True)  
 

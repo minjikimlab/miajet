@@ -13,17 +13,16 @@ my_job_header
 
 conda activate jet-env
 
-# Use the CHROM environment variable passed by the wrapper
-python -m miajet /nfs/turbo/umms-minjilab/downloaded_data/DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped.hic \
+python -m miajet "${HIC_FILE}" \
   --chrom "${CHROM}" \
-  --exp_type "hic" \
-  --resolution 50000 \
+  --exp_type "${EXP}" \
+  --resolution "${RES}" \
+  --normalization "${NORM}" \
   --alpha 0.1 0.05 0.01 \
   --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_output" \
   --num_cores 4 \
   --verbose \
   # --folder_name "NEW_SUMMARY" \
-  # --normalization "KR" \
   # --window_size 6000000 \
   # --data_type "oe" \
   # --rem_k_strata 1 \
@@ -56,8 +55,4 @@ python -m miajet /nfs/turbo/umms-minjilab/downloaded_data/DP-thymocytes_WT_hic_G
   # --rmse 0.01 \
   # --eig2_trim 0 \
   # --whiten 0.01 \
-
-
-  
-
 

@@ -84,6 +84,9 @@ def load_imagej_results(save_path, scale_range, verbose, root,
         # read curve tracing results
         df_results = read_curve_tracing_results(f, verbose)
 
+        if df_results is None:
+            continue
+
         # remove duplicate rows in summary and results (most likely due to junctions, but the data is exactly the same)
         df_results.drop_duplicates([contour_label, pos_label, frame_label], inplace=True)
 

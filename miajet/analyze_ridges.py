@@ -1514,22 +1514,26 @@ def plot_saliency_distribution(df_agg, ranking, q, save_path, bins=30):
     data = df_agg[ranking].values
     nonzero_data = data[~np.isclose(data, 0)]
 
+    if len(nonzero_data) == 0:
+        print("\tWarning: No non-zero jet saliency values. Skipping histogram plot...")
+        return
+
     # Compute the bin edges up front
     bin_edges = np.histogram_bin_edges(data, bins=bins)
 
     # Compute stats for full data
-    N_all      = len(data)
-    mean_all   = np.nanmean(data)
+    N_all = len(data)
+    mean_all = np.nanmean(data)
     median_all = np.nanpercentile(data, q=q)
-    p25_all    = np.nanpercentile(data, 25)
-    p75_all    = np.nanpercentile(data, 75)
+    p25_all = np.nanpercentile(data, 25)
+    p75_all = np.nanpercentile(data, 75)
 
     # Compute stats for “zero‐bin”‐filtered data
-    N_nz       = len(nonzero_data)
-    mean_nz    = np.nanmean(nonzero_data)
-    median_nz  = np.nanpercentile(nonzero_data, q=q)
-    p25_nz     = np.nanpercentile(nonzero_data, 25)
-    p75_nz     = np.nanpercentile(nonzero_data, 75)
+    N_nz = len(nonzero_data)
+    mean_nz = np.nanmean(nonzero_data)
+    median_nz = np.nanpercentile(nonzero_data, q=q)
+    p25_nz = np.nanpercentile(nonzero_data, 25)
+    p75_nz = np.nanpercentile(nonzero_data, 75)
 
     # Create two subplots
     fig, ax = plt.subplots(1, 2, figsize=(12, 6), layout="constrained")
@@ -1584,6 +1588,8 @@ def plot_top_k(df_agg, df_features, K, ranking, hic_file, chromosome, resolution
     """
     The output plot for users
     """
+    if df_agg.empty:
+        return # simply don't plot
 
     window_size_bin = np.ceil(window_size / resolution).astype(int)
 
@@ -1685,6 +1691,10 @@ def plot_corner_diagnostic(df_agg, df_features, K, ranking, im, im_corner, corne
 
 def make_bed(df_pos_all, N, chromosome, window_size, resolution, x_label, y_label, save_name):
 
+    if df_pos_all.empty:
+        pd.DataFrame(columns=["chr1", "x1", "x2", "chr2", "y1", "y2"]).to_csv(save_name, sep="\t", header=None, index=False)
+        return
+
     df_pos_all["chr1"] = chromosome
     df_pos_all["chr2"] = chromosome
     
@@ -1713,6 +1723,12 @@ def format_summary_table(df_agg_in, df_features_in, chromosome, resolution, rank
     * Adds new columns: chrom, start, end, length
     * Keeps: angle_mean, input_mean, `ranking`, ks, p-val
     """
+    keep = ["unique_id", "chrom", "start", "end", "length", "input_mean", "angle_mean", "width_mean", ranking, "ks", "p-val_raw", "p-val_corr", 
+            "entropy", "rmse"] # Added in v1.0.16
+    
+    if df_agg_in.empty:
+        return pd.DataFrame(columns=keep)
+
     df_agg = df_agg_in.copy()
     df_features = df_features_in.copy()
 
@@ -1740,9 +1756,6 @@ def format_summary_table(df_agg_in, df_features_in, chromosome, resolution, rank
     # ensure that other columns are kept in the summary table (e.g. ks)
     df_agg = df_agg.merge(agg, on="unique_id", how="left")
 
-    keep = ["unique_id", "chrom", "start", "end", "length", "input_mean", "angle_mean", "width_mean", ranking, "ks", "p-val_raw", "p-val_corr", 
-            "entropy", "rmse"] # Added in v1.0.16
-
     # sort by ranking
     df_agg.sort_values(ranking, inplace=True, ascending=False, ignore_index=True)
 
@@ -1756,6 +1769,11 @@ def format_expanded_table(df_features, chromosome, resolution, scale_range, wind
     * Adds new columns: chrom, x (bp), y (bp)
     * Keeps: width, angle_imagej, ridge_strength
     """
+    keep = ["unique_id", "chrom", "x (bp)", "y (bp)", "x (pixels)", "y (pixels)", "width", "angle_imagej", "ridge_strength"]
+
+    if df_features.empty:
+        return pd.DataFrame(columns=keep)
+
     df = df_features.copy()
 
     scale_index = np.digitize(df["s_imagej"].values, scale_range) - 1
@@ -1775,7 +1793,6 @@ def format_expanded_table(df_features, chromosome, resolution, scale_range, wind
     df["y (pixels)"] = df[y_label]
     df["chrom"] = chromosome
 
-    keep = ["unique_id", "chrom", "x (bp)", "y (bp)", "x (pixels)", "y (pixels)", "width", "angle_imagej", "ridge_strength"]
 
     return df[keep].copy()
 
@@ -1845,18 +1862,26 @@ def save_results(df_agg, df_features, K, ranking, save_path, chromosome, N_remov
     3. `{root}_juicer-visualize.bedpe` - Bedpe file for visualization in Juicer
     4. `{root}_plot_{K}.png` - Plot of the top K ridges
     """
-    # Sort by ranking
-    df_agg.sort_values(ranking, inplace=True, ascending=False, ignore_index=True)
-
-    # Subset top K
-    if K == "all":
-        df_agg_topK = df_agg.copy()
-    else:
-        df_agg_topK = df_agg.iloc[:K]
-
-    # Get X and Y positions
+    # Columns to keep for expanded table
     keep = [contour_label, "s_imagej", x_label, y_label, "width", "angle_imagej", "ridge_strength"]
-    df_features_topK = df_agg_topK.merge(df_features[keep], how="inner", on=[contour_label, "s_imagej"])
+
+    if df_agg.empty:
+        # If df_agg is empty, save empty results with the appropriate columns but just no rows
+        df_features_topK = pd.DataFrame(columns=keep)
+        df_agg_topK = df_agg
+
+    else:
+        # Sort by ranking
+        df_agg.sort_values(ranking, inplace=True, ascending=False, ignore_index=True)
+
+        # Subset top K
+        if K == "all":
+            df_agg_topK = df_agg.copy()
+        else:
+            df_agg_topK = df_agg.iloc[:K]
+
+        # Get X and Y positions
+        df_features_topK = df_agg_topK.merge(df_features[keep], how="inner", on=[contour_label, "s_imagej"])
 
     # Save bedpe visualization
     save_name = os.path.join(save_path, f"{root}_juicer-visualize.bedpe") 

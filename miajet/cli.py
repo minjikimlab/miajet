@@ -26,7 +26,7 @@ def parse_args():
     parser.add_argument("--window_size", type=int, required=False, default=6_000_000,
                         help="Distance from main diagonal (default: 6_000_000 for 6 Mbp)")
     parser.add_argument("--normalization", type=str, required=False, default=None,
-                        help="Hi-C normalization method (e.g. 'KR', 'VC_SQRT')")
+                        help="Hi-C normalization method (e.g. 'KR', 'VC_SQRT', 'NONE')")
     parser.add_argument("--data_type", type=str, required=False, choices=["observed", "oe"], default=None,
                         help="Hi-C data type (default: 'observed')")
     parser.add_argument("--thresholds", nargs="+", type=float, required=False, default=[0.01, 0.05],

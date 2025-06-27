@@ -9,6 +9,9 @@ def z_standardize(A):
     """
     Helper for `scalar_products`
     """
+    if np.any(np.sum(A, axis=0) == 0):
+        raise ValueError("Cannot standardize a matrix with zero sum columns")
+
     return (A - np.mean(A, axis=0)) / np.std(A, axis=0)
 
 
@@ -143,9 +146,17 @@ def read_hic_rectangle(filename, chrom, resolution, window_size_bin, data_type, 
         The number of rows (and columns) in the Hi-C matrix after removing zero sum regions
     """
     # read Hi-C file as a numpy array
-    mat = read_hic_file(filename, chrom, resolution, positions=positions, data_type=data_type, normalization=normalization, verbose=False)
+    mat = read_hic_file(filename, chrom, resolution, positions=positions, data_type=data_type, normalization=normalization, verbose=verbose)
 
+    if mat.shape[0] == 1 and mat.shape[1] == 1:
+        # Most likely due to the normalization vectors not being present in the .hic file
+        raise ValueError(f".hic file read in error. This is most likely due to the normalization vectors not being present in the .hic file. "
+                         f"Suggestion: retry with a different normalizaiton method than '{normalization}'")
+ 
     mat = mat.astype(np.float64)        
+
+    # fill nans with 0
+    mat[np.isnan(mat)] = 0
 
     # add 5 bins to the window size to avoid aliasing artefacts
     window_size_buffer = min(window_size_bin + 5, mat.shape[0]) 
@@ -243,7 +254,15 @@ def read_hic_network_enhancement(filename, chrom, resolution, window_size_bin, v
                         data_type="oe", # hard-code 
                         normalization=normalization, verbose=False)
 
-    mat = mat.astype(np.float64)
+    if mat.shape[0] == 1 and mat.shape[1] == 1:
+        # Most likely due to the normalization vectors not being present in the .hic file
+        raise ValueError(f".hic file read in error. This is most likely due to the normalization vectors not being present in the .hic file. "
+                         f"Suggestion: retry with a different normalizaiton method than '{normalization}'")
+ 
+    mat = mat.astype(np.float64)        
+
+    # fill nans with 0
+    mat[np.isnan(mat)] = 0
 
     window_size_buffer = min(window_size_bin + 5, mat.shape[0]) 
     # the 5 bins is for aliasing artefacts
@@ -384,7 +403,15 @@ def read_hic_corr_rectangle(filename, chrom, resolution, window_size_bin, data_t
     
     mat = read_hic_file(filename=filename, chrom=chrom, resolution=resolution, positions=positions, data_type=data_type, normalization=normalization, verbose=False)
 
-    mat = mat.astype(np.float64)
+    if mat.shape[0] == 1 and mat.shape[1] == 1:
+        # Most likely due to the normalization vectors not being present in the .hic file
+        raise ValueError(f".hic file read in error. This is most likely due to the normalization vectors not being present in the .hic file. "
+                         f"Suggestion: retry with a different normalizaiton method than '{normalization}'")
+ 
+    mat = mat.astype(np.float64)        
+
+    # fill nans with 0
+    mat[np.isnan(mat)] = 0
 
     window_size_buffer = min(window_size_bin + 5, mat.shape[0]) 
     # the 5 bins is for aliasing artefacts
@@ -445,19 +472,20 @@ def read_hic_corr_rectangle(filename, chrom, resolution, window_size_bin, data_t
     # Save histogram of the contact map intensity values
     save_histogram(mat, save_path, vmax_perc=vmax_q, vmin_perc=vmin_q, file_name=f"{root}_correlation_{data_type}_intensity_value_histogram.png")
 
-    if np.percentile(mat, vmin_q) == np.percentile(mat, vmax_q):
-        # This should not occur as the vmin and vmax is already updated in the main function
-        # With the call to 
-        #   config = check_im_vmin_vmax(im, config) 
-        raise ValueError()
-
-    mat = cv.normalize(mat, None, alpha=0, beta=1, norm_type=cv.NORM_MINMAX, dtype=cv.CV_64F)
-
-    # clip values in mat
-    mat = np.clip(mat, np.percentile(mat, vmin_q), np.percentile(mat, vmax_q))
-
     # before we extract rectangle, we first compute the correlation matrix 
     mat = scalar_products(mat, out="correlation")
+
+    # switched order to AFTER scalar_products
+    mat = cv.normalize(mat, None, alpha=0, beta=1, norm_type=cv.NORM_MINMAX, dtype=cv.CV_64F)
+
+    if np.percentile(mat, vmin_q) == np.percentile(mat, vmax_q):
+        print("\tWARNING: vmin_q and vmax_q are equal. Setting to 0 and 100...")
+        vmin_q = 0
+        vmax_q = 100
+
+    # clip values in mat
+    # switched order to AFTER scalar_products 
+    mat = np.clip(mat, np.percentile(mat, vmin_q), np.percentile(mat, vmax_q))
 
     # below is equivalent to `read_hic_rectangle`
     window_size_buffer = min(window_size_bin + 5, mat.shape[0]) 
@@ -562,6 +590,11 @@ def read_hic_file(filename, chrom, resolution, positions, data_type, normalizati
     numpy.ndarray : a numpy array of the Hi-C matrix 
     '''
     hic = hicstraw.HiCFile(filename)
+
+    if resolution not in hic.getResolutions():
+        raise ValueError(f"Resolution {resolution} not found in the .hic file. Available resolutions: {hic.getResolutions()}")
+        
+
     if verbose:
         print("Identified")
         print("Possible resolutions")
@@ -586,8 +619,8 @@ def read_hic_file(filename, chrom, resolution, positions, data_type, normalizati
             print()
         
     if not found:
-        print("Chromosome '{}' could not be identified. Check again.".format(chrom))
-        return
+        raise ValueError(f"Chromosome '{chrom}' could not be identified. Please check the chromosome name")
+        
     
     mzd = hic.getMatrixZoomData(key, key, data_type, normalization, "BP", int(resolution))
     
@@ -599,7 +632,14 @@ def read_hic_file(filename, chrom, resolution, positions, data_type, normalizati
         binned_size = np.ceil((end_pos - start_pos) / resolution).astype(int)
         return read_hic_efficiently(mzd, binned_size, resolution, max_matrix_size, verbose)
         
-    return mzd.getRecordsAsMatrix(start_pos, end_pos, start_pos, end_pos)
+    # return mzd.getRecordsAsMatrix(start_pos, end_pos, start_pos, end_pos)
+    # DEBUG
+    print("WARNING: DEBUG MODE. TESTING EMPTY MATRIX")
+
+    mat = mzd.getRecordsAsMatrix(start_pos, end_pos, start_pos, end_pos)
+
+    return np.full_like(mat, fill_value=0.1)
+    
     
 
 
@@ -622,15 +662,42 @@ def remove_zero_sum(A_in, verbose=False):
     remove_idx : numpy.ndarray
         A numpy array of the indices of the rows and columns that were removed due to zero sum
     '''
+    remove_idx_all = []
+
     if verbose:
         print("{}".format(A_in.shape), end=" ")
-    remove_idx = np.where(np.isclose(np.sum(A_in, axis=0), 0))[0]
-    A_in = np.delete(A_in, remove_idx, axis=0)
-    A_in = np.delete(A_in, remove_idx, axis=1)
-    if verbose:
-        print("-> {}".format(A_in.shape))
-        print("    Removed indices: {}".format(remove_idx))
-    return A_in, remove_idx
+
+    zero_bool = np.isclose(np.sum(A_in, axis=0), 0) | np.isclose(np.sum(A_in, axis=1), 0)
+
+    # make an address book of the indices that are kept
+    keep = np.arange(A_in.shape[0])
+
+    while np.any(zero_bool):
+        # remove zero sum columns
+        remove_idx = np.where(zero_bool)[0]
+        A_in = np.delete(A_in, remove_idx, axis=0)
+        A_in = np.delete(A_in, remove_idx, axis=1)
+
+        # `remove_idx_all` needs to be indices with respect to the original matrix
+        # as such, we use the `keep` as the address book
+        remove_idx_orig = keep[remove_idx]
+        
+        if verbose:
+            print("-> {}".format(A_in.shape))
+            print("    Removed indices: {}".format(remove_idx_orig))
+
+        remove_idx_all.extend(list(remove_idx_orig))
+
+        # keep only the indices that are not removed
+        keep = keep[~zero_bool] 
+
+        zero_bool = np.isclose(np.sum(A_in, axis=0), 0) | np.isclose(np.sum(A_in, axis=1), 0)
+
+    if np.any(np.isclose(np.sum(A_in, axis=0), 0)) or np.any(np.isclose(np.sum(A_in, axis=1), 0)):
+        raise ValueError("There are still zero sum columns in the matrix after removing zero sum rows and columns. "
+                         "This should not happen. Please check the input matrix.")
+    
+    return A_in, remove_idx_all
 
 
 

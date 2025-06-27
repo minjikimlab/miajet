@@ -29,11 +29,11 @@ files_4dn=(
 )
 
 files_encode=(
-    # "ENCFF528XGK.hic" # Guckelberger et al. 2024, HCT116, RAD21 0hr
-    # "ENCFF317OIA.hic" # Guckelberger et al. 2024, HCT116, RAD21 6hr
+    "ENCFF528XGK.hic" # Guckelberger et al. 2024, HCT116, RAD21 0hr
+    "ENCFF317OIA.hic" # Guckelberger et al. 2024, HCT116, RAD21 6hr
     # "ENCFF318GOM.hic" # ENCODE, GM12878 intact
-    # "ENCFF616PUW.hic" # Rao et al. 2014, K562
-    # "ENCFF621AIY.hic" # ENCODE, K562, intact Hi-C
+    "ENCFF616PUW.hic" # Rao et al. 2014, K562
+    "ENCFF621AIY.hic" # ENCODE, K562, intact Hi-C
     # "ENCFF808MAG.pairs.gz" # K562_intacthic_ENCODE-2023_ENCFF621AIY_hg38.hic Downloading due to failed .hic to .mcool conversion
     # "ENCFF785BPC.pairs.gz" # GM12878_intacthic_ENCFF318GOM.hic Downloading due to failed .hic to .mcool conversion
     # "ENCFF109GNA.pairs.gz" # HCT116_RAD21-auxin-0hr_intacthic_Guckelberger-2024_ENCFF528XGK_hg38.hic Downloading due to failed .hic to .mcool conversion

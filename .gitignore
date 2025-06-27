@@ -34,3 +34,4 @@ dist/
 build/
 *.egg
 
+notebooks/test*
