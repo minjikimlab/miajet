@@ -169,11 +169,17 @@ def compute_test_statistic_quantities(im, ridge_points, ridge_angles, width_in, 
 
     for i, (pt, ang) in enumerate(zip(ridge_points, ridge_angles)):
 
-        if isinstance(width, list) or isinstance(width, np.ndarray):
-            C, R, L = compute_boxes(point=pt, angle=ang, w=width[i], h=height, factor_lr=factor_lr)
+        if isinstance(height, list) or isinstance(height, np.ndarray):
+            if isinstance(width, list) or isinstance(width, np.ndarray):
+                C, R, L = compute_boxes(point=pt, angle=ang, w=width[i], h=height[i], factor_lr=factor_lr)
+            else:
+                C, R, L = compute_boxes(point=pt, angle=ang, w=width, h=height[i], factor_lr=factor_lr)
         else:
-            C, R, L = compute_boxes(point=pt, angle=ang, w=width, h=height, factor_lr=factor_lr)
-        
+            if isinstance(width, list) or isinstance(width, np.ndarray):
+                C, R, L = compute_boxes(point=pt, angle=ang, w=width[i], h=height, factor_lr=factor_lr)
+            else:
+                C, R, L = compute_boxes(point=pt, angle=ang, w=width, h=height, factor_lr=factor_lr)
+            
         center_box_coords.append(list(C.exterior.coords))
         right_box_coords.append(list(R.exterior.coords))
         left_box_coords.append(list(L.exterior.coords))
@@ -329,7 +335,23 @@ def process_significance_single(df_ridge, im_p_value, corr_im_p_value, factor_lr
     # test_statistic, p_val = kstest(obs_arr - null_arr, lambda x : np.where(x < 0, 0.0, 1.0), alternative='less', nan_policy='omit')
     # test_statistic, p_val = ttest_rel(obs_arr, null_arr, alternative='greater', nan_policy='omit') # best for NE
 
-    return orig_idx, test_statistic, p_val
+    # For v1.1.0 we do not use the null values
+    # Lets first combine the background values i.e. L and R 
+    if agg == "mean":
+        c_obs = c_mean_obs
+        b_obs = np.maximum(l_mean_obs, r_mean_obs) # Maximums
+        # b_obs = (l_mean_obs + r_mean_obs) / 2 # Average
+        # b_obs = np.minimum(l_mean_obs, r_mean_obs) # Minimum
+    else:
+        c_obs = c_med_obs
+        b_obs = np.maximum(l_med_obs, r_med_obs) # Maximum
+        # b_obs = (l_med_obs + r_med_obs) / 2 # Average
+        # b_obs = np.minimum(l_med_obs, r_med_obs) # Minimum
+
+    # and then compute the KS test statistic
+    enrich_test_statistic, enrich_p_val = ks_2samp(c_obs, b_obs, nan_policy="omit", alternative="less")
+
+    return orig_idx, test_statistic, p_val, enrich_p_val
 
 
 
@@ -399,12 +421,28 @@ def process_significance(df_ridge):
         else:
             raise ValueError(f"Invalid statistic: {statistic}")
 
-    test_statistic, p_val = ks_2samp(obs_arr, null_arr, nan_policy="omit", alternative="less")
+    test_statistic, p_val = ks_2samp(obs_arr, null_arr, nan_policy="omit", alternative="less") # v1.0.17
     # test_statistic, p_val = wilcoxon(obs_arr - null_arr, alternative='greater', nan_policy='omit')
     # test_statistic, p_val = kstest(obs_arr - null_arr, lambda x : np.where(x < 0, 0.0, 1.0), alternative='less', nan_policy='omit')
     # test_statistic, p_val = ttest_rel(obs_arr, null_arr, alternative='greater', nan_policy='omit') # best for NE
 
-    return orig_idx, test_statistic, p_val
+    # For v1.1.0 we do not use the null values
+    # Lets first combine the background values i.e. L and R 
+    if agg == "mean":
+        c_obs = c_mean_obs
+        b_obs = np.maximum(l_mean_obs, r_mean_obs) # Maximums
+        # b_obs = (l_mean_obs + r_mean_obs) / 2 # Average
+        # b_obs = np.minimum(l_mean_obs, r_mean_obs) # Minimum
+    else:
+        c_obs = c_med_obs
+        b_obs = np.maximum(l_med_obs, r_med_obs) # Maximum
+        # b_obs = (l_med_obs + r_med_obs) / 2 # Average
+        # b_obs = np.minimum(l_med_obs, r_med_obs) # Minimum
+
+    # and then compute the KS test statistic
+    enrich_test_statistic, enrich_p_val = ks_2samp(c_obs, b_obs, nan_policy="omit", alternative="less")
+
+    return orig_idx, test_statistic, p_val, enrich_p_val
 
 def compute_significance(df_agg, df_features, im_p_value, corr_im_p_value, agg, statistic, factor_lr=1,
                          contour_label="Contour Number",
@@ -466,7 +504,8 @@ def compute_significance(df_agg, df_features, im_p_value, corr_im_p_value, agg, 
 
     n = len(df_agg)
     ks_stat_arr = np.zeros(n)
-    p_val_arr   = np.zeros(n)
+    p_val_arr = np.zeros(n)
+    enrich_p_val_arr = np.zeros(n)
 
     # group by ridge
     gb = df_merge.groupby("_orig_idx", sort=False)
@@ -474,7 +513,7 @@ def compute_significance(df_agg, df_features, im_p_value, corr_im_p_value, agg, 
     if num_cores == 1:
         # single-core processing
         for orig_idx, df_ridge in tqdm(gb, disable=not verbose):
-            idx, ks_stat, p_val = process_significance_single(df_ridge, 
+            idx, ks_stat, p_val, enrich_p_val = process_significance_single(df_ridge, 
                                                               im_p_value=im_p_value, 
                                                               corr_im_p_value=corr_im_p_value, 
                                                               factor_lr=factor_lr,
@@ -484,6 +523,7 @@ def compute_significance(df_agg, df_features, im_p_value, corr_im_p_value, agg, 
                                                               y_label=y_label)
             ks_stat_arr[idx] = ks_stat
             p_val_arr[idx] = p_val
+            enrich_p_val_arr[idx] = enrich_p_val
     else:
         # prepare for multi-core
         groups = [df for _, df in gb]
@@ -499,18 +539,20 @@ def compute_significance(df_agg, df_features, im_p_value, corr_im_p_value, agg, 
                             contour_label,
                             x_label,
                             y_label)) as pool:
-            for idx, ks_stat, p_val in tqdm(
+            for idx, ks_stat, p_val, enrich_p_val in tqdm(
                 pool.imap_unordered(process_significance, groups),
                 total=total,
                 disable=not verbose
             ):
                 ks_stat_arr[idx] = ks_stat
                 p_val_arr[idx]  = p_val
+                enrich_p_val_arr[idx] = enrich_p_val
 
     # assemble output
     df_out = df_agg.copy()
     df_out["ks"] = ks_stat_arr
     df_out["p-val"] = p_val_arr
+    df_out["enrichment_p-val"] = enrich_p_val_arr
 
     return df_out
 
@@ -541,11 +583,14 @@ def correct_significance(df_agg, method="fdr_bh"):
     _, p_values_corrected, _, _ = multipletests(df_agg["p-val"].values, method=method)
     df_agg["p-val_corr"] = p_values_corrected
 
+    _, p_values_corrected_enrich, _, _ = multipletests(df_agg["enrichment_p-val"].values, method=method)
+    df_agg["enrichment_p-val_corr"] = p_values_corrected_enrich
+
     return df_agg
 
 
 
-def threshold_significance(df_agg_in, alpha_range, verbose=False):
+def threshold_significance(df_agg_in, alpha_range, enrich_thresh, verbose=False):
     """
     Filter rows of a DataFrame by a p-value cutoff provided in `alpha_range`
 
@@ -580,15 +625,26 @@ def threshold_significance(df_agg_in, alpha_range, verbose=False):
         if verbose:
             print(f"\t{len(df_agg)} / {n} ridges remaining after thresholding at alpha = {alpha_range}...")
 
+        # df_agg = df_agg.loc[df_agg["enrichment_p-val_corr"] <= enrich_thresh].reset_index(drop=True)
+
+        # if verbose:
+        #     print(f"\t{len(df_agg)} / {n} ridges remaining after enrichment thresholding at {enrich_thresh}...")
+
         return [df_agg]
 
     df_agg_alpha = []
     for alpha in alpha_range:
         df_agg = df_agg_in.loc[df_agg_in["p-val_corr"] <= alpha].reset_index(drop=True)  
-        df_agg_alpha.append(df_agg)
 
         if verbose:
             print(f"\t * alpha = {alpha} : {len(df_agg)} / {n} ridges remaining...")
+
+        # df_agg = df_agg.loc[df_agg["enrichment_p-val_corr"] <= enrich_thresh].reset_index(drop=True)
+
+        # if verbose:
+        #     print(f"\t * alpha = {alpha} : {len(df_agg)} / {n} ridges remaining after enrichment thresholding at {enrich_thresh}...")
+
+        df_agg_alpha.append(df_agg)
 
     return df_agg_alpha
 

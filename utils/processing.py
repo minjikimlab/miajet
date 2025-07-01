@@ -476,6 +476,8 @@ def read_hic_corr_rectangle(filename, chrom, resolution, window_size_bin, data_t
     mat = scalar_products(mat, out="correlation")
 
     # switched order to AFTER scalar_products
+    # but this means we may need to be careful about mapping to 0-1 range
+    # mat = np.abs(mat)  # take absolute value to consider negative correlations as well (CHANGE)
     mat = cv.normalize(mat, None, alpha=0, beta=1, norm_type=cv.NORM_MINMAX, dtype=cv.CV_64F)
 
     if np.percentile(mat, vmin_q) == np.percentile(mat, vmax_q):
@@ -632,13 +634,13 @@ def read_hic_file(filename, chrom, resolution, positions, data_type, normalizati
         binned_size = np.ceil((end_pos - start_pos) / resolution).astype(int)
         return read_hic_efficiently(mzd, binned_size, resolution, max_matrix_size, verbose)
         
-    # return mzd.getRecordsAsMatrix(start_pos, end_pos, start_pos, end_pos)
+    return mzd.getRecordsAsMatrix(start_pos, end_pos, start_pos, end_pos)
     # DEBUG
-    print("WARNING: DEBUG MODE. TESTING EMPTY MATRIX")
+    # print("WARNING: DEBUG MODE. TESTING EMPTY MATRIX")
 
-    mat = mzd.getRecordsAsMatrix(start_pos, end_pos, start_pos, end_pos)
+    # mat = mzd.getRecordsAsMatrix(start_pos, end_pos, start_pos, end_pos)
 
-    return np.full_like(mat, fill_value=0.1)
+    # return np.full_like(mat, fill_value=0.1)
     
     
 

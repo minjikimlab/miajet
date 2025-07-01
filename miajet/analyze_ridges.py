@@ -14,7 +14,17 @@ import matplotlib.patches as patches
 import pandas as pd
 from tqdm import tqdm
 
+K_XL = np.array([[-1,  1],
+                 [-2,  2],
+                 [-1,  1]], dtype=float)
 
+K_XR = np.array([[ 1, -1],
+                 [ 2, -2],
+                 [ 1, -1]], dtype=float)
+
+K_Y  = np.array([[ 1,  2,  1],
+                 [ 0,  0,  0],
+                 [-1, -2, -1]], dtype=float)
 
 
 def rank_true_ridges(df_agg, df_features, f_true_cns, ranking, chromosome, resolution, save_path, parameter_str,
@@ -805,7 +815,7 @@ def plot_top_k_diagnostic(df_agg, df_features, K, im, im_p_value, corr_im_p_valu
             start_bin = np.round(start / resolution * np.sqrt(2)).astype(int)
             end_bin = np.round(end / resolution * np.sqrt(2)).astype(int)
 
-            ridge_points = convert_imagej_coord_to_numpy(df_ridge[[x_label, y_label]].values, im.shape[0], flip_y=False, start_bin=start_bin)
+            ridge_points = convert_imagej_coord_to_numpy(df_ridge[[x_label, y_label]].values, im.shape[0], flip_y=False, start_bin=start_bin) # local
             ridge_coords = convert_imagej_coord_to_numpy(df_ridge[[x_label, y_label]].values, im.shape[0], flip_y=True, start_bin=start_bin)
             ridge_coords_curve = convert_imagej_coord_to_numpy(df_ridge[[x_label, y_label]].values, im.shape[0], flip_y=False, start_bin=0) # global
             
@@ -848,8 +858,9 @@ def _process_ridge(
     args,
     # 1) your tuple
     # 2) **all** external names this function uses:
-    im, im_p_value, corr_im_p_value,
+    im, im_oe, im_p_value, corr_im_p_value,
     I, D, A, W1, W2, R, C,
+    max_width_bin, p_norm,
     resolution, scale_range, angle_range,
     window_size,               # <-- was missing
     save_path,
@@ -1184,6 +1195,242 @@ def _process_ridge(
         plt.savefig(save_name, dpi=400)
         plt.close()
 
+
+    def plot_stripiness_diagnostic(
+        im_oe,                              # your observed image
+        ridge_points,                       # from convert_imagej_coord_to_numpy(..., start_bin)
+        ridge_coords_curve,                 # for compute_test_statistic_quantities
+        df_ridge,                           # your single-ridge DataFrame
+        p_norm,                             # your p-norm
+        K_XL, K_XR, K_Y,                    # your stripiness kernels
+        factor_lr,                          # usually 1
+        max_width_bin,                      # optional clip
+        start_bin,                          # from your window calculation
+        ridge_widths,                       # df_ridge["width"].values
+        save_path=None,
+        fig_suptitle=""
+    ):
+        """
+        """
+
+        ridge_widths = np.clip(df_ridge["width"].values, 0, max_width_bin)
+        # height_ratio = 1
+        # ridge_heights = np.clip(ridge_widths * height_ratio, 1, None)
+        ridge_heights = 1
+        
+        (
+            left_means, right_means, center_means,
+            left_box_coords, right_box_coords, center_box_coords,
+            left_num_points, right_num_points, center_num_points,
+            left_vals, right_vals, center_vals,
+            left_meds, right_meds, center_meds
+        ) = compute_test_statistic_quantities(
+                im=im_oe,
+                ridge_points=ridge_points, # use local points because im_oe is local here
+                ridge_angles=-df_ridge["angle_imagej"].values - 90,
+                width_in=ridge_widths,
+                # height=1,
+                height=ridge_heights,
+                im_shape=im_oe.shape,
+                factor_lr=factor_lr
+        )
+
+        n_pts = len(center_means)
+        G_xL = np.full(n_pts, np.nan)
+        G_xR = np.full(n_pts, np.nan)
+        G_y  = np.full(n_pts, np.nan)
+        delta_G = np.full(n_pts, np.nan)
+
+        for i in range(1, n_pts - 1):
+            patch_xL = np.array([[left_means[i-1], center_means[i-1]],
+                                [left_means[i],   center_means[i]],
+                                [left_means[i+1], center_means[i+1]]])
+            patch_xR = np.array([[center_means[i-1], right_means[i-1]],
+                                [center_means[i],   right_means[i]],
+                                [center_means[i+1], right_means[i+1]]])
+            patch_y  = np.array([[left_means[i-1], center_means[i-1], right_means[i-1]],
+                                [left_means[i],   center_means[i],   right_means[i]],
+                                [left_means[i+1], center_means[i+1], right_means[i+1]]])
+
+            G_xL[i]    = np.sum(K_XL * patch_xL)
+            G_xR[i]    = np.sum(K_XR * patch_xR)
+            G_y[i]     = np.sum(K_Y  * patch_y)
+            delta_G[i] = min(G_xL[i], G_xR[i]) - np.abs(G_y[i])
+
+        valid = ~np.isnan(delta_G)
+        if valid.sum() == 0:
+            G_p = 0.0
+            print("Warning: stripiness cannot be computed for all points → G_p = 0")
+        else:
+            G_p = (np.sum(delta_G[valid] ** p_norm) / n_pts) ** (1 / p_norm)
+        M = np.median(center_means)
+        S = M * G_p
+
+        center_flat = np.concatenate(center_vals)
+        right_flat  = np.concatenate(right_vals)
+        left_flat   = np.concatenate(left_vals)
+
+        center_flat = center_flat[np.isfinite(center_flat)]
+        right_flat  = right_flat[np.isfinite(right_flat)]
+        left_flat   = left_flat[np.isfinite(left_flat)]
+
+        center_means_clean = center_means[np.isfinite(center_means)]
+        left_means_clean = left_means[np.isfinite(left_means)]
+        right_means_clean = right_means[np.isfinite(right_means)]
+
+        # --- now plot exactly rows 1–4 of plot_p_value_observed_null, but only cols 0–2 ---
+        im_crop = im_oe
+
+        fig, ax = plt.subplots(
+            5, 3,
+            figsize=(33, 16),            # same width/height as your 6-column version
+            layout="constrained",
+            height_ratios=[3, 1, 1, 1, 1]
+        )
+        fig.suptitle(fig_suptitle)
+
+        # Row 1: Original OE, + ridge, + ridge & boxes
+        imcm = ax[0, 0].imshow(im_crop, cmap="Reds")
+        ax[0, 0].set_title("Original Log Obs")
+        plt.colorbar(imcm, ax=ax[0, 0])
+
+        imcm = ax[0, 1].imshow(im_crop, cmap="Reds")
+        ax[0, 1].scatter(ridge_points[:, 0], ridge_points[:, 1],
+                        color="cyan", marker="x", s=5, label="Ridge Points")
+        ax[0, 1].set_title("With Ridge Points")
+        ax[0, 1].legend()
+        plt.colorbar(imcm, ax=ax[0, 1])
+
+        imcm = ax[0, 2].imshow(im_crop, cmap="Reds")
+        ax[0, 2].scatter(ridge_points[:, 0], ridge_points[:, 1],
+                        color="cyan", marker="x", s=5, label="Ridge Points")
+        plt.colorbar(imcm, ax=ax[0, 2])
+        for i, coords in enumerate(center_box_coords):
+            arr = np.array(coords)
+            ax[0, 2].plot(arr[:, 0], arr[:, 1],
+                        color="cyan", linestyle="-", linewidth=1,
+                        alpha=0.75, marker=None,
+                        label="Center Box" if i == 0 else None)
+        for i, coords in enumerate(right_box_coords):
+            arr = np.array(coords)
+            ax[0, 2].plot(arr[:, 0], arr[:, 1],
+                        color="green", linestyle="-", linewidth=0.5,
+                        alpha=0.5, marker=None,
+                        label="Right Box" if i == 0 else None)
+        for i, coords in enumerate(left_box_coords):
+            arr = np.array(coords)
+            ax[0, 2].plot(arr[:, 0], arr[:, 1],
+                        color="blue", linestyle="-", linewidth=0.5,
+                        alpha=0.5, marker=None,
+                        label="Left Box" if i == 0 else None)
+        ax[0, 2].set_title("With Ridge Points and Boxes")
+        ax[0, 2].legend()
+
+        # Row 2: widths, histogram, ECDF
+        ax[1, 0].plot(ridge_widths, "-o")
+        ax[1, 0].set_title("Ridge Widths")
+        ax[1, 0].set_ylabel("Intensity")
+        ax[1, 0].set_xlabel("Ridge Point Index")
+
+        ax[1, 1].hist(center_flat, bins=20,
+                    color="cyan", alpha=0.5, label="Center Box")
+        ax[1, 1].hist(right_flat, bins=20,
+                    color="green", alpha=0.5, label="Right Box")
+        ax[1, 1].hist(left_flat, bins=20,
+                    color="blue", alpha=0.5, label="Left Box")
+        ax[1, 1].legend()
+        ax[1, 1].set_title("Histogram of Intensity Values")
+        ax[1, 1].set_ylabel("Frequency")
+        ax[1, 1].set_xlabel("Intensity")
+
+        # only plot ECDF if there’s at least one value
+        if center_flat.size > 0:
+            ax[1, 2].ecdf(center_flat, color="cyan", label="Center Box")
+        if right_flat.size > 0:
+            ax[1, 2].ecdf(right_flat,  color="green", label="Right Box")
+        if left_flat.size > 0:
+            ax[1, 2].ecdf(left_flat,   color="blue",  label="Left Box")
+
+        ax[1, 2].legend()
+        ax[1, 2].set_title("Cumulative Histogram of Intensity Values")
+        ax[1, 2].set_ylabel("Cumulative Frequency")
+        ax[1, 2].set_xlabel("Intensity")
+
+        # Row 3: mean intensities
+        ax[2, 0].plot(center_means_clean, "-o", color="cyan", label="Center")
+        ax[2, 0].plot(left_means_clean,   "-o", color="blue", label="Left")
+        ax[2, 0].plot(right_means_clean,  "-o", color="green", label="Right")
+        ax[2, 0].set_title("Comparison of Mean (or Median) Intensity")
+        ax[2, 0].set_ylabel("Intensity")
+        ax[2, 0].set_xlabel("Ridge Point Index")
+        ax[2, 0].legend()
+
+        ax[2, 1].hist(center_means_clean, bins=20, color="cyan", alpha=0.5, label="Center Box")
+        ax[2, 1].hist(right_means_clean,  bins=20, color="green", alpha=0.5, label="Right Box")
+        ax[2, 1].hist(left_means_clean,   bins=20, color="blue", alpha=0.5, label="Left Box")
+        ax[2, 1].legend()
+        ax[2, 1].set_title("Histogram of Mean (or Median) Intensity Values")
+        ax[2, 1].set_ylabel("Frequency")
+        ax[2, 1].set_xlabel("Intensity")
+
+        # only plot ECDF if there’s at least one value
+        if center_flat.size > 0:
+            ax[1, 2].ecdf(center_means_clean, color="cyan", label="Center Box")
+        if right_flat.size > 0:
+            ax[1, 2].ecdf(right_means_clean,  color="green", label="Right Box")
+        if left_flat.size > 0:
+            ax[1, 2].ecdf(left_means_clean,   color="blue",  label="Left Box")
+
+        ax[2, 2].legend()
+        ax[2, 2].set_title("Cumulative Histogram of Mean (or Median) Intensity Values")
+        ax[2, 2].set_ylabel("Cumulative Frequency")
+        ax[2, 2].set_xlabel("Intensity")
+
+        # Row 4: number of points
+        ax[3, 1].plot(center_num_points, "-o", color="cyan")
+        ax[3, 1].set_title("Center Box Number of Points")
+        ax[3, 1].set_ylabel("Number of Points")
+        ax[3, 1].set_xlabel("Ridge Point Index")
+
+        ax[3, 2].plot(right_num_points, "-o", color="green")
+        ax[3, 2].set_title("Right Box Number of Points")
+        ax[3, 2].set_ylabel("Number of Points")
+        ax[3, 2].set_xlabel("Ridge Point Index")
+
+        ax[3, 0].plot(left_num_points, "-o", color="blue")
+        ax[3, 0].set_title("Left Box Number of Points")
+        ax[3, 0].set_ylabel("Number of Points")
+        ax[3, 0].set_xlabel("Ridge Point Index")
+
+        # --- Row 5: YOUR STRIPINESS PLOTS ---
+        ax[4, 0].plot(G_xL, "-o", label="G_xL")
+        ax[4, 0].plot(G_xR, "-o", label="G_xR")
+        ax[4, 0].plot(G_y,  "-o", label="G_y")
+        ax[4, 0].legend()
+        ax[4, 0].set_title("G_xL, G_xR, G_y")
+        ax[4, 0].set_xlabel("Ridge Point Index")
+
+        ax[4, 1].plot(np.minimum(G_xL, G_xR), "-o", label="min(G_xL,G_xR)")
+        ax[4, 1].plot(G_y, "-o", label="G_y")
+        ax[4, 1].legend()
+        ax[4, 1].set_title("min(G_xL, G_xR) vs G_y")
+        ax[4, 1].set_xlabel("Ridge Point Index")
+
+        ax[4, 2].plot(delta_G, "-o")
+        ax[4, 2].set_title(f"ΔG   G_p={(G_p):.3g}   M={M:.3g}   S={S:.3g}")
+        ax[4, 2].set_xlabel("Ridge Point Index")
+
+        # hide any empty panels
+        for a in ax.flat:
+            if not a.has_data():
+                a.set_visible(False)
+
+        if save_path:
+            fig.savefig(save_path, dpi=400)
+            plt.close(fig)
+        else:
+            plt.show()
+
     def plot_p_value_diagnostic():
 
         for factor_lr in [1]: 
@@ -1382,12 +1629,39 @@ def _process_ridge(
         plot_scale_space_heatmap()
 
         plot_p_value_diagnostic()
-        
-    
+
+
+        if true_given:
+            save_name_strip = os.path.join(
+                save_path,
+                f"merge-true_rank-{rank+1}_{genomic_labels(start_correct)}_stripiness_lr1.png"
+            )
+        else:
+            save_name_strip = os.path.join(
+                save_path,
+                f"rank-{rank+1}_{genomic_labels(start_correct)}_stripiness_lr1.png"
+            )
+        plot_stripiness_diagnostic(
+            im_oe=im_oe[:, start_bin:end_bin],
+            ridge_points=ridge_points,
+            ridge_coords_curve=ridge_coords_curve,
+            df_ridge=df_ridge,
+            p_norm=p_norm,
+            K_XL=K_XL,
+            K_XR=K_XR,
+            K_Y=K_Y,
+            factor_lr=1,
+            max_width_bin=max_width_bin,
+            start_bin=start_bin,
+            ridge_widths=df_ridge["width"].values,
+            save_path=save_name_strip,
+            fig_suptitle=ridge_title
+        )        
+            
 
 def plot_top_k_diagnostic_parallel(
-    df_agg, df_features, K, im, im_p_value, corr_im_p_value,
-    I, D, A, W1, W2, R, C, ranking, resolution, chromosome,
+    df_agg, df_features, K, im, im_p_value, im_oe, corr_im_p_value,
+    I, D, A, W1, W2, R, C, max_width_bin, p_norm, ranking, resolution, chromosome,
     scale_range, window_size, save_path, num_bins, bin_size,
     points_min, points_max, num_cores,
     f_true_bed, tolerance, angle_range,
@@ -1418,6 +1692,7 @@ def plot_top_k_diagnostic_parallel(
 
     items = list(df_agg_topK.groupby([contour_label, "s_imagej"], sort=False))
     if K != "all":
+        K = np.clip(K, 1, len(items))
         items = items[:K]
 
     # 2) build the little (rank, indexer, df_ridge) tuples
@@ -1429,8 +1704,11 @@ def plot_top_k_diagnostic_parallel(
         # note: args tuple stays unbound, partial binds everything else:
         im=im, 
         im_p_value=im_p_value,               # <-- newly bound
+        im_oe=im_oe,                         # <-- newly bound
         corr_im_p_value=corr_im_p_value,     # <-- newly bound
         I=I, D=D, A=A, W1=W1, W2=W2, R=R, C=C,
+        max_width_bin=max_width_bin,
+        p_norm=p_norm,
         resolution=resolution, 
         scale_range=scale_range, 
         angle_range=angle_range,
@@ -1723,8 +2001,9 @@ def format_summary_table(df_agg_in, df_features_in, chromosome, resolution, rank
     * Adds new columns: chrom, start, end, length
     * Keeps: angle_mean, input_mean, `ranking`, ks, p-val
     """
-    keep = ["unique_id", "chrom", "start", "end", "length", "input_mean", "angle_mean", "width_mean", ranking, "ks", "p-val_raw", "p-val_corr", 
-            "entropy", "rmse"] # Added in v1.0.16
+    keep = ["unique_id", "chrom", "start", "end", "length", "input_mean", "angle_mean", "width_mean", ranking, 
+            "ks", "p-val_raw", "p-val_corr", 
+            "stripiness"]  
     
     if df_agg_in.empty:
         return pd.DataFrame(columns=keep)
@@ -1905,10 +2184,6 @@ def save_results(df_agg, df_features, K, ranking, save_path, chromosome, N_remov
     if plot:
         plot_top_k(df_agg, df_features, K, ranking, hic_file, chromosome, resolution, window_size, normalization, rotation_padding,
                    save_path, im_vmax=im_vmax, im_vmin=im_vmin, root=root, parameter_str=parameter_str)
-
-
-
-
 
 
     # def plot_curves_transpose(overlay_ridge_condition=False):

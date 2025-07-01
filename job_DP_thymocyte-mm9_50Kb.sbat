@@ -22,7 +22,8 @@ python -m miajet /nfs/turbo/umms-minjilab/downloaded_data/GSE199059_CD69negDPWTR
   --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_output" \
   --num_cores 4 \
   --verbose \
-  # --folder_name "TEST_T" \
+  --folder_name "GSE199059_CD69negDPWTR1R2R3R4_merged-stripiness-1-p-enrich-0.4" \
+  # --root_within 2 \
   # --normalization "KR" \
   # --window_size 6000000 \
   # --data_type "oe" \

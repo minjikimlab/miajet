@@ -430,7 +430,7 @@ def plot_n_hic(
         layout="constrained",
         sharex="all" if share_xy else False,
         sharey="all" if share_xy else False,
-        dpi=dpi,
+        dpi=dpi, squeeze=False,
     )
 
     # --- iterate over subplots ----------------------------------------------

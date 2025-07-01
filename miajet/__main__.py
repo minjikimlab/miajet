@@ -12,6 +12,7 @@ from .analyze_ridges import plot_distribution_diagnostic, plot_top_k_diagnostic,
     save_results, plot_entropy_distribution, plot_corner_diagnostic, rank_true_ridges, plot_saliency_distribution
 from .compute_p_value import compute_significance, correct_significance, threshold_significance
 from .overlaps import find_and_remove_overlaps
+from .stripiness import compute_stripiness
 from .threshold_saliency import threshold_saliency_q
 from .tee import set_logging_file
 from utils.scale_space import construct_scale_space, clip_scale_range, generate_scales_from_widths
@@ -35,7 +36,7 @@ def main():
     # GENERATE HI-C IMAGE
     if config.verbose: print("Generating Hi-C image...")
     t0 = time.time()
-    im, im_orig, im_p_value, rm_idx, image_path, square_size = generate_hic_image(hic_file=config.hic_file,
+    im, im_orig, im_p_value, im_oe, rm_idx, image_path, square_size = generate_hic_image(hic_file=config.hic_file,
                                                                                   chromosome=config.chrom, 
                                                                                   resolution=config.resolution,
                                                                                   window_size=config.window_size, 
@@ -200,7 +201,7 @@ def main():
     if config.verbose: print("Computing p-values...")
     t0 = time.time()
     df_agg = compute_significance(df_agg=df_agg, df_features=df_features, im_p_value=im_p_value, corr_im_p_value=corr_im_p_value, 
-                                  agg="median", statistic=1, factor_lr=1, # hard-code aggregation function and statistic
+                                  agg="mean", statistic=1, factor_lr=1, # hard-code aggregation function and statistic
                                   num_cores=config.num_cores, verbose=config.verbose)     
     total_time += time.time() - t0
     if config.verbose: print(f"Computing p-values... {time.time() - t0:.0f}s Done")
@@ -212,14 +213,23 @@ def main():
     total_time += time.time() - t0
     if config.verbose: print(f"Removing overlaps... {time.time() - t0:.0f}s Done")
 
+    # COMPUTE STRIPINESS 
+    if config.verbose: print("Computing stripiness...")
+    t0 = time.time()
+    max_width_bin = None # hard-code 
+    p_norm = 1 # hard-code 
+    df_agg = compute_stripiness(df_agg, df_features, im_oe=im_oe, stripiness_factor_lr=1, p_norm=p_norm, max_width_bin=max_width_bin)
+    total_time += time.time() - t0
+    if config.verbose: print(f"Computing stripiness... {time.time() - t0:.0f}s Done")
+
     # CORRECT AND THRESHOLD JETS
     if config.verbose: print("Correcting and thresholding jets...")
     t0 = time.time()
     df_agg = correct_significance(df_agg, method="fdr_bh")
     # threshold saliency first (based on results before p-value thresholding)
     df_agg_saliency = threshold_saliency_q(df_agg, ranking=config.ranking, q=config.saliency_thresh, verbose=config.verbose)
-    df_agg_alpha = threshold_significance(df_agg, alpha_range=config.alpha, verbose=config.verbose)
-    df_agg_alpha_sal = threshold_significance(df_agg_saliency, alpha_range=config.alpha, verbose=config.verbose)
+    df_agg_alpha = threshold_significance(df_agg, alpha_range=config.alpha, enrich_thresh=1, verbose=config.verbose)
+    df_agg_alpha_sal = threshold_significance(df_agg_saliency, alpha_range=config.alpha, enrich_thresh=1, verbose=config.verbose)
     total_time += time.time() - t0
     if config.verbose: print(f"Correcting and thresholding jets... {time.time() - t0:.0f}s Done")
 
@@ -253,16 +263,27 @@ def main():
                      root=config.root, parameter_str=config.parameter_str,
                     hic_file=config.hic_file, normalization=config.normalization, plot=True,
                     rotation_padding=config.rotation_padding, im_vmax=config.im_vmax, im_vmin=config.im_vmin)
+            # For the saliency thresholded only, plot diagnostic plots
+
+    # print("\tWarning: diagnostic plots being generated! Comment out once finalized")
+    # for i, df_agg_each in enumerate(df_agg_alpha):
+    #     plot_top_k_diagnostic_parallel(df_agg_each, df_features,
+    #                     K="all", im=im, im_oe=im_oe, im_p_value=im_p_value, corr_im_p_value=corr_im_p_value, I=I, D=D, A=A, W1=W1, W2=W2, R=R, C=C,
+    #                     max_width_bin=max_width_bin, p_norm=p_norm, ranking=config.ranking, resolution=config.resolution, chromosome=config.chrom,
+    #                     scale_range=config.scale_range, window_size=config.window_size, 
+    #                     save_path=config.alpha_dir[i], num_cores=config.num_cores,
+    #                     num_bins=config.num_bins, bin_size=config.bin_size, points_min=config.points_min, points_max=config.points_max, 
+    #                     f_true_bed=None, tolerance=None, f_true_cns=None, angle_range=config.angle_range, verbose=config.verbose)
     # For the saliency thresholded only, plot diagnostic plots
     # print("\tWarning: diagnostic plots being generated! Comment out once finalized")
     # plot_top_k_diagnostic_parallel(df_agg_saliency, df_features,
-    #                 K="all", im=im, im_p_value=im_p_value, corr_im_p_value=corr_im_p_value, I=I, D=D, A=A, W1=W1, W2=W2, R=R, C=C,
-    #                 ranking=config.ranking, resolution=config.resolution, chromosome=config.chrom,
+    #                 K=32, im=im, im_oe=im_oe, im_p_value=im_p_value, corr_im_p_value=corr_im_p_value, I=I, D=D, A=A, W1=W1, W2=W2, R=R, C=C,
+    #                 max_width_bin=max_width_bin, p_norm=p_norm, ranking=config.ranking, resolution=config.resolution, chromosome=config.chrom,
     #                 scale_range=config.scale_range, window_size=config.window_size, 
     #                 save_path=config.saliency_dir, num_cores=config.num_cores,
     #                 num_bins=config.num_bins, bin_size=config.bin_size, points_min=config.points_min, points_max=config.points_max, 
     #                 f_true_bed=None, tolerance=None, f_true_cns=None, angle_range=config.angle_range, verbose=config.verbose)
-    total_time += time.time() - t0
+    # total_time += time.time() - t0
     if config.verbose: print(f"Saving results... {time.time() - t0:.0f}s Done")
     if config.verbose: print(f"Total time elapsed: {total_time // 60:.0f}m {total_time % 60:.0f}s")
     

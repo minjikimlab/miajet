@@ -143,6 +143,21 @@ def generate_hic_image(hic_file, chromosome, resolution, window_size, data_type,
         raise ValueError(f"Empty contact map generated for chromosome {chromosome} with resolution {resolution} and window size {window_size}. "
                          f"Please check the Hi-C file {hic_file} for coverage and/or parameters")
     
+    if data_type != "oe":
+         # used to compute stripiness
+        im_oe, _, _ = read_hic_rectangle(filename=hic_file, 
+                                        chrom=chromosome, 
+                                        resolution=resolution, 
+                                        window_size_bin=window_size_bin, 
+                                        data_type="oe", 
+                                        normalization=normalization,
+                                        rotate_mode=rotation_padding, 
+                                        cval=0, 
+                                        handle_zero_sum="remove", 
+                                        whiten=None, # used to compute stripiness
+                                        verbose=verbose)     
+    else:
+        im_oe = im.copy()
     
     im_p_value, _, _ = read_hic_rectangle(filename=hic_file, 
                                        chrom=chromosome, 
@@ -193,14 +208,16 @@ def generate_hic_image(hic_file, chromosome, resolution, window_size, data_type,
 
     im = cv.normalize(im, None, alpha=0, beta=1, norm_type=cv.NORM_MINMAX, dtype=cv.CV_64F)
     im_orig = cv.normalize(im_orig, None, alpha=0, beta=1, norm_type=cv.NORM_MINMAX, dtype=cv.CV_64F)
+    im_oe = cv.normalize(im_oe, None, alpha=0, beta=1, norm_type=cv.NORM_MINMAX, dtype=cv.CV_64F)
 
     plt.imsave(save_name, im, cmap="gray", vmax=np.percentile(im, vmax_perc), vmin=np.percentile(im, vmin_perc))
 
     # what imageJ looks at i.e. [0, 1] normalization -> percentile thresholding
     im = np.clip(im, np.percentile(im, vmin_perc), np.percentile(im, vmax_perc))   
     im_orig = np.clip(im_orig, np.percentile(im, vmin_perc), np.percentile(im, vmax_perc))
+    im_oe = np.clip(im_oe, np.percentile(im, vmin_perc), np.percentile(im, vmax_perc))
 
-    return im, im_orig, im_p_value, rm_idx, save_name, N
+    return im, im_orig, im_p_value, im_oe, rm_idx, save_name, N
 
 
 

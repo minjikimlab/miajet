@@ -22,6 +22,7 @@ python -m miajet /nfs/turbo/umms-minjilab/downloaded_data/Repli-HiC_K562_WT_tota
   --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_output" \
   --num_cores 4 \
   --verbose \
+  --folder_name "Repli-HiC_K562_WT_totalS-stripiness-1" \
   # --normalization "VC_SQRT" \
   # --window_size 6000000 \
   # --data_type "observed" \
