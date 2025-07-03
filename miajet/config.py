@@ -204,7 +204,8 @@ def process_args(args: argparse.Namespace) -> Config:
 
     # Main direcotry (level 1): ImageJ parameters
     hic_file_name = os.path.basename(config.hic_file)
-    hic_file_name = hic_file_name.split(".")[0]
+    # hic_file_name = hic_file_name.split(".")[0] # bug if hic_file_name has multiple dots, e.g. "file.name.hic"
+    hic_file_name = os.path.splitext(hic_file_name)[0]  # Remove file extension
 
     # generate save name root to append to every level 1 files
     config.root = f"{hic_file_name}_{config.chrom}_{genomic_labels(config.resolution)}"

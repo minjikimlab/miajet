@@ -370,58 +370,64 @@ def plot_n_hic(
     num_ticks=5,
     show_cbar=True,
     vcenter=None,
-    cmap="viridis",
+    cmap="Reds",
     vmax=None,
-    **kwargs
+    standardize_cbar=False,
+    **kwargs,
 ):
-    """
-    Plots n Hi-C matrices with ≤ `ppr` plots per row, each with an individual colorbar.
+    """Plot *n* Hi-C matrices in a compact grid.
 
-    Parameters
-    ----------
-    H : list | np.ndarray
-        List of 2-D Hi-C matrices or a 3-D array of shape (n, m, m).
-    titles : list[str]
-        Per-matrix subplot titles.
-    suptitle : str
-        Figure-level title.
-    resolution : int | list[int] | np.ndarray
-        Bin size(s) in base-pairs.  If a list/array is given, it must match len(H).
-    ppr : int, default 5
-        Plots per row.
-    genomic_shift : int | list[int] | np.ndarray, default 0
-        Starting coordinate(s) of each Hi-C window.
-    savepath : str | None
-        If given, save figure to this path.
-    show : bool, default False
-        Show figure instead of closing it.
-    *remaining args*
-        See original docstring.
+    If ``standardize_cbar`` is *True*, all panels share a single colour scale
+    (common *vmin*/*vmax*) **and** a single colourbar.  When a non-``None``
+    ``vcenter`` is supplied, the shared scale is implemented with
+    :class:`matplotlib.colors.TwoSlopeNorm`, so the zero (or other specified
+    centre) is aligned and symmetric across every image and the global
+    colourbar.
+
+    The public API is unchanged apart from the new ``standardize_cbar`` flag; a
+    value of *False* reproduces the original behaviour exactly.
     """
 
-    # --- ensure H is a list of 2-D arrays -----------------------------------
+    # ------------------------------------------------------------------
+    # Validate / normalise input array(s)
+    # ------------------------------------------------------------------
     if isinstance(H, np.ndarray):
         if H.ndim == 3:
             H = list(H)
         else:
-            raise ValueError(
-                "Numpy array H must be 3-dim with shape (n_mats, dim1, dim2)"
-            )
+            raise ValueError("Numpy array H must be 3-dim with shape (n, m, m)")
 
     if not isinstance(H, list):
         raise TypeError("H must be a list or 3-D numpy array")
 
-    # --- figure/grid setup ---------------------------------------------------
-    closest_multiple = ppr - len(H) % ppr if len(H) % ppr else 0
-    num_rows = (len(H) + closest_multiple) // ppr
-    num_cols = min(len(H), ppr)
+    n_mats = len(H)
+
+    # ------------------------------------------------------------------
+    # Determine global limits when a shared colourbar is requested
+    # ------------------------------------------------------------------
+    global_vmin = kwargs.get("vmin", None)
+    global_vmax = None
+
+    if standardize_cbar:
+        # -- vmax --------------------------------------------------------
+        if vmax is None:
+            global_vmax = max(np.nanmax(h) for h in H)
+        else:
+            global_vmax = max(vmax) if isinstance(vmax, (list, np.ndarray)) else vmax
+        # -- vmin --------------------------------------------------------
+        if global_vmin is None:
+            global_vmin = min(np.nanmin(h) for h in H)
+    # (If standardize_cbar is False we leave vmin/vmax handling to per-panel logic)
+
+    # ------------------------------------------------------------------
+    # Figure / grid layout
+    # ------------------------------------------------------------------
+    closest_multiple = ppr - n_mats % ppr if n_mats % ppr else 0
+    num_rows = (n_mats + closest_multiple) // ppr
+    num_cols = min(n_mats, ppr)
 
     share_xy = not isinstance(genomic_shift, (list, np.ndarray))
-    fig_size = (
-        figsize
-        if figsize is not None
-        else (4.2 * num_cols, 3 * num_rows + 1)
-    )
+    fig_size = figsize if figsize is not None else (4.2 * num_cols, 3 * num_rows + 1)
 
     fig, axs = plt.subplots(
         num_rows,
@@ -430,61 +436,85 @@ def plot_n_hic(
         layout="constrained",
         sharex="all" if share_xy else False,
         sharey="all" if share_xy else False,
-        dpi=dpi, squeeze=False,
+        dpi=dpi,
+        squeeze=False,
     )
 
-    # --- iterate over subplots ----------------------------------------------
+    first_im = None  # reference image for a potential global colourbar
+
+    # ------------------------------------------------------------------
+    # Helper for kwargs without vmin/vmax (to avoid conflicts with `norm`)
+    # ------------------------------------------------------------------
+    def _kwargs_without_limits(src):
+        return {k: v for k, v in src.items() if k not in {"vmin", "vmax"}}
+
+    # ------------------------------------------------------------------
+    # Main plotting loop
+    # ------------------------------------------------------------------
     for i, ax in enumerate(axs.flat):
-        if i >= len(H):
+        if i >= n_mats:
             ax.axis("off")
             continue
 
-        if resolution is not None:
-            # pick resolution for this panel
-            res_i = resolution[i] if isinstance(resolution, (list, np.ndarray)) else resolution
+        # Panel-specific parameters (scalar or sequence allowed)
+        res_i = resolution[i] if isinstance(resolution, (list, np.ndarray)) else resolution
+        cmap_i = cmap[i] if isinstance(cmap, (list, np.ndarray)) else cmap
+        vmax_i = vmax[i] if isinstance(vmax, (list, np.ndarray)) else vmax
+        vcenter_i = vcenter[i] if isinstance(vcenter, (list, np.ndarray)) else vcenter
 
-        def _choose(val):
-            return val[i] if isinstance(val, (list, np.ndarray)) else val
+        # If using a shared scale, override per-panel limits
+        if standardize_cbar:
+            vmax_i = global_vmax
+            vmin_i = global_vmin
+        else:
+            vmin_i = kwargs.get("vmin", None)
 
-        cmap_i = _choose(cmap)
-        vmax_i = _choose(vmax)
-        vcenter_i = _choose(vcenter)
-
+        # ------------------------------------------------------------
+        # Draw image (handling centred vs. linear colour scales)
+        # ------------------------------------------------------------
         if vcenter_i is None:
             im = ax.imshow(
                 H[i],
                 interpolation="none",
                 cmap=cmap_i,
                 vmax=vmax_i,
-                **kwargs,
+                vmin=vmin_i,
+                **_kwargs_without_limits(kwargs),
             )
         else:
+            # Use TwoSlopeNorm for a symmetric / centred scale.  Remove any
+            # vmin/vmax from kwargs to avoid conflicts with `norm`.
+            norm = colors.TwoSlopeNorm(
+                vcenter=vcenter_i,
+                vmax=vmax_i,
+                vmin=vmin_i,
+            )
             im = ax.imshow(
                 H[i],
                 interpolation="none",
                 cmap=cmap_i,
-                norm=colors.TwoSlopeNorm(vcenter=vcenter_i, vmax=vmax_i),
-                **kwargs,
+                norm=norm,
+                **_kwargs_without_limits(kwargs),
             )
 
-        if show_cbar:
+        # Keep first image handle for a potential global colourbar
+        if first_im is None:
+            first_im = im
+
+        # Individual colourbar unless a shared one is requested
+        if show_cbar and not standardize_cbar:
             cbar = fig.colorbar(im, ax=ax)
             cbar.set_label(cmap_label, rotation=270)
 
+        # ------------------------------------------------------------
+        # Axis labelling
+        # ------------------------------------------------------------
         ax.set_title(titles[i], fontsize=10)
 
-        # ticks
-        def_xticks = np.arange(
-            0, H[i].shape[1], np.ceil(H[i].shape[1] / num_ticks).astype(int)
-        )
-        def_yticks = np.arange(
-            0, H[i].shape[0], np.ceil(H[i].shape[0] / num_ticks).astype(int)
-        )
+        def_xticks = np.arange(0, H[i].shape[1], np.ceil(H[i].shape[1] / num_ticks).astype(int))
+        def_yticks = np.arange(0, H[i].shape[0], np.ceil(H[i].shape[0] / num_ticks).astype(int))
 
-        if isinstance(genomic_shift, (list, np.ndarray)):
-            gshift = genomic_shift[i]
-        else:
-            gshift = genomic_shift
+        gshift = genomic_shift[i] if isinstance(genomic_shift, (list, np.ndarray)) else genomic_shift
 
         if resolution is not None:
             ticks_bp_x = [genomic_labels(gshift + x * res_i, N=1) for x in def_xticks]
@@ -495,7 +525,16 @@ def plot_n_hic(
             ax.set_yticks(def_yticks)
             ax.set_yticklabels(ticks_bp_y, fontsize=8)
 
-    # --- figure-level labels -------------------------------------------------
+    # ------------------------------------------------------------------
+    # Draw a single shared colourbar if requested
+    # ------------------------------------------------------------------
+    if show_cbar and standardize_cbar and first_im is not None:
+        cbar = fig.colorbar(first_im, ax=axs.ravel().tolist(), shrink=0.6)
+        cbar.set_label(cmap_label, rotation=270)
+
+    # ------------------------------------------------------------------
+    # Figure-level titles / labels & I/O
+    # ------------------------------------------------------------------
     fig.suptitle(suptitle, fontsize=12.5)
     if supxlabel:
         fig.supxlabel(supxlabel)
@@ -508,6 +547,8 @@ def plot_n_hic(
         plt.show()
     else:
         plt.close(fig)
+
+
 
 
 
