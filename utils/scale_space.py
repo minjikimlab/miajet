@@ -232,10 +232,10 @@ def construct_scale_space_helper(s, im, gamma, ridge_strength_method, scale_spac
     References:
     [1] Haralick, Robert M., et al. “The Topographic Primal Sketch.” 
         The International Journal of Robotics Research, vol. 2, no. 1, Mar. 1983, 
-        pp. 50–72. DOI.org (Crossref), https://doi.org/10.1177/027836498300200105.
+        pp. 50-72. DOI.org (Crossref), https://doi.org/10.1177/027836498300200105.
     [2] Lindeberg, T. “Edge Detection and Ridge Detection with Automatic Scale Selection.” 
         Proceedings CVPR IEEE Computer Society Conference on Computer Vision and Pattern Recognition, IEEE, 1996, 
-        pp. 465–70. DOI.org (Crossref), https://doi.org/10.1109/CVPR.1996.517113.
+        pp. 465-70. DOI.org (Crossref), https://doi.org/10.1109/CVPR.1996.517113.
     """
 
     # Which kernel to use? Gaussian or 2D Mean
@@ -334,9 +334,9 @@ def construct_scale_space_helper(s, im, gamma, ridge_strength_method, scale_spac
 
     # Nonflat ridges: Case 1 and Case 2
     ridges1 = np.logical_and.reduce([
-        grad_nonzero,   # Gradient is non-zero
-        im_p_nearzero,  # Zero crossing in p-direction
-        im_pp_neg       # Negative curvature in p-direction
+        grad_nonzero,   # Gradient is non-zero 
+        im_p_nearzero,  # Zero crossing in p-direction  Lp
+        im_pp_neg       # Negative curvature in p-direction Lpp
     ])
     ridges2 = np.logical_and.reduce([
         grad_nonzero,   # Gradient is non-zero

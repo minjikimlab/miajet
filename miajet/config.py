@@ -93,7 +93,7 @@ def assign_defaults(args: argparse.Namespace) -> argparse.Namespace:
         "hic": {
             "normalization":    "KR",
             "data_type":        "oe",
-            "root_within":      10,
+            "root_within":      3,
             "entropy_thresh":   0.5,
             "angle_trim":       0.5,
             "corner_trim":      0,

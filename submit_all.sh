@@ -21,12 +21,12 @@ yq -r '.samples | keys | .[]' submit_all_config.yaml | while IFS= read -r sample
   norm=$(yq -r ".samples[\"$sample\"].norm"    submit_all_config.yaml)
   res=$(yq -r ".samples[\"$sample\"].res"      submit_all_config.yaml)
   exp=$(yq -r ".samples[\"$sample\"].exp"      submit_all_config.yaml)
-
+  win=$(yq -r ".samples[\"$sample\"].win"      submit_all_config.yaml)
   
   for chrom in ${CHROMS[$genome]}; do
     sbatch \
       --job-name="${sample}_${chrom}_${norm}_${res}" \
-      --export=HIC_FILE="$hic",CHROM="$chrom",NORM="$norm",RES="$res",EXP="$exp" \
+      --export=HIC_FILE="$hic",CHROM="$chrom",NORM="$norm",RES="$res",EXP="$exp",WIN="$win" \
       job_all.sh
   done
 

@@ -427,7 +427,7 @@ def plot_n_hic(
     num_cols = min(n_mats, ppr)
 
     share_xy = not isinstance(genomic_shift, (list, np.ndarray))
-    fig_size = figsize if figsize is not None else (4.2 * num_cols, 3 * num_rows + 1)
+    fig_size = figsize if figsize is not None else (4.5 * num_cols, 3 * num_rows + 1)
 
     fig, axs = plt.subplots(
         num_rows,

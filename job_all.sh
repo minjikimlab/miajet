@@ -3,7 +3,7 @@
 #SBATCH --account=minjilab0 
 #SBATCH --partition=standard 
 #SBATCH --cpus-per-task=4
-#SBATCH --mem=30g 
+#SBATCH --mem=90g 
 #SBATCH --gpus=0 
 #SBATCH --profile=all
 #SBATCH --time=2:00:00  
@@ -18,12 +18,12 @@ python -m miajet "${HIC_FILE}" \
   --exp_type "${EXP}" \
   --resolution "${RES}" \
   --normalization "${NORM}" \
+  --window_size "${WIN}" \
   --alpha 0.1 0.05 0.01 \
   --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_output" \
   --num_cores 4 \
   --verbose \
   # --folder_name "NEW_SUMMARY" \
-  # --window_size 6000000 \
   # --data_type "oe" \
   # --rem_k_strata 1 \
   # --thresholds 0.01 0.05 \
