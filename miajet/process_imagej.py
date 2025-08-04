@@ -329,8 +329,7 @@ def reorient_ridges(df_results, gb_results, y_label, verbose=False):
     Reorients the ridges based on the y positions of the first and last points in each ridge
     The invariant is that the y position (vertical axis of the rectangle) should be decreasing along the ridge
 
-    If the first point of the ridge has a lower y position than that of the last point,
-    then the ridge is reoriented by simply reversing the rows of the ridge in the expanded table
+    NEW: Now sorts the entire ridge by y_label in decreasing order
 
     Originally copied from filtering.py
 
@@ -348,35 +347,43 @@ def reorient_ridges(df_results, gb_results, y_label, verbose=False):
     df_results : pd.DataFrame
         Updated expanded table
     '''
-    count = 0 # count the number of ridges that were reoriented
+    count = 0  # count how many ridges 
 
-    # essentially rebuild the expanded table from these frames
-    frames = [] 
+    frames = []
     for cid in gb_results.indices:
 
         # select ridge
         df_ridge = df_results.iloc[gb_results.indices.get(cid)].copy()
 
-        # reorient if wrong orientation
-        if df_ridge[y_label].values[0] < df_ridge[y_label].values[-1]:
-            # the y value is largest at the bottom of the rectangle
+        # sort rows so y_label is in decreasing order
+        if not df_ridge[y_label].is_monotonic_decreasing:
             count += 1
-
-            # reverse the rows of the ridge
-            df_ridge = df_ridge.iloc[::-1]
+            df_ridge = df_ridge.sort_values(by=y_label, ascending=False)
 
         frames.append(df_ridge)
-        
-        
+
     if verbose:
         print(f"\tReoriented {count} out of {len(gb_results)} ridges")
-        
+
     if count == 0:
         return df_results
 
     return pd.concat(frames).reset_index(drop=True)
 
 
+def check_ridge_order(df_pos,
+                      contour_label="Contour Number",
+                      s_label="s_imagej",
+                      y_label="Y_(px)"):
+    """
+    Verify that, for each (contour_label, s_imagej) ridge,
+    the y_label series is non-increasing
+    """
+    for (cid, sid), grp in df_pos.groupby([contour_label, s_label], sort=False):
+        if not grp[y_label].is_monotonic_decreasing:
+            print(f"Order violation in ridge: contour={cid}, scale={sid}")
+            return False
+    return True
 
 def process_imagej_results(df, df_pos, window_size, N, resolution, remove_kth_strata, remove_min_size, root_within, 
                            verbose, num_cores,
@@ -448,6 +455,10 @@ def process_imagej_results(df, df_pos, window_size, N, resolution, remove_kth_st
     assert len(df_pos.drop_duplicates([contour_label, "s_imagej"])) == len(df)
 
     if verbose: print(f"\tNum ridges after processing: {len(df)}")
+
+    df_pos = reorient_ridges(df_pos, df_pos.groupby([contour_label, "s_imagej"]), y_label, True)
+
+    assert check_ridge_order(df_pos)
 
     return df, df_pos
 
@@ -619,6 +630,8 @@ def trim_imagej_results_corner(df, df_pos, C, im_shape_0, min_trim_size_in, remo
 
     if verbose: print("\tNow removing small ridges (post corner trimming)...")
     df_pos_out, df_new = remove_small_ridges(df_pos_out, df_new, remove_min_size, contour_label, verbose)
+
+    df_pos_out = reorient_ridges(df_pos_out, df_pos_out.groupby([contour_label, "s_imagej"]), y_label, True)
 
     return df_new, df_pos_out
 
@@ -794,6 +807,8 @@ def trim_imagej_results_angle(df, df_pos, A, im_shape_0, min_trim_size_in, remov
 
     if verbose: print("\tNow removing small ridges (post angle trimming)...")
     df_pos_out, df_new = remove_small_ridges(df_pos_out, df_new, remove_min_size, contour_label, verbose)
+
+    df_pos_out = reorient_ridges(df_pos_out, df_pos_out.groupby([contour_label, "s_imagej"]), y_label, True)
 
     return df_new, df_pos_out
 
@@ -1021,5 +1036,7 @@ def trim_imagej_results_eig2(df, df_pos, W2, im_shape_0, min_trim_size_in, remov
 
     if verbose: print("\tNow removing small ridges (post eig2 trimming)...")
     df_pos_out, df_new = remove_small_ridges(df_pos_out, df_new, remove_min_size, contour_label, verbose)
+
+    df_pos_out = reorient_ridges(df_pos_out, df_pos_out.groupby([contour_label, "s_imagej"]), y_label, True)
 
     return df_new, df_pos_out

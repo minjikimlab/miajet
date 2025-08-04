@@ -3,10 +3,30 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2 as cv
 import os
+import scipy
 
 from utils.processing import read_hic_rectangle, read_hic_corr_rectangle, read_hic_network_enhancement
 from utils.plotting import save_histogram
 import copy
+
+def compute_edge_strength(im):
+    """
+    Computes the edge strength of the image using Sobel filters
+    
+    Parameters
+    ----------
+    im : np.ndarray
+        The contact map image as a 2D numpy array
+    
+    Returns
+    -------
+    edge_strength : np.ndarray
+        The edge strength of the image as a 2D numpy array
+    """
+    Ix = scipy.ndimage.sobel(im, axis=1, mode='reflect') # dx
+    Iy = scipy.ndimage.sobel(im, axis=0, mode='reflect') # dy    
+    return Ix**2 + Iy**2
+
 
 def check_im_corner_vmin_vmax(im, config_in):
     '''

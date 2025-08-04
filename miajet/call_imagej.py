@@ -81,6 +81,7 @@ from pyvirtualdisplay import Display
 
 def process_sigma_pyvd(s, lt, ut, image_path, save_path, root, memory_alloc, macro_path, verbose):
     s_str = str(s)
+    s_rounded = f"{s:.3f}"
     max_attempts = 5
     timeout_seconds = 120
     attempt = 0
@@ -93,7 +94,14 @@ def process_sigma_pyvd(s, lt, ut, image_path, save_path, root, memory_alloc, mac
     while attempt < max_attempts:
         args = "|||".join([s_str, image_path, save_path,
                            str(current_ut), str(current_lt), root])
-        
+
+        # Check if results already exist
+        expected_csv = os.path.join(save_path, f"{root}_imagej_results_s-{s_rounded}_table.csv")
+        if os.path.exists(expected_csv):
+            if verbose:
+                print("Results already exist, skipping processing.")
+            return
+
         if verbose:
             print(f"\tAttempt {attempt+1}: s={s:.2f}, ut={current_ut:.2f}, lt={current_lt:.2f}")
 

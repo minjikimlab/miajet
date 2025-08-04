@@ -18,7 +18,7 @@ def main(hic_file, data_name, genome, resolution, window_size):
     p_value = 0.05
     # HARD-CODED PARAMETER: "--extension_pixels", "10", "100", "5",
     # HARD-CODED PARAMETER: signal_noise_background = 1.3
-    base_save_dir = "/nfs/turbo/umms-minjilab/sionkim/jet_pred"
+    base_save_dir = "/nfs/turbo/umms-minjilab/sionkim/benchmark"
 
     ext_length = int(window_size * 0.75) # STANDARDIZE to 0.75 of window size
     offset = 5 * resolution

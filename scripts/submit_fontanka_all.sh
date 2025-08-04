@@ -6,10 +6,8 @@
 #SBATCH --mem=8g 
 #SBATCH --gpus=0 
 #SBATCH --time=1:00:00  
-#SBATCH --mail-type=NONE 
+#SBATCH --mail-type=NONE,FAIL 
 
-
-conda activate fontanka
 
 yq -r '.samples | keys | .[]' ../submit_all_config.yaml | while IFS= read -r sample; do
   hic=$(yq -r ".samples[\"$sample\"].mcool"    ../submit_all_config.yaml)

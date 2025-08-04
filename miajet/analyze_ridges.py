@@ -1197,16 +1197,16 @@ def _process_ridge(
 
 
     def plot_stripiness_diagnostic(
-        im_oe,                              # your observed image
-        ridge_points,                       # from convert_imagej_coord_to_numpy(..., start_bin)
-        ridge_coords_curve,                 # for compute_test_statistic_quantities
-        df_ridge,                           # your single-ridge DataFrame
-        p_norm,                             # your p-norm
-        K_XL, K_XR, K_Y,                    # your stripiness kernels
-        factor_lr,                          # usually 1
-        max_width_bin,                      # optional clip
-        start_bin,                          # from your window calculation
-        ridge_widths,                       # df_ridge["width"].values
+        im_oe, 
+        ridge_points, 
+        ridge_coords_curve,
+        df_ridge,    
+        p_norm,     
+        K_XL, K_XR, K_Y,                   
+        factor_lr, 
+        max_width_bin, 
+        start_bin, 
+        ridge_widths,
         save_path=None,
         fig_suptitle=""
     ):
@@ -1278,12 +1278,11 @@ def _process_ridge(
         left_means_clean = left_means[np.isfinite(left_means)]
         right_means_clean = right_means[np.isfinite(right_means)]
 
-        # --- now plot exactly rows 1–4 of plot_p_value_observed_null, but only cols 0–2 ---
         im_crop = im_oe
 
         fig, ax = plt.subplots(
             5, 3,
-            figsize=(33, 16),            # same width/height as your 6-column version
+            figsize=(33, 16), 
             layout="constrained",
             height_ratios=[3, 1, 1, 1, 1]
         )
@@ -1343,7 +1342,6 @@ def _process_ridge(
         ax[1, 1].set_ylabel("Frequency")
         ax[1, 1].set_xlabel("Intensity")
 
-        # only plot ECDF if there’s at least one value
         if center_flat.size > 0:
             ax[1, 2].ecdf(center_flat, color="cyan", label="Center Box")
         if right_flat.size > 0:
@@ -1373,7 +1371,6 @@ def _process_ridge(
         ax[2, 1].set_ylabel("Frequency")
         ax[2, 1].set_xlabel("Intensity")
 
-        # only plot ECDF if there’s at least one value
         if center_flat.size > 0:
             ax[1, 2].ecdf(center_means_clean, color="cyan", label="Center Box")
         if right_flat.size > 0:
@@ -1402,7 +1399,6 @@ def _process_ridge(
         ax[3, 0].set_ylabel("Number of Points")
         ax[3, 0].set_xlabel("Ridge Point Index")
 
-        # --- Row 5: YOUR STRIPINESS PLOTS ---
         ax[4, 0].plot(G_xL, "-o", label="G_xL")
         ax[4, 0].plot(G_xR, "-o", label="G_xR")
         ax[4, 0].plot(G_y,  "-o", label="G_y")
@@ -1852,6 +1848,110 @@ def plot_saliency_distribution(df_agg, ranking, q, save_path, bins=30):
 
 
 
+def save_scale_space(df_agg, df_features,
+                     K="all", im=None, edge_strength=None,
+                     I=None, D=None, A=None, W1=None, W2=None, R=None, C=None,
+                     ranking="ridge_strength_mean",
+                     resolution=None, chromosome=None,
+                     scale_range=None, 
+                     save_path=".",
+                     angle_range=(45, 135), verbose=True,
+                     contour_label="Contour Number",
+                     x_label="X_(px)_unmap",
+                     y_label="Y_(px)_unmap"):
+
+
+    os.makedirs(save_path, exist_ok=True)
+
+    # ensure df_agg is ranked the same way the plotting code does
+    df_agg = df_agg.sort_values(ranking, ascending=False, ignore_index=True)
+    # keep all rows, but we'll break after K curves are written
+
+    # Save the agg and features dataframes as well
+    f_agg = os.path.join(save_path, "df_agg.csv")
+    f_features = os.path.join(save_path, "df_features.csv")
+
+    df_agg["chrom"] = chromosome
+    df_features["chrom"] = chromosome
+    df_agg.to_csv(f_agg, index=False)
+    df_features.to_csv(f_features, index=False)
+
+    df_agg = df_agg.merge(df_features, how="inner", on=[contour_label, "s_imagej"])
+    gb = df_agg.groupby([contour_label, "s_imagej"], sort=False)
+
+    out_files = []
+    written   = 0
+    for rank, (idx, df_ridge) in enumerate(gb):
+        if K != "all" and written >= K:
+            break
+
+        if not df_ridge[y_label].is_monotonic_decreasing:
+            df_ridge = df_ridge.sort_values(by=y_label, ascending=False)
+
+        ridge_coords_curve = convert_imagej_coord_to_numpy(
+            df_ridge[[x_label, y_label]].values,
+            im.shape[0],
+            flip_y=False,
+            start_bin=0
+        )
+
+        # extract all scale‑space signatures
+        im_curves, es_curves, I_curves, D_curves, W1_curves, W2_curves, \
+        R_curves, C_curves = extract_line_scale_space(
+            ridge_coords_curve,
+            scale_space_container=[
+                np.expand_dims(im, 0), np.expand_dims(edge_strength, 0),
+                I, D, W1, W2, R, C
+            ]
+        )
+
+        A_curves = round_line_scale_space(
+            ridge_coords_curve,
+            scale_space_container=[A]
+        )
+        A_bool_curves = np.logical_and(A_curves >= angle_range[0],
+                                       A_curves <= angle_range[1])
+
+        # save
+        contour, s_img = idx
+        fname = os.path.join(
+            save_path,
+            f"ridge_{contour}_{np.round(s_img, 3):.3f}.npz"
+        )
+
+        np.savez_compressed(
+            fname,
+            im_curves=im_curves,
+            es_curves=es_curves,
+            I_curves=I_curves,
+            D_curves=D_curves,
+            A_curves=A_curves,
+            A_bool_curves=A_bool_curves,
+            W1_curves=W1_curves,
+            W2_curves=W2_curves,
+            R_curves=R_curves,
+            C_curves=C_curves,
+            contour=np.array(contour),
+            s_idx = int(np.argmin(np.abs(np.asarray(scale_range) - float(s_img)))),  # convert to bin index
+            rank=np.array(rank + 1),
+            score=np.array(df_ridge.iloc[0][ranking]),
+            chromosome=np.array(chromosome if chromosome is not None else ""),
+            resolution=np.array(resolution if resolution is not None else -1)
+        )
+
+        out_files.append(fname)
+        written += 1
+        if verbose:
+            print(f"* saved {fname}")
+
+    if verbose:
+        print(f"{written} ridge files written to {save_path}")
+
+
+    return out_files
+
+
+
 from utils.plotting import plot_n_rect
 from .expanded_table import rect_to_square
 import random
@@ -1877,7 +1977,11 @@ def plot_top_k(df_agg, df_features, K, ranking, hic_file, chromosome, resolution
     im = np.log10(im + 1)
     im = cv.normalize(im, None, alpha=0, beta=1, norm_type=cv.NORM_MINMAX, dtype=cv.CV_64F)
 
-    save_name = os.path.join(save_path, f"{root}_plot_{K}.png") 
+    # Check extension and don't redefine if savepath is already a file name
+    if not save_path.endswith(".png"):
+        save_name = os.path.join(save_path, f"{root}_plot_{K}.png")
+    else:
+        save_name = save_path 
 
     # first, subset the correct results
     # Sort by ranking

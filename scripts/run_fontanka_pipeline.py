@@ -15,7 +15,7 @@ def main(hic_file, data_name, genome, resolution, window_size):
     # Shared parameters
     # resolution = 50000      # 50 kb
     # window_size = int(6e6)  # 6 Mb
-    base_save_dir = "/nfs/turbo/umms-minjilab/sionkim/jet_pred"
+    base_save_dir = "/nfs/turbo/umms-minjilab/sionkim/benchmark"
     angle_leniency_deg = 20
     num_cores = 4
     angle_leniency_rad = np.radians(angle_leniency_deg)
@@ -89,32 +89,32 @@ def main(hic_file, data_name, genome, resolution, window_size):
     # Extract snips
     snips_path = os.path.join(save_dir, f"FONTANKA_{data_name}.{resolution}.snips.npy")
 
-    # cmd = [
-    #     "conda", "run", "-n", "fontanka", # this is needed to run the command in the fontanka conda env
-    #     "fontanka", "slice-windows",
-    #     f"{hic_file}::resolutions/{resolution}",
-    #     snips_path, # this is the output file (i.e. snips)
-    #     "-W", str(window_size),
-    #     "-p", f"{num_cores}", # number of cores
-    #     "--view", arms_save_path,
-    #     "--expected", cvd_save_path,
-    # ]
-    # subprocess.run(cmd, check=True)
+    cmd = [
+        "conda", "run", "-n", "fontanka", # this is needed to run the command in the fontanka conda env
+        "fontanka", "slice-windows",
+        f"{hic_file}::resolutions/{resolution}",
+        snips_path, # this is the output file (i.e. snips)
+        "-W", str(window_size),
+        "-p", f"{num_cores}", # number of cores
+        "--view", arms_save_path,
+        "--expected", cvd_save_path,
+    ]
+    subprocess.run(cmd, check=True)
 
     # Apply binary fountain mask
     out_path = os.path.join(save_dir, f"FONTANKA_{data_name}.{resolution}.predicted.fountains.tsv")
-    # mask_cmd = [
-    #     "conda", "run", "-n", "fontanka",
-    #     "fontanka", "apply-binary-fountain-mask",
-    #     f"{hic_file}::resolutions/{resolution}",
-    #     out_path,
-    #     "-A", str(angle_leniency_rad),
-    #     "-W", str(window_size),
-    #     "-p", str(num_cores),
-    #     "--snips", snips_path,
-    #     "--view", arms_save_path,
-    # ]
-    # subprocess.run(mask_cmd, check=True)
+    mask_cmd = [
+        "conda", "run", "-n", "fontanka",
+        "fontanka", "apply-binary-fountain-mask",
+        f"{hic_file}::resolutions/{resolution}",
+        out_path,
+        "-A", str(angle_leniency_rad),
+        "-W", str(window_size),
+        "-p", str(num_cores),
+        "--snips", snips_path,
+        "--view", arms_save_path,
+    ]
+    subprocess.run(mask_cmd, check=True)
 
     # New: thresholding and dropNA
     results = pd.read_csv(out_path, sep="\t", index_col=0)

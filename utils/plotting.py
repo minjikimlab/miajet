@@ -146,7 +146,7 @@ def chr_num_to_string(x):
     return "chr{}".format(int(x))
     
     
-def plot_hic(A, title, resolution, genomic_shift=0, savepath=None, show=True, log=False, cbar=True, figsize=(6, 5), vcenter=None, **kwargs):
+def plot_hic(A, title, resolution, genomic_shift=0, savepath=None, show=True, log=False, cbar=True, figsize=(6, 5), vcenter=None, hide_axis=False, vmax=None, **kwargs):
     # print("Plotting Hi-C...")
     plt.close("all")
     
@@ -154,15 +154,15 @@ def plot_hic(A, title, resolution, genomic_shift=0, savepath=None, show=True, lo
     
     if log:
         if vcenter is None:
-            im = ax.imshow(np.log10(A + 1), interpolation="none", **kwargs)
+            im = ax.imshow(np.log10(A + 1), interpolation="none", vmax=vmax, **kwargs)
         else:
-            im = ax.imshow(np.log10(A + 1), interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter), **kwargs)
+            im = ax.imshow(np.log10(A + 1), interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter, vmax=vmax), **kwargs)
 
     else:
         if vcenter is None:
-            im = ax.imshow(A, interpolation="none", **kwargs)
+            im = ax.imshow(A, interpolation="none", vmax=vmax, **kwargs)
         else:
-            im = ax.imshow(A, interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter), **kwargs)
+            im = ax.imshow(A, interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter, vmax=vmax), **kwargs)
         
     if cbar:
         plt.colorbar(im, ax=ax)
@@ -183,6 +183,9 @@ def plot_hic(A, title, resolution, genomic_shift=0, savepath=None, show=True, lo
         plt.yticks(ticks=def_yticks, labels=ticks_bp_y, fontsize=8)
 
     plt.title(title, fontsize=10)
+
+    if hide_axis:
+        ax.set_axis_off()
     
     if savepath is not None:
         # print("Saved to {}")
@@ -373,6 +376,8 @@ def plot_n_hic(
     cmap="Reds",
     vmax=None,
     standardize_cbar=False,
+    share_xy=True,
+    hide_axis=False,
     **kwargs,
 ):
     """Plot *n* Hi-C matrices in a compact grid.
@@ -426,7 +431,8 @@ def plot_n_hic(
     num_rows = (n_mats + closest_multiple) // ppr
     num_cols = min(n_mats, ppr)
 
-    share_xy = not isinstance(genomic_shift, (list, np.ndarray))
+    if share_xy:
+        share_xy = not isinstance(genomic_shift, (list, np.ndarray))
     fig_size = figsize if figsize is not None else (4.5 * num_cols, 3 * num_rows + 1)
 
     fig, axs = plt.subplots(
@@ -516,7 +522,7 @@ def plot_n_hic(
 
         gshift = genomic_shift[i] if isinstance(genomic_shift, (list, np.ndarray)) else genomic_shift
 
-        if resolution is not None:
+        if resolution is not None and not hide_axis:
             ticks_bp_x = [genomic_labels(gshift + x * res_i, N=1) for x in def_xticks]
             ticks_bp_y = [genomic_labels(gshift + y * res_i, N=1) for y in def_yticks]
 
@@ -524,6 +530,9 @@ def plot_n_hic(
             ax.set_xticklabels(ticks_bp_x, fontsize=8, rotation=45)
             ax.set_yticks(def_yticks)
             ax.set_yticklabels(ticks_bp_y, fontsize=8)
+
+        if hide_axis:
+            ax.set_axis_off()
 
     # ------------------------------------------------------------------
     # Draw a single shared colourbar if requested
@@ -968,8 +977,6 @@ def plot_p_value_observed_null(im_p_value, corr_im_p_value, ridge_points, ridge_
     fig, ax = plt.subplots(5, 6, figsize=(33, 16), layout="constrained", height_ratios=[3, 1, 1, 1, 1])
     fig.suptitle(fig_suptitle)    
     
-    # --- First row: Original image and ridge points ---
-
     # OBSERVED
     imcm = ax[0, 0].imshow(im_p_value, cmap='Reds')
     ax[0, 0].set_title("Original Log Obs")
@@ -1080,7 +1087,7 @@ def plot_p_value_observed_null(im_p_value, corr_im_p_value, ridge_points, ridge_
     ax[0, 5].set_title("With Ridge Points and Boxes")
     ax[0, 5].legend()
 
-    # --- Second row: Boxplot, histogram and ECDF of intensity values ---
+    # Second row: Boxplot, histogram and ECDF of intensity values
     # Boxplot
     ax[1, 0].plot(ridge_widths, "-o")
     ax[1, 0].set_title("Ridge Widths")
@@ -1128,7 +1135,7 @@ def plot_p_value_observed_null(im_p_value, corr_im_p_value, ridge_points, ridge_
     ax[1, 5].set_ylabel("Cumulative Frequency")
     ax[1, 5].set_xlabel("Intensity")
 
-    # --- Third row:  Mean or Median intensity values  ---
+    # Third row:  Mean or Median intensity values 
     for i, offset in enumerate([0, 3]):
         ax[2, 0+offset].plot(center_means[i], '-o', color="cyan", label="Center")
         ax[2, 0+offset].plot(left_means[i], '-o', color="blue", label="Left")
@@ -1155,7 +1162,7 @@ def plot_p_value_observed_null(im_p_value, corr_im_p_value, ridge_points, ridge_
         ax[2, 2+offset].set_xlabel("Intensity")
 
 
-    # --- Fourth row: Number of Points in boxes and Mean test statistic plots ---
+    # Fourth row: Number of Points in boxes and Mean test statistic plots
     ax[3, 1].plot(center_num_points, '-o', color="cyan")
     ax[3, 1].set_title("Center Box Number of Points")
     ax[3, 1].set_ylabel("Number of Points")
@@ -1190,7 +1197,7 @@ def plot_p_value_observed_null(im_p_value, corr_im_p_value, ridge_points, ridge_
     ax[3, 5].set_xlabel("Ridge Point Index")
 
 
-    # --- Fifth row: Ratio of observed and null test statistic and ECDF ---
+    # Fifth row: Ratio of observed and null test statistic and ECDF 
     ax[4, 0].plot(mean_CR_subtract[0] / mean_CR_subtract[1], '-o')
     ax[4, 0].set_title("C - avg(L, R) Ratio")
     ax[4, 0].set_xlabel("Ridge Point Index")

@@ -35,3 +35,20 @@ build/
 *.egg
 
 notebooks/test*
+notebooks/Bcell_vs_DP.ipynb
+notebooks/C-Elegans_depletion.ipynb
+notebooks/GM12878_all_pairs.ipynb
+notebooks/GM12878_analysis.ipynb
+notebooks/HCT116_overlap.ipynb
+notebooks/K562_vs_GM12878_overlap.ipynb
+notebooks/Length_histogram.ipynb
+notebooks/PET_count_boxplot.ipynb
+notebooks/_contact_map.jpg
+notebooks/_contact_map_intensity_value_histogram.jpg
+notebooks/convert_summary_to_bed.ipynb
+notebooks/diagnose_scale_space.ipynb
+notebooks/single.ipynb
+
+
+
+slurm_out/

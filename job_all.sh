@@ -1,15 +1,17 @@
 #!/bin/bash
 
-#SBATCH --account=minjilab0 
+#SBATCH --account=rjhryan0 
 #SBATCH --partition=standard 
 #SBATCH --cpus-per-task=4
-#SBATCH --mem=90g 
+#SBATCH --mem=60g 
 #SBATCH --gpus=0 
 #SBATCH --profile=all
 #SBATCH --time=2:00:00  
 #SBATCH --mail-type=FAIL 
 
 my_job_header
+
+echo "Using rjhyrna0 account"
 
 conda activate jet-env
 
@@ -20,7 +22,7 @@ python -m miajet "${HIC_FILE}" \
   --normalization "${NORM}" \
   --window_size "${WIN}" \
   --alpha 0.1 0.05 0.01 \
-  --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_output" \
+  --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/benchmarks" \
   --num_cores 4 \
   --verbose \
   # --folder_name "NEW_SUMMARY" \

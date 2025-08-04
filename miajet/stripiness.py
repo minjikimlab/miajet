@@ -136,6 +136,7 @@ def process_stripiness_single(df_ridge, im_oe,
     return orig_idx, S
 
 
+
 def compute_stripiness(df_agg, df_features, im_oe,
                        p_norm,
                        stripiness_factor_lr,

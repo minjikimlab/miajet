@@ -127,10 +127,11 @@ def remove_stack_centromeres(stack, stack_positions, expected_stack_size):
     assert stack.shape[0] == len(stack_positions)
     return stack, stack_positions
 
+from scipy import ndimage
 
 def remove_and_resize_square_stacks(stack, stack_positions, expected_stack_size):
     """
-    Filters out any arrays in `stack` that aren’t square, then
+    Filters out any arrays in `stack` that aren't square, then
     resizes the remaining square arrays to (expected_stack_size, expected_stack_size).
 
     Parameters
@@ -166,6 +167,14 @@ def remove_and_resize_square_stacks(stack, stack_positions, expected_stack_size)
             (expected_stack_size, expected_stack_size),
             interpolation=cv.INTER_AREA
         )
+
+        # # Use scipy ndimage
+        # zoom_factor = expected_stack_size / arr.shape[0]
+        # resized = ndimage.zoom(arr,
+        #                        zoom=zoom_factor, 
+        #                        order=1, 
+        #                        mode="reflect")
+
         stack_uniform.append(resized)
 
     # build numpy array of resized windows
@@ -277,9 +286,9 @@ def get_pileups_dynamic_resolution(
         chrom_set = list(set(bed_df['chrom']).intersection(chromosomes))
     bed_df = bed_df[bed_df['chrom'].isin(chrom_set)].reset_index(drop=True)
 
-    # 4) open hic & fetch available resolutions
+    # open hic & fetch available resolutions
     hic = hicstraw.HiCFile(hic_file)
-    avail_res = sorted(hic.getResolutions())  # e.g. [500,1000,5000,...]
+    avail_res = sorted(hic.getResolutions())
 
     # determine whether 'chr' prefix is used in the file
     names = [c.name for c in hic.getChromosomes()]
@@ -324,10 +333,12 @@ def get_pileups_dynamic_resolution(
 
         # extract the pileup
         mat = mzd.getRecordsAsMatrix(
-            int(row['start']), int(row['end']),
-            int(row['start']), int(row['end'])
+            int(row['start'] - best_res), int(row['end']),
+            int(row['start'] - best_res), int(row['end'])
         )
-        pileups.append(mat)
+        # NEW extract one pixel beyond the start as the first row and col is always 0
+        # Then index to get correct size
+        pileups.append(mat[1:, 1:])
 
     return pileups, bed_df, selected_resolutions
 
@@ -367,9 +378,21 @@ def assign_midpoint(row):
 
     return pd.Series({"mp x": x[i], "mp y": y[i]})
 
+def assign_midpoint_main_diagonal(row):
+    """
+    Assigns midpoint to be the point on the main diagonal that is the closest
+    """
+    x = row["x (bp)"].values
+    y = row["y (bp)"].values
+
+    i = np.argmin(np.abs(x - y))
+
+    common_point = (x[i] + y[i]) / 2
+
+    return pd.Series({"mp x": common_point, "mp y": common_point})
 
 
-def generate_bed_2(df_summary, df_expanded, eps, fraction):
+def generate_bed_2(df_summary, df_expanded, eps, fraction, project_midpoint_to_diag=False):
     """
     Identical API and invariants to `generate_bed_df` but computes the start and end in a different way
 
@@ -380,7 +403,14 @@ def generate_bed_2(df_summary, df_expanded, eps, fraction):
         return pd.DataFrame()
     
     df_plot_extrusion = df_expanded.groupby('unique_id').apply(assign_extrusion, include_groups=False).reset_index()
-    df_plot_midpoint = df_expanded.groupby('unique_id').apply(assign_midpoint, include_groups=False).reset_index()
+
+    if project_midpoint_to_diag:
+        # New: project the midpoint (i.e. the point closest of jet to the main diagonal) TO THE MAIN DIAGONAL
+        # I.e. assign it as the midpoint
+        df_plot_midpoint = df_expanded.groupby('unique_id').apply(assign_midpoint_main_diagonal, include_groups=False).reset_index()
+    else:
+        # This is the assignment we've been using for individual plots so far
+        df_plot_midpoint = df_expanded.groupby('unique_id').apply(assign_midpoint, include_groups=False).reset_index()
 
     # simply concatenate
     df_plot_summary = pd.merge(left=df_plot_extrusion, right=df_plot_midpoint, on="unique_id", how="inner")

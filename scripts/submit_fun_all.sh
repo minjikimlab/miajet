@@ -6,9 +6,7 @@
 #SBATCH --mem=8g 
 #SBATCH --gpus=0 
 #SBATCH --time=1:00:00  
-#SBATCH --mail-type=NONE 
-
-conda activate fun-env
+#SBATCH --mail-type=NONE,FAIL 
 
 
 yq -r '.samples | keys | .[]' ../submit_all_config.yaml | while IFS= read -r sample; do

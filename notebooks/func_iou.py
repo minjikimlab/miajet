@@ -131,7 +131,7 @@ def match_by_iou(dfA: pd.DataFrame, dfB: pd.DataFrame,
 
     Returns
     -------
-    List of (unique_id_A, unique_id_B) pairs.
+    List of (unique_id_A, unique_id_B) pairs
     """
     # Precompute buffered geometries for dfB
     geomsB = dict()

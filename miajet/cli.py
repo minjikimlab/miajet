@@ -1,5 +1,15 @@
 import argparse
 
+_MISSING = argparse.SUPPRESS
+
+def none_or_float(x):
+    if isinstance(x, str) and x.lower() == 'none':
+        return None
+    try:
+        return float(x)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"Invalid float value: {x}. Use 'None' for no value.")
+
 
 def parse_args():
 
@@ -25,9 +35,9 @@ def parse_args():
                         help="Alpha or a list of alpha values for p-value cutoffs (default: 0.1 0.05)")
     parser.add_argument("--window_size", type=int, required=False, default=6_000_000,
                         help="Distance from main diagonal (default: 6_000_000 for 6 Mbp)")
-    parser.add_argument("--normalization", type=str, required=False, default=None,
+    parser.add_argument("--normalization", type=str, required=False, default=_MISSING,
                         help="Hi-C normalization method (e.g. 'KR', 'VC_SQRT', 'NONE')")
-    parser.add_argument("--data_type", type=str, required=False, choices=["observed", "oe"], default=None,
+    parser.add_argument("--data_type", type=str, required=False, choices=["observed", "oe"], default=_MISSING,
                         help="Hi-C data type (default: 'observed')")
     parser.add_argument("--thresholds", nargs="+", type=float, required=False, default=[0.01, 0.05],
                         help="The lower and upper thresholds for ImageJ Curve Tracing plugin (default: 0.01 0.05)")
@@ -38,7 +48,7 @@ def parse_args():
     parser.add_argument("--jet_widths", nargs="+", required=False, type=float, default=None,
                         help="The lower and upper bound of widths in pixels of jets to be detected"
                         "If not specified, a default scale range will be used: logspace 1.5^1 to 1.5^7 with 24 increments")
-    parser.add_argument("--root_within", type=int, required=False, default=None,
+    parser.add_argument("--root_within", type=int, required=False, default=_MISSING,
                         help="Enforce the root of any ridge to be ≤ certain number of bins to main diagonal")
     parser.add_argument("--folder_name", type=str, required=False, default=None,
                         help="Folder name to store generated files. Defaults to the Hi-C file name without extension.")
@@ -84,48 +94,48 @@ def parse_args():
                         help="Bin size for entropy histogram; if not specified, None")
     parser.add_argument("--points_min", type=float, required=False, default=0,
                         help="Minimum data range for entropy histogram (default: 0)")
-    parser.add_argument("--points_max", type=float, required=False, default=0.04,
+    parser.add_argument("--points_max", type=none_or_float, required=False, default=0.04,
                         help="Maximum data range for entropy histogram (default: 0.04)")
-    parser.add_argument("--entropy_thresh", type=float, required=False, default=None,
+    parser.add_argument("--entropy_thresh", type=none_or_float, required=False, default=_MISSING,
                         help="Normalized entropy threshold (default: None)")
-    parser.add_argument("--eps_r", type=float, required=False, default=0.0005,
+    parser.add_argument("--eps_r", type=none_or_float, required=False, default=0.0005,
                         help="Epsilon value for ridge (default: 0.0005)")
-    parser.add_argument("--eps_c1", type=float, required=False, default=0.1,
+    parser.add_argument("--eps_c1", type=none_or_float, required=False, default=0.1,
                         help="Epsilon value for condition 1 (default: 0.1)")
-    parser.add_argument("--eps_c2", type=float, required=False, default=1e-5,
+    parser.add_argument("--eps_c2", type=none_or_float, required=False, default=1e-5,
                         help="Epsilon value for condition 2 (default: 1e-5)")
-    parser.add_argument("--whiten", type=float, required=False, default=None,
+    parser.add_argument("--whiten", type=none_or_float, required=False, default=None,
                         help="Whether to whiten image, effectively removing correlation of the image map (default: None)"
                             "If not None, give the float of the epsilon of the ZCA whitening (typically 1e-5 but may require adjustment)")
-    parser.add_argument("--im_vmax", type=float, required=False, default=None,
+    parser.add_argument("--im_vmax", type=none_or_float, required=False, default=_MISSING,
                         help="The percentile (0-100 scale) for the maximum intensity range of Hi-C image")
-    parser.add_argument("--im_vmin", type=float, required=False, default=None,
+    parser.add_argument("--im_vmin", type=none_or_float, required=False, default=_MISSING,
                         help="The percentile (0-100 scale) for the minimum intensity range of Hi-C image")
-    parser.add_argument("--im_corner_vmax", type=float, required=False, default=None,
+    parser.add_argument("--im_corner_vmax", type=none_or_float, required=False, default=_MISSING,
                         help="The percentile (0-100 scale) for the maximum intensity range of corner image")
-    parser.add_argument("--im_corner_vmin", type=float, required=False, default=None,
+    parser.add_argument("--im_corner_vmin", type=none_or_float, required=False, default=_MISSING,
                         help="The percentile (0-100 scale) for the minimum intensity range of corner image")
-    parser.add_argument("--angle_trim", type=float, required=False, default=None,
+    parser.add_argument("--angle_trim", type=none_or_float, required=False, default=_MISSING,
                         help="Angle trim for ridges according to range specified by angle_range option"
                             "If None, then no trimming is performed"
                             "If a float (0.0-1.0), then the minimum possible length of ridge is the fraction specified of the original length"
                             "If an integer (>=1), then the minimum possible length of ridge is the integer specified"
                             )
-    parser.add_argument("--corner_trim", type=float, required=False, default=None,
+    parser.add_argument("--corner_trim", type=none_or_float, required=False, default=_MISSING,
                         help="Corner trim for ridges (note: corner must be identified at ALL scales in order to be trimmed at the location)"
                             "If None, then no trimming is performed"
                             "If a float (0.0-1.0), then the minimum possible length of ridge is the fraction specified of the original length"
                             "If an integer (>=1), then the minimum possible length of ridge is the integer specified"
                             )
-    parser.add_argument("--eig2_trim", type=float, required=False, default=None,
+    parser.add_argument("--eig2_trim", type=none_or_float, required=False, default=_MISSING,
                         help="Eigenvalue 2 trim for ridges"
                             "If None, then no trimming is performed"
                             "If a float (0.0-1.0), then the minimum possible length of ridge is the fraction specified of the original length"
                             "If an integer (>=1), then the minimum possible length of ridge is the integer specified"
                             )
-    parser.add_argument("--ang_frac", action="store_true", default=None,
+    parser.add_argument("--ang_frac", action="store_true", default=_MISSING,
                         help="Whether to use the angle fraction multipliers to the saliency (default: False)")
-    parser.add_argument("--rmse", type=float, required=False, default=None,
+    parser.add_argument("--rmse", type=none_or_float, required=False, default=_MISSING,
                         help="Normalized RMSE threshold (default: None)")
     parser.add_argument("--f_true", type=str, required=False, default=None,
                         help="True bed file to merge")

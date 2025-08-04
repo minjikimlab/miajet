@@ -5,7 +5,7 @@ import numpy as np
 from tqdm import tqdm
 
 
-def find_and_remove_overlaps(df_agg, df_features, iou_threshold=0.6, verbose=False,                         
+def find_and_remove_overlaps(df_agg, df_features, iou_threshold=0.6, verbose=False, resolve_conflict="p-val",
                              contour_label="Contour Number",
                              x_label="X_(px)_unmap",
                              y_label="Y_(px)_unmap",):
@@ -57,7 +57,7 @@ def find_and_remove_overlaps(df_agg, df_features, iou_threshold=0.6, verbose=Fal
 
         # add the current ridge to the group
         group_indexes.append(indexer)
-        group_p_vals.append(df_ridge["p-val"].values[0])
+        group_p_vals.append(df_ridge[resolve_conflict].values[0])
 
         # build geometry objects of each ridge 
         # width_radius = max(df_ridge["width"].mean() / 2, 3.5)
@@ -95,12 +95,18 @@ def find_and_remove_overlaps(df_agg, df_features, iou_threshold=0.6, verbose=Fal
             # if IOU is above threshold, consider the ridge as overlapping
             if iou > iou_threshold:
                 group_indexes.append(neigh_indexer)
-                group_p_vals.append(df_neigh["p-val"].values[0])
+                group_p_vals.append(df_neigh[resolve_conflict].values[0])
 
 
         # now select the ridge with the minimum p-value
         group_p_vals = np.array(group_p_vals)
-        min_p_val_index = np.argmin(group_p_vals)
+        if resolve_conflict == "p-val":
+            # Then we minimize
+            min_p_val_index = np.argmin(group_p_vals)
+        else:
+            # Then we maximize
+            min_p_val_index = np.argmax(group_p_vals)
+        
         min_p_val_indexer = group_indexes[min_p_val_index]
 
         final_indexers.add(min_p_val_indexer)

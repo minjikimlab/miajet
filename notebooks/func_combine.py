@@ -40,7 +40,7 @@ def extract_comments(csv_path: str) -> list[str]:
 
 
 
-def combine_results(results_dir, folder_pattern, result_type, exp_name=None):
+def combine_results(results_dir, folder_pattern, result_type, exp_name=None, enforce_all_chroms=True):
     """
     Search for folders under `results_dir` matching `folder_pattern` (which may
     contain a glob-style asterisk), then for each folder:
@@ -51,7 +51,7 @@ def combine_results(results_dir, folder_pattern, result_type, exp_name=None):
     Parameters
     ----------
     results_dir : str
-        Path to the directory containing all result‐folders
+        Path to the directory containing all result-folders
     folder_pattern : str
         A glob style pattern (e.g. "splenic-B-cell_*_50Kb") used to match subfolders
     result_type : str
@@ -105,6 +105,8 @@ def combine_results(results_dir, folder_pattern, result_type, exp_name=None):
     summary_frames = []
     expanded_frames = []
     bedpe_frames = []
+    no_comment_found = True
+    successful_chroms = []
     for i, folder in enumerate(matched_folders):
 
         if exp_name is not None:
@@ -130,22 +132,44 @@ def combine_results(results_dir, folder_pattern, result_type, exp_name=None):
 
         # Load and collect
         if not os.path.isfile(summary_csv):
+            if not enforce_all_chroms:
+                print(f"Warning: Expected file not found: {summary_csv}. Skipping this file.")
+                continue
             raise FileNotFoundError(f"Expected file not found: {summary_csv}")
         if not os.path.isfile(expanded_csv):
+            if not enforce_all_chroms:
+                print(f"Warning: Expected file not found: {expanded_csv}. Skipping this file.")
+                continue
             raise FileNotFoundError(f"Expected file not found: {expanded_csv}")
         if not os.path.isfile(juicer_bedpe):
+            if not enforce_all_chroms:
+                print(f"Warning: Expected file not found: {juicer_bedpe}. Skipping this file.")
+                continue
             raise FileNotFoundError(f"Expected file not found: {juicer_bedpe}")
         
+        # If at this stage, then chromosome ran successfully
+        successful_chroms.append(folder)
+        
         # extract the comments from a single summary csv only
-        if i == 0:
+        if no_comment_found:
             comments = extract_comments(summary_csv)
             for comment in comments:
                 print(comment)
+            no_comment_found = False
 
         summary_frames.append(pd.read_csv(summary_csv, comment='#'))
         expanded_frames.append(pd.read_csv(expanded_csv, comment='#'))
         bedpe_frames.append(pd.read_csv(juicer_bedpe, comment='#', sep='\t', header=None, index_col=False, 
                                         names=['chrom1', 'start1', 'end1', 'chrom2', 'start2', 'end2']))
+        
+    if len(summary_frames) == 0:
+        print(f"No results found at all for {folder_pattern} with result type {result_type}")
+        # return pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), []
+        raise ValueError
+    
+    print("Successfully read in:")
+    for f in successful_chroms:
+        print(f"  * {f}")
 
     # Concatenate all and reset the index
     combined_summary = pd.concat(summary_frames,  ignore_index=True)

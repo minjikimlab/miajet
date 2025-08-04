@@ -6,6 +6,7 @@ from scipy.stats import entropy
 from utils.file_io import save_csv
 import json
 from scipy.optimize import curve_fit
+from .analyze_ridges import plot_top_k
 
 
 def count_alternating_01(boolean_array):
@@ -56,9 +57,204 @@ def consecutive_true(boolean_array, min_consecutive=1):
 
     return out_vec
 
- 
 
-def filter_ridges(df_agg, rmse, entropy_thresh, ridge_cond_type, ridge_cond_val,
+def simulate_filter_ridges(df_agg, df_features, rmse, entropy_thresh, c0_filter, exp_scale_deriv, exp_scale_deriv2, ridge_cond_type, ridge_cond_val,
+                            angle_mean_type, angle_range, angle_deriv_thresh, col_mean_diff_std, verbose, save_path, config):
+    """
+    Simulates the effect of each filter. Plots the output jets (i.e. effect of each filter)
+    in save_path directory
+    """
+    # Plot top K
+    save_name = os.path.join(save_path, f"{config.root}_plot_nofilter.png")
+    plot_top_k(df_agg, df_features, "all", 
+                config.ranking, config.hic_file, config.chrom, config.resolution,
+                config.window_size, config.normalization, config.rotation_padding,
+                save_name, config.root, config.parameter_str, config.im_vmin, config.im_vmax)
+
+    sum_rem = 0
+
+    if rmse is not None:
+        # filter based on the rmse
+        rmse_satisfies = df_agg["rmse"] <= rmse
+        df_agg["rmse_bool"] = rmse_satisfies
+        len_df_agg = len(df_agg)
+        df_agg_sim = df_agg.loc[df_agg["rmse_bool"]].reset_index(drop=True)
+        if verbose: print(f"\tFiltering based on rmse <= {rmse}: {len_df_agg} -> {len(df_agg_sim)} (removed {len_df_agg - len(df_agg_sim)})")
+        sum_rem += len_df_agg - len(df_agg_sim)
+
+        df_features_sim = df_features.merge(df_agg_sim[["Contour Number", "s_imagej"]].drop_duplicates(), on=["Contour Number", "s_imagej"], how="inner").reset_index(drop=True)
+        save_name = os.path.join(save_path, f"{config.root}_plot_rmse.png")
+        plot_top_k(df_agg_sim, df_features_sim, "all", 
+                   config.ranking, config.hic_file, config.chrom, config.resolution,
+                   config.window_size, config.normalization, config.rotation_padding,
+                   save_name, config.root, config.parameter_str, config.im_vmin, config.im_vmax)
+
+    if c0_filter is not None:
+        # filter based on the rmse
+        c0_satisfies = df_agg["coeffs"].apply(lambda x : x[0] > c0_filter)
+        df_agg["coeffs_bool"] = c0_satisfies
+        len_df_agg = len(df_agg)
+        df_agg_sim = df_agg.loc[df_agg["coeffs_bool"]].reset_index(drop=True)
+        if verbose: print(f"\tFiltering based on c0 filter > {c0_filter}: {len_df_agg} -> {len(df_agg_sim)} (removed {len_df_agg - len(df_agg_sim)})")
+        sum_rem += len_df_agg - len(df_agg_sim)
+
+        df_features_sim = df_features.merge(df_agg_sim[["Contour Number", "s_imagej"]].drop_duplicates(), on=["Contour Number", "s_imagej"], how="inner").reset_index(drop=True)
+        save_name = os.path.join(save_path, f"{config.root}_plot_c0-filter.png")
+        plot_top_k(df_agg_sim, df_features_sim, "all", 
+                   config.ranking, config.hic_file, config.chrom, config.resolution,
+                   config.window_size, config.normalization, config.rotation_padding,
+                   save_name, config.root, config.parameter_str, config.im_vmin, config.im_vmax)
+
+    if exp_scale_deriv is not None:
+        # filter based on the exp_scale_deriv
+        exp_scale_deriv_satisfies = df_agg["exp_scale_deriv"] <= exp_scale_deriv
+        df_agg["exp_scale_deriv_bool"] = exp_scale_deriv_satisfies
+        len_df_agg = len(df_agg)
+        df_agg_sim = df_agg.loc[df_agg["exp_scale_deriv_bool"]].reset_index(drop=True)
+        if verbose: print(f"\tFiltering based on exp_scale_deriv <= {exp_scale_deriv}: {len_df_agg} -> {len(df_agg_sim)} (removed {len_df_agg - len(df_agg_sim)})")
+        sum_rem += len_df_agg - len(df_agg_sim)
+
+        df_features_sim = df_features.merge(df_agg_sim[["Contour Number", "s_imagej"]].drop_duplicates(), on=["Contour Number", "s_imagej"], how="inner").reset_index(drop=True)
+        save_name = os.path.join(save_path, f"{config.root}_plot_exp-scale-deriv.png")
+        plot_top_k(df_agg_sim, df_features_sim, "all", 
+                   config.ranking, config.hic_file, config.chrom, config.resolution,
+                   config.window_size, config.normalization, config.rotation_padding,
+                   save_name, config.root, config.parameter_str, config.im_vmin, config.im_vmax)
+        
+    if exp_scale_deriv2 is not None:
+        # filter based on the exp_scale_deriv2
+        exp_scale_deriv2_satisfies = df_agg["exp_scale_deriv2"] <= exp_scale_deriv2
+        df_agg["exp_scale_deriv2_bool"] = exp_scale_deriv2_satisfies
+        len_df_agg = len(df_agg)
+        df_agg_sim = df_agg.loc[df_agg["exp_scale_deriv2_bool"]].reset_index(drop=True)
+        if verbose: print(f"\tFiltering based on exp_scale_deriv2 <= {exp_scale_deriv2}: {len_df_agg} -> {len(df_agg_sim)} (removed {len_df_agg - len(df_agg_sim)})")
+        sum_rem += len_df_agg - len(df_agg_sim)
+
+        df_features_sim = df_features.merge(df_agg_sim[["Contour Number", "s_imagej"]].drop_duplicates(), on=["Contour Number", "s_imagej"], how="inner").reset_index(drop=True)
+        save_name = os.path.join(save_path, f"{config.root}_plot_exp-scale-deriv2.png")
+        plot_top_k(df_agg_sim, df_features_sim, "all", 
+                   config.ranking, config.hic_file, config.chrom, config.resolution,
+                   config.window_size, config.normalization, config.rotation_padding,
+                   save_name, config.root, config.parameter_str, config.im_vmin, config.im_vmax)
+        
+    if exp_scale_deriv is not None and exp_scale_deriv2 is not None:
+        # filter based on both exp_scale_deriv and exp_scale_deriv2
+        exp_scale_deriv_satisfies = df_agg["exp_scale_deriv"] <= exp_scale_deriv
+        exp_scale_deriv2_satisfies = df_agg["exp_scale_deriv2"] <= exp_scale_deriv2
+        df_agg["exp_scale_both_bool"] = exp_scale_deriv_satisfies & exp_scale_deriv2_satisfies
+        len_df_agg = len(df_agg)
+        df_agg_sim = df_agg.loc[df_agg["exp_scale_both_bool"]].reset_index(drop=True)
+        if verbose: print(f"\tFiltering based on both exp_scale_deriv <= {exp_scale_deriv} and exp_scale_deriv2 <= {exp_scale_deriv2}: {len_df_agg} -> {len(df_agg_sim)} (removed {len_df_agg - len(df_agg_sim)})")
+        sum_rem += len_df_agg - len(df_agg_sim)
+
+        df_features_sim = df_features.merge(df_agg_sim[["Contour Number", "s_imagej"]].drop_duplicates(), on=["Contour Number", "s_imagej"], how="inner").reset_index(drop=True)
+        save_name = os.path.join(save_path, f"{config.root}_plot_exp-scale-both.png")
+        plot_top_k(df_agg_sim, df_features_sim, "all", 
+                   config.ranking, config.hic_file, config.chrom, config.resolution,
+                   config.window_size, config.normalization, config.rotation_padding,
+                   save_name, config.root, config.parameter_str, config.im_vmin, config.im_vmax)
+    
+
+    if col_mean_diff_std is not None:
+        # filter based on the std of the col mean diff
+        col_mean_diff_satisfies = df_agg["col_mean_diff_std"] <= col_mean_diff_std
+        df_agg["col_mean_diff_bool"] = col_mean_diff_satisfies
+        len_df_agg = len(df_agg)
+        df_agg_sim = df_agg.loc[df_agg["col_mean_diff_bool"]].reset_index(drop=True)
+        if verbose: print(f"\tFiltering based on col_mean_diff <= {col_mean_diff_std}: {len_df_agg} -> {len(df_agg_sim)} (removed {len_df_agg - len(df_agg_sim)})")
+        sum_rem += len_df_agg - len(df_agg_sim)
+
+        df_features_sim = df_features.merge(df_agg_sim[["Contour Number", "s_imagej"]].drop_duplicates(), on=["Contour Number", "s_imagej"], how="inner").reset_index(drop=True)
+        save_name = os.path.join(save_path, f"{config.root}_plot_col-mean-diff-std.png")
+        plot_top_k(df_agg_sim, df_features_sim, "all", 
+                   config.ranking, config.hic_file, config.chrom, config.resolution,
+                   config.window_size, config.normalization, config.rotation_padding,
+                   save_name, config.root, config.parameter_str, config.im_vmin, config.im_vmax)
+
+
+    if entropy_thresh is not None:
+        entropy_satisfies = df_agg["entropy"] <= entropy_thresh
+        df_agg["entropy_bool"] = entropy_satisfies
+        len_df_agg = len(df_agg)
+        df_agg_sim = df_agg.loc[df_agg["entropy_bool"]].reset_index(drop=True)
+        if verbose: print(f"\tEntropy threshold keeping 'normalized entropy' <= {entropy_thresh}: {len_df_agg} -> {len(df_agg_sim)} (removed {len_df_agg - len(df_agg_sim)})")
+        sum_rem += len_df_agg - len(df_agg_sim)
+
+        df_features_sim = df_features.merge(df_agg_sim[["Contour Number", "s_imagej"]].drop_duplicates(), on=["Contour Number", "s_imagej"], how="inner").reset_index(drop=True)
+        save_name = os.path.join(save_path, f"{config.root}_plot_entropy.png")
+        plot_top_k(df_agg_sim, df_features_sim, "all", 
+                   config.ranking, config.hic_file, config.chrom, config.resolution,
+                   config.window_size, config.normalization, config.rotation_padding,
+                   save_name, config.root, config.parameter_str, config.im_vmin, config.im_vmax)
+
+
+    if ridge_cond_type is not None:
+        if ridge_cond_type == "frac_zeros":
+            ridge_cond_satisfies = df_agg["ridge_cond_fraction"] >= ridge_cond_val
+        elif ridge_cond_type == "num_zeros":
+            ridge_cond_satisfies = df_agg["ridge_cond_num"] >= ridge_cond_val
+        else:
+            print("`ridge_cond_type` must be either 'num_zeros' or 'frac_zeros'")
+            raise ValueError
+        
+        df_agg["ridge_cond_bool"] = ridge_cond_satisfies
+        len_df_agg = len(df_agg)
+        df_agg_sim = df_agg.loc[df_agg["ridge_cond_bool"]].reset_index(drop=True)
+        if verbose: print(f"\tRidge condition filtering '{ridge_cond_type}' >= {ridge_cond_val}: {len_df_agg} -> {len(df_agg_sim)} (removed {len_df_agg - len(df_agg_sim)})")
+        sum_rem += len_df_agg - len(df_agg_sim)
+
+        df_features_sim = df_features.merge(df_agg_sim[["Contour Number", "s_imagej"]].drop_duplicates(), on=["Contour Number", "s_imagej"], how="inner").reset_index(drop=True)
+        save_name = os.path.join(save_path, f"{config.root}_plot_ridge-cond-bool.png")
+        plot_top_k(df_agg_sim, df_features_sim, "all", 
+                   config.ranking, config.hic_file, config.chrom, config.resolution,
+                   config.window_size, config.normalization, config.rotation_padding,
+                   save_name, config.root, config.parameter_str, config.im_vmin, config.im_vmax)
+
+
+    if angle_mean_type is not None:
+        if angle_mean_type in df_agg.columns:
+            angle_mean_satisfies = (angle_range[0] <= df_agg[angle_mean_type]) &  (df_agg[angle_mean_type] <= angle_range[1])
+            df_agg["angle_mean_bool"] = angle_mean_satisfies
+            len_df_agg = len(df_agg)
+            df_agg_sim = df_agg.loc[df_agg["angle_mean_bool"]].reset_index(drop=True)
+            if verbose: print(f"\tAngle condition filtering {angle_range[0]} <= '{angle_mean_type}' <= {angle_range[1]}: {len_df_agg} -> {len(df_agg_sim)}  (removed {len_df_agg - len(df_agg_sim)})")
+            sum_rem += len_df_agg - len(df_agg_sim)
+
+            df_features_sim = df_features.merge(df_agg_sim[["Contour Number", "s_imagej"]].drop_duplicates(), on=["Contour Number", "s_imagej"], how="inner").reset_index(drop=True)
+            save_name = os.path.join(save_path, f"{config.root}_plot_angle-mean-type.png")
+            plot_top_k(df_agg_sim, df_features_sim, "all", 
+                    config.ranking, config.hic_file, config.chrom, config.resolution,
+                    config.window_size, config.normalization, config.rotation_padding,
+                    save_name, config.root, config.parameter_str, config.im_vmin, config.im_vmax)
+        else:
+            print("`angle_mean_type` must be either 'angle_mean' or None")
+            raise ValueError
+
+    if angle_deriv_thresh is not None:
+        angle_deriv_satisfies = df_agg["angle_deriv_max"] <= angle_deriv_thresh
+        df_agg["angle_deriv_bool"] = angle_deriv_satisfies
+        len_df_agg = len(df_agg)
+        df_agg_sim = df_agg.loc[df_agg["angle_deriv_bool"]].reset_index(drop=True)
+        if verbose: print(f"\tAngle derivative filtering 'angle_deriv_max' <= {angle_deriv_thresh}: {len_df_agg} -> {len(df_agg_sim)}  (removed {len_df_agg - len(df_agg_sim)})")
+        sum_rem += len_df_agg - len(df_agg_sim)
+
+        df_features_sim = df_features.merge(df_agg_sim[["Contour Number", "s_imagej"]].drop_duplicates(), on=["Contour Number", "s_imagej"], how="inner").reset_index(drop=True)
+        save_name = os.path.join(save_path, f"{config.root}_plot_angle-deriv-max.png")
+        plot_top_k(df_agg_sim, df_features_sim, "all", 
+                   config.ranking, config.hic_file, config.chrom, config.resolution,
+                   config.window_size, config.normalization, config.rotation_padding,
+                   save_name, config.root, config.parameter_str, config.im_vmin, config.im_vmax)      
+    
+    if verbose: 
+        print(f"\tTotal ridges removed: {sum_rem}")
+        print(f"\tTotal ridges remaining: {len(df_agg)}")
+
+
+    return df_agg
+
+
+
+def filter_ridges(df_agg, rmse, entropy_thresh, c0_filter, exp_scale_deriv, exp_scale_deriv2, ridge_cond_type, ridge_cond_val,
                   angle_mean_type, angle_range, angle_deriv_thresh, col_mean_diff_std, verbose):
     """
     Filter ridges based on various conditions (if None then no filtering is applied)
@@ -92,6 +288,33 @@ def filter_ridges(df_agg, rmse, entropy_thresh, ridge_cond_type, ridge_cond_val,
     """
     sum_rem = 0
 
+    if c0_filter is not None:
+        # filter based on the rmse
+        c0_satisfies = df_agg["coeffs"].apply(lambda x : x[0] > c0_filter)
+        df_agg["coeffs_bool"] = c0_satisfies
+        len_df_agg = len(df_agg)
+        df_agg = df_agg.loc[df_agg["coeffs_bool"]].reset_index(drop=True)
+        if verbose: print(f"\tFiltering based on c0 filter > {c0_filter}: {len_df_agg} -> {len(df_agg)} (removed {len_df_agg - len(df_agg)})")
+        sum_rem += len_df_agg - len(df_agg)
+
+    if exp_scale_deriv is not None:
+        # filter based on the exp_scale_deriv
+        exp_scale_deriv_satisfies = df_agg["exp_scale_deriv"] <= exp_scale_deriv
+        df_agg["exp_scale_deriv_bool"] = exp_scale_deriv_satisfies
+        len_df_agg = len(df_agg)
+        df_agg = df_agg.loc[df_agg["exp_scale_deriv_bool"]].reset_index(drop=True)
+        if verbose: print(f"\tFiltering based on exp_scale_deriv <= {exp_scale_deriv}: {len_df_agg} -> {len(df_agg)} (removed {len_df_agg - len(df_agg)})")
+        sum_rem += len_df_agg - len(df_agg)
+    
+    if exp_scale_deriv2 is not None:
+        # filter based on the exp_scale_deriv2
+        exp_scale_deriv2_satisfies = df_agg["exp_scale_deriv2"] <= exp_scale_deriv2
+        df_agg["exp_scale_deriv2_bool"] = exp_scale_deriv2_satisfies
+        len_df_agg = len(df_agg)
+        df_agg = df_agg.loc[df_agg["exp_scale_deriv2_bool"]].reset_index(drop=True)
+        if verbose: print(f"\tFiltering based on exp_scale_deriv2 <= {exp_scale_deriv2}: {len_df_agg} -> {len(df_agg)} (removed {len_df_agg - len(df_agg)})")
+        sum_rem += len_df_agg - len(df_agg)
+
     if rmse is not None:
         # filter based on the rmse
         rmse_satisfies = df_agg["rmse"] <= rmse
@@ -100,6 +323,7 @@ def filter_ridges(df_agg, rmse, entropy_thresh, ridge_cond_type, ridge_cond_val,
         df_agg = df_agg.loc[df_agg["rmse_bool"]].reset_index(drop=True)
         if verbose: print(f"\tFiltering based on rmse <= {rmse}: {len_df_agg} -> {len(df_agg)} (removed {len_df_agg - len(df_agg)})")
         sum_rem += len_df_agg - len(df_agg)
+
 
     if col_mean_diff_std is not None:
         # filter based on the std of the col mean diff
@@ -281,6 +505,22 @@ def compute_histogram_data(points, points_min, points_max, num_bins=None, bin_si
 
     return pmf, bin_edges
 
+def masked_abs_diff(x, N):
+    # compute the per‑element diff with a zero at 0
+    d = np.abs(np.diff(x, prepend=x[0]))
+    # now mask out the first N values
+    d[:N] = 0
+    return d
+
+
+def masked_abs_second_diff(x, N, edge_order=1):
+    # first derivative
+    d1 = np.gradient(x, 1.0, edge_order=edge_order)
+    # second derivative
+    d2 = np.gradient(d1, 1.0, edge_order=edge_order)
+    d2 = np.abs(d2)
+    d2[:N] = 0
+    return d2
 
 def aggregate_ridge_features(group, ranking, angle_label, angle_range,
                              noise_consec_in, noise_alt_in, sum_cond, agg, 
@@ -497,6 +737,13 @@ def aggregate_ridge_features(group, ranking, angle_label, angle_range,
         y_fit_ev = np.polyval(coeffs, x_ev)
         residuals = expected_values - y_fit_ev
         rmse = np.sqrt(np.mean(residuals**2)) / len(expected_values)
+
+    exp_scale_deriv = masked_abs_diff(group["expected_scale"].values, N=2) # ignore the first two positions
+    exp_scale_deriv = np.max(exp_scale_deriv) # take the maximum derivative value
+
+    exp_scale_deriv2 = masked_abs_second_diff(group["expected_scale"].values, N=2) # ignore the first two positions
+    exp_scale_deriv2 = np.max(exp_scale_deriv2) # take the maximum
+
     
     # Build Result
     result = {
@@ -523,6 +770,8 @@ def aggregate_ridge_features(group, ranking, angle_label, angle_range,
         "direction": 0,
         "rmse": rmse,
         "coeffs": coeffs, # parameters of RMSE
+        "exp_scale_deriv": exp_scale_deriv,
+        "exp_scale_deriv2": exp_scale_deriv2,
         ranking: final_value
     }
     return pd.Series(result)
@@ -667,5 +916,3 @@ def generate_summary_table(df_features, ranking, angle_label, angle_range, noise
     # save_csv(df_agg, save_name, root, parameter_str, convert_json=["pmf", "edges", "coeffs"])
 
     return df_agg
-
-

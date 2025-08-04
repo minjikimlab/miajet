@@ -101,9 +101,9 @@ def assign_defaults(args: argparse.Namespace) -> argparse.Namespace:
             "rmse":             0.01,
             "eig2_trim":        0.0,
             "im_vmin":          0,
-            "im_vmax":          99,
+            "im_vmax":          99, # 99
             "im_corner_vmin":   0,
-            "im_corner_vmax":   98,
+            "im_corner_vmax":   98, # 98
         },
         "replihic": {
             "normalization":    "VC_SQRT",
@@ -124,7 +124,7 @@ def assign_defaults(args: argparse.Namespace) -> argparse.Namespace:
     # Assign defaults
     defaults = exp_defaults[args.exp_type]
     for key, val in defaults.items():
-        if getattr(args, key) is None:
+        if not hasattr(args, key):
             setattr(args, key, val)
 
     return args

@@ -313,20 +313,20 @@ def process_significance_single(df_ridge, im_p_value, corr_im_p_value, factor_lr
     # select arrays
     if agg == "mean":
         if statistic == 1:
-            obs_arr, null_arr = mean_CR_ratio_obs,   mean_CR_ratio_null
+            obs_arr, null_arr = mean_CR_ratio_obs, mean_CR_ratio_null
         elif statistic == 2:
-            obs_arr, null_arr = mean_CR_sub_obs,     mean_CR_sub_null
+            obs_arr, null_arr = mean_CR_sub_obs, mean_CR_sub_null
         elif statistic == 3:
-            obs_arr, null_arr = mean_C2R_ratio_obs,  mean_C2R_ratio_null
+            obs_arr, null_arr = mean_C2R_ratio_obs, mean_C2R_ratio_null
         else:
             raise ValueError(f"Invalid statistic: {statistic}")
     else:  # median
         if statistic == 1:
-            obs_arr, null_arr = med_CR_ratio_obs,    med_CR_ratio_null
+            obs_arr, null_arr = med_CR_ratio_obs, med_CR_ratio_null
         elif statistic == 2:
-            obs_arr, null_arr = med_CR_sub_obs,      med_CR_sub_null
+            obs_arr, null_arr = med_CR_sub_obs, med_CR_sub_null
         elif statistic == 3:
-            obs_arr, null_arr = med_C2R_ratio_obs,   med_C2R_ratio_null
+            obs_arr, null_arr = med_C2R_ratio_obs, med_C2R_ratio_null
         else:
             raise ValueError(f"Invalid statistic: {statistic}")
 
@@ -339,13 +339,13 @@ def process_significance_single(df_ridge, im_p_value, corr_im_p_value, factor_lr
     # Lets first combine the background values i.e. L and R 
     if agg == "mean":
         c_obs = c_mean_obs
-        b_obs = np.maximum(l_mean_obs, r_mean_obs) # Maximums
-        # b_obs = (l_mean_obs + r_mean_obs) / 2 # Average
+        # b_obs = np.maximum(l_mean_obs, r_mean_obs) # Maximums
+        b_obs = (l_mean_obs + r_mean_obs) / 2 # Average
         # b_obs = np.minimum(l_mean_obs, r_mean_obs) # Minimum
     else:
         c_obs = c_med_obs
-        b_obs = np.maximum(l_med_obs, r_med_obs) # Maximum
-        # b_obs = (l_med_obs + r_med_obs) / 2 # Average
+        # b_obs = np.maximum(l_med_obs, r_med_obs) # Maximum
+        b_obs = (l_med_obs + r_med_obs) / 2 # Average
         # b_obs = np.minimum(l_med_obs, r_med_obs) # Minimum
 
     # and then compute the KS test statistic
@@ -430,13 +430,13 @@ def process_significance(df_ridge):
     # Lets first combine the background values i.e. L and R 
     if agg == "mean":
         c_obs = c_mean_obs
-        b_obs = np.maximum(l_mean_obs, r_mean_obs) # Maximums
-        # b_obs = (l_mean_obs + r_mean_obs) / 2 # Average
+        # b_obs = np.maximum(l_mean_obs, r_mean_obs) # Maximums
+        b_obs = (l_mean_obs + r_mean_obs) / 2 # Average
         # b_obs = np.minimum(l_mean_obs, r_mean_obs) # Minimum
     else:
         c_obs = c_med_obs
-        b_obs = np.maximum(l_med_obs, r_med_obs) # Maximum
-        # b_obs = (l_med_obs + r_med_obs) / 2 # Average
+        # b_obs = np.maximum(l_med_obs, r_med_obs) # Maximum
+        b_obs = (l_med_obs + r_med_obs) / 2 # Average
         # b_obs = np.minimum(l_med_obs, r_med_obs) # Minimum
 
     # and then compute the KS test statistic

@@ -315,7 +315,6 @@ def expected_value(pmf_matrix_in, value):
     return np.array(expected_values)   
     
 
-
 def generate_expanded_table(im, df, df_pos, D, A, W1, W2, R, C, scale_range, angle_range, num_cores, verbose, save_path, root,
                             contour_label="Contour Number",                         
                             x_label="X_(px)", 
@@ -504,6 +503,10 @@ def generate_expanded_table(im, df, df_pos, D, A, W1, W2, R, C, scale_range, ang
         # Compare the entire arrays of Y coordinates
         if not np.allclose(group_features["Y_(px)"].values, group_pos["Y_(px)"].values):
             raise ValueError(f"Mismatch in Y coordinates for ridge {key}!")
+        
+    from .process_imagej import reorient_ridges
+        
+    df_features_assigned = reorient_ridges(df_features_assigned, df_features_assigned.groupby([contour_label, "s_imagej"]), y_label, True)
 
     return df_features_assigned
 
@@ -780,6 +783,10 @@ def insert_unmapped_regions(df_features, im_orig, rm_idx, N_removed, window_size
 
     df_features = trim_whitespace_ridges(df_features, im_orig, verbose=verbose, num_cores=num_cores, 
                                          contour_label=contour_label, x_label=x_label, y_label=y_label)
+    
+    from .process_imagej import reorient_ridges # Should refactor but
+    
+    df_features = reorient_ridges(df_features, df_features.groupby([contour_label, "s_imagej"]), y_label+"_unmap", True)
 
     return df_features
 

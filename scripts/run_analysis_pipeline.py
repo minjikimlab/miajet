@@ -107,6 +107,14 @@ def main(key):
 
     chrom_sizes = bf.fetch_chromsizes(genome, as_bed=True)
     common_chroms = chrom_sizes["chrom"].tolist()
+
+    # NEW: subset common_chroms to only contain that which successfully generated
+    # This is because MIA-Jet currently fails to run some chromosomes
+    chrom_ran = attributes["chroms"] # A new attribute in submit_all_config.yaml
+    if chrom_ran != "all":
+        # Then its a list which we should subset
+        common_chroms = list(chrom_ran)
+        print("Subsetting common chromosomes because MIA-Jet failed to run some...")
     
     miajet_table = miajet_table[miajet_table["chrom"].isin(common_chroms)]
     fun_table = fun_table[fun_table["chrom"].isin(common_chroms)]
@@ -168,8 +176,8 @@ def main(key):
 
     bed_tables = []
     for i, (s, e) in enumerate(zip(tables, positions)):
-        # bed_tables.append(generate_bed_df(s, e, eps=500e3, fraction=0.5))
-        bed_tables.append(generate_bed_2(s, e, eps=500e3, fraction=1.5))
+        # bed_tables.append(generate_bed_df(s, e, eps=0, fraction=0.5))
+        bed_tables.append(generate_bed_2(s, e, eps=0, fraction=1.5))
 
     # First determine if N is appropriate
     min_set = np.array([len(bed_df) for bed_df in bed_tables])
@@ -504,9 +512,9 @@ def main(key):
         )
 
         # Make bed files to get stacks
-        bed_intersection = generate_bed_2(df_intersection, df_pos_intersection, eps=500e3, fraction=1.5)
-        bed_diff_A = generate_bed_2(df_diff_A, df_pos_diff_A, eps=500e3, fraction=1.5)
-        bed_diff_B = generate_bed_2(df_diff_B, df_pos_diff_B, eps=500e3, fraction=1.5)
+        bed_intersection = generate_bed_2(df_intersection, df_pos_intersection, eps=0, fraction=1.5)
+        bed_diff_A = generate_bed_2(df_diff_A, df_pos_diff_A, eps=0, fraction=1.5)
+        bed_diff_B = generate_bed_2(df_diff_B, df_pos_diff_B, eps=0, fraction=1.5)
 
         chrom_sizes = bf.fetch_chromsizes(genome, as_bed=True)
 
