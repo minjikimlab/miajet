@@ -2106,8 +2106,7 @@ def format_summary_table(df_agg_in, df_features_in, chromosome, resolution, rank
     * Keeps: angle_mean, input_mean, `ranking`, ks, p-val
     """
     keep = ["unique_id", "chrom", "start", "end", "length", "input_mean", "angle_mean", "width_mean", ranking, 
-            "ks", "p-val_raw", "p-val_corr", 
-            "stripiness"]  
+            "ks", "p-val_raw", "p-val_corr"]  
     
     if df_agg_in.empty:
         return pd.DataFrame(columns=keep)
