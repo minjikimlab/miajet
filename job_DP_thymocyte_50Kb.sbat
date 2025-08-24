@@ -19,10 +19,10 @@ python -m miajet /nfs/turbo/umms-minjilab/downloaded_data/DP-thymocytes_WT_hic_G
   --exp_type "hic" \
   --resolution 50000 \
   --alpha 0.1 0.05 0.01 \
-  --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_debug" \
+  --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_output_v1.0.22" \
   --num_cores 4 \
   --verbose \
-  --folder_name "replica-v1.0.20" \
+  # --folder_name "replica-v1.0.20" \
   # --rmse "None" \
   # --entropy "None" \
   # --sum_cond "a-r-c" \

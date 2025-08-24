@@ -108,13 +108,13 @@ def main():
     t0 = time.time()
     # Normal scale space tensor generation
     I, D, W1, W2, A, R, _ = construct_scale_space(im, config.scale_range, config.gamma, config.ridge_method, 
-                                            "gaussian", filter_mode=config.convolution_padding, 
+                                            filter_mode=config.convolution_padding, 
                                             eps_r=config.eps_r, eps_c1=config.eps_c1, eps_c2=config.eps_c2,
                                             zc_method=2, zc_ks=5, # hard-code zero crossing settings (lenient)
                                             num_pools=config.num_cores)
     # Corner only scale space tensor generation
     _, _, _, _, _, _, C = construct_scale_space(im_corner, config.scale_range, config.gamma, config.ridge_method, 
-                                            "gaussian", filter_mode=config.convolution_padding, 
+                                            filter_mode=config.convolution_padding, 
                                             eps_r=config.eps_r, eps_c1=config.eps_c1, eps_c2=config.eps_c2,
                                             zc_method=2, zc_ks=5, # hard-code zero crossing settings (lenient)
                                             num_pools=config.num_cores)
@@ -243,7 +243,7 @@ def main():
     # REMOVE OVERLAPS
     if config.verbose: print("Removing overlaps...")
     t0 = time.time()
-    df_agg = find_and_remove_overlaps(df_agg, df_features, iou_threshold=0.25, verbose=config.verbose, 
+    df_agg = find_and_remove_overlaps(df_agg, df_features, iou_threshold=0.05, verbose=config.verbose, 
                                     #   resolve_conflict=config.ranking, 
                                       resolve_conflict="p-val", 
                                       )

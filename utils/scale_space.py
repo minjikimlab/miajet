@@ -213,7 +213,7 @@ def gamma_to_lp_norm(gamma, m, D=2):
     return 1 / (1 + (1 - gamma) * (m / D))
 
 
-def construct_scale_space_helper(s, im, gamma, ridge_strength_method, scale_space_filter,
+def construct_scale_space_helper(s, im, gamma, ridge_strength_method,
               filter_mode, zc_method, zc_ks, eps_r, eps_c1, eps_c2):
     """
     Helper function for construct_scale_space that generates a set of scale space features
@@ -223,9 +223,6 @@ def construct_scale_space_helper(s, im, gamma, ridge_strength_method, scale_spac
     * pyscsp.discscsp.computeNjetfcn for Gaussian derivatives
 
     The ridge conditions are defined in Haralick 1983 [1] (see also Lindeberg 1996 [2])
-
-    Note that there are some deprecated functionality, such as 
-    * scale_space_filter = "2d-mean" which is not recommended for use
 
     See `construct_scale_space` for the description of the parameters
 
@@ -237,84 +234,36 @@ def construct_scale_space_helper(s, im, gamma, ridge_strength_method, scale_spac
         Proceedings CVPR IEEE Computer Society Conference on Computer Vision and Pattern Recognition, IEEE, 1996, 
         pp. 465-70. DOI.org (Crossref), https://doi.org/10.1109/CVPR.1996.517113.
     """
+    # Generate image blurred
+    im_blur = pyscsp.discscsp.computeNjetfcn(
+        im, 'L', s, gamma=gamma, normdermethod="discgaussvar", filter_mode=filter_mode)
+    I_s = im_blur
 
-    # Which kernel to use? Gaussian or 2D Mean
-    if scale_space_filter == "gaussian":
+    # Gradient magnitude
+    im_Lv = pyscsp.discscsp.computeNjetfcn(im, 'Lv', s, gamma=gamma,
+                                            normdermethod="discgaussvar", filter_mode=filter_mode)
+    
+    # Second derivatives
+    im_xx = -pyscsp.discscsp.computeNjetfcn(
+        im, 'Lxx', s, gamma=gamma, normdermethod="discgaussvar", filter_mode=filter_mode)
+    im_yy = -pyscsp.discscsp.computeNjetfcn(
+        im, 'Lyy', s, gamma=gamma, normdermethod="discgaussvar", filter_mode=filter_mode)
+    im_xy = -pyscsp.discscsp.computeNjetfcn(
+        im, 'Lxy', s, gamma=gamma, normdermethod="discgaussvar", filter_mode=filter_mode)
 
-        # Generate image blurred
-        im_blur = pyscsp.discscsp.computeNjetfcn(
-            im, 'L', s, gamma=gamma, normdermethod="discgaussvar", filter_mode=filter_mode)
-        I_s = im_blur
+    # Must compute the spatial ridgeness too
+    # Directional derivatives (first order)
+    im_p = pyscsp.discscsp.computeNjetfcn(
+        im, 'Lp', s, gamma=gamma, normdermethod="discgaussvar", filter_mode=filter_mode)
+    im_q = pyscsp.discscsp.computeNjetfcn(
+        im, 'Lq', s, gamma=gamma, normdermethod="discgaussvar", filter_mode=filter_mode)
 
-        # Gradient magnitude
-        im_Lv = pyscsp.discscsp.computeNjetfcn(im, 'Lv', s, gamma=gamma,
-                                               normdermethod="discgaussvar", filter_mode=filter_mode)
-        
-        # Second derivatives
-        im_xx = -pyscsp.discscsp.computeNjetfcn(
-            im, 'Lxx', s, gamma=gamma, normdermethod="discgaussvar", filter_mode=filter_mode)
-        im_yy = -pyscsp.discscsp.computeNjetfcn(
-            im, 'Lyy', s, gamma=gamma, normdermethod="discgaussvar", filter_mode=filter_mode)
-        im_xy = -pyscsp.discscsp.computeNjetfcn(
-            im, 'Lxy', s, gamma=gamma, normdermethod="discgaussvar", filter_mode=filter_mode)
+    # Directional derivatives (second order)
+    im_pp = pyscsp.discscsp.computeNjetfcn(
+        im, 'Lpp', s, gamma=gamma, normdermethod="discgaussvar", filter_mode=filter_mode)
+    im_qq = pyscsp.discscsp.computeNjetfcn(
+        im, 'Lqq', s, gamma=gamma, normdermethod="discgaussvar", filter_mode=filter_mode)
 
-        # Must compute the spatial ridgeness too
-        # Directional derivatives (first order)
-        im_p = pyscsp.discscsp.computeNjetfcn(
-            im, 'Lp', s, gamma=gamma, normdermethod="discgaussvar", filter_mode=filter_mode)
-        im_q = pyscsp.discscsp.computeNjetfcn(
-            im, 'Lq', s, gamma=gamma, normdermethod="discgaussvar", filter_mode=filter_mode)
-
-        # Directional derivatives (second order)
-        im_pp = pyscsp.discscsp.computeNjetfcn(
-            im, 'Lpp', s, gamma=gamma, normdermethod="discgaussvar", filter_mode=filter_mode)
-        im_qq = pyscsp.discscsp.computeNjetfcn(
-            im, 'Lqq', s, gamma=gamma, normdermethod="discgaussvar", filter_mode=filter_mode)
-
-    elif scale_space_filter == "2d-mean":
-        # This is not recommended for use but kept just in case
-        p0 = gamma_to_lp_norm(gamma, 0, 2)
-        p1 = gamma_to_lp_norm(gamma, 1, 2)
-        p2 = gamma_to_lp_norm(gamma, 2, 2)
-
-        kx = np.ones(s)
-        kx /= np.linalg.norm(kx, ord=p0)
-        mean_filter_order0 = np.outer(kx, kx)
-
-        kx = np.ones(s)
-        kx /= np.linalg.norm(kx, ord=p1)
-        mean_filter_order1 = np.outer(kx, kx)
-
-        kx = np.ones(s)
-        kx /= np.linalg.norm(kx, ord=p2)
-        mean_filter_order2 = np.outer(kx, kx)
-
-        im_blur = cv.filter2D(im, ddepth=cv.CV_64F, kernel=mean_filter_order0)
-        I_s = im_blur
-
-        im_blur_order1 = cv.filter2D(im, ddepth=cv.CV_64F, kernel=mean_filter_order1)
-        im_blur_order2 = cv.filter2D(im, ddepth=cv.CV_64F, kernel=mean_filter_order2)
-
-        im_xx = -pyscsp.discscsp.computeNjetfcn(
-            im_blur_order2, 'Lxx', 3, gamma=1, normdermethod="discgaussvar", filter_mode=filter_mode)
-        im_yy = -pyscsp.discscsp.computeNjetfcn(
-            im_blur_order2, 'Lyy', 3, gamma=1, normdermethod="discgaussvar", filter_mode=filter_mode)
-        im_xy = -pyscsp.discscsp.computeNjetfcn(
-            im_blur_order2, 'Lxy', 3, gamma=1, normdermethod="discgaussvar", filter_mode=filter_mode)
-
-        # Must compute the spatial ridgeness too
-        im_p = pyscsp.discscsp.computeNjetfcn(
-            im_blur_order1, 'Lp', 3, gamma=1, normdermethod="discgaussvar", filter_mode=filter_mode)
-        im_q = pyscsp.discscsp.computeNjetfcn(
-            im_blur_order1, 'Lq', 3, gamma=1, normdermethod="discgaussvar", filter_mode=filter_mode)
-
-        im_pp = pyscsp.discscsp.computeNjetfcn(
-            im_blur_order2, 'Lpp', 3, gamma=1, normdermethod="discgaussvar", filter_mode=filter_mode)
-        im_qq = pyscsp.discscsp.computeNjetfcn(
-            im_blur_order2, 'Lqq', 3, gamma=1, normdermethod="discgaussvar", filter_mode=filter_mode)
-    else:
-        print("`scale_space_filter` must be either 'gaussian' or '2d-mean'")
-        raise ValueError
 
     # Enforce gradient magnitude conditions (Haralick)
     grad_nonzero = (im_Lv >= eps_r) # Nonflat ridges
@@ -373,12 +322,21 @@ def construct_scale_space_helper(s, im, gamma, ridge_strength_method, scale_spac
     C_s = np.logical_and.reduce([grad_zero, det_neg])
 
 
-    im_eigvals, im_eigvecs = image_eigh(
-        np.array([[im_xx, im_xy], [im_xy, im_yy]]))
+    # im_eigvals, im_eigvecs = image_eigh(
+    #     np.array([[im_xx, im_xy], [im_xy, im_yy]]))
 
-    V_s = im_eigvecs
-    W1_s = im_eigvals[1] # Larger eigenvalue
-    W2_s = im_eigvals[0] # Smaller eigenvalue
+    # V_s = im_eigvecs
+    # W1_s = im_eigvals[1] # Larger eigenvalue
+    # W2_s = im_eigvals[0] # Smaller eigenvalue
+
+
+    # v1.0.22 (manual computation of hessian eigenvalues)
+    detH = im_xx * im_yy - im_xy ** 2
+    traceH = im_xx + im_yy
+    disc = np.clip(traceH ** 2 - 4 * detH, 0, None) # Lower bound by 0
+    W1_s = 0.5 * (traceH + np.sqrt(disc)) # Larger eigenvalue
+    W2_s = 0.5 * (traceH - np.sqrt(disc)) # Smaller eigenvalue
+    im_eigvals = np.array([W2_s, W1_s])
 
     # Compute ridge strength
     d = local_contrast_enhancement(im_eigvals, ridge_strength_method)
@@ -390,13 +348,17 @@ def construct_scale_space_helper(s, im, gamma, ridge_strength_method, scale_spac
     elif ridge_strength_method in [3, 4]:
         D_s = d ** 0.5
 
-    return I_s, D_s, W1_s, W2_s, V_s, R_s, C_s
+    # v1.0.22 (manual computation of direction of eigenvector)
+    A_s = 0.5 * np.arctan2(2 * im_xy, im_xx - im_yy) 
+    A_s = np.degrees(A_s)
+    A_s = ((A_s + 90) % 360) % 180 # compute normal and wrap
+
+    return I_s, D_s, W1_s, W2_s, A_s, R_s, C_s
 
 
 
 
-def construct_scale_space(im, s_range, gamma, ridge_strength_method,
-                          scale_space_filter, filter_mode, eps_r, eps_c1, eps_c2,
+def construct_scale_space(im, s_range, gamma, ridge_strength_method, filter_mode, eps_r, eps_c1, eps_c2,
                           zc_method=1, zc_ks=3, num_pools=None):
     """
     Constructs scale space tensors for the input image `im` over the specified scale range `s_range`
@@ -462,7 +424,6 @@ def construct_scale_space(im, s_range, gamma, ridge_strength_method,
     # Prepare the partial function with fixed arguments
     process_s_partial = partial(
         construct_scale_space_helper, im=im, gamma=gamma, ridge_strength_method=ridge_strength_method,
-        scale_space_filter=scale_space_filter, 
         eps_r=eps_r, eps_c1=eps_c1, eps_c2=eps_c2,
         filter_mode=filter_mode, zc_method=zc_method, zc_ks=zc_ks)
 
@@ -473,16 +434,16 @@ def construct_scale_space(im, s_range, gamma, ridge_strength_method,
         results = [process_s_partial(s) for s in s_range]
 
     # Unpack the results
-    I_list, D_list, W1_list, W2_list, V_list, R_list, C_list = zip(*results)
+    I_list, D_list, W1_list, W2_list, A_list, R_list, C_list = zip(*results)
 
     # Convert lists to numpy arrays
     I = np.array(I_list)
-    D = np.array(D_list)
+    D = np.clip(np.array(D_list), 0, None) # v1.0.22 clip for ridge strength
     W1 = np.array(W1_list)
     W2 = np.array(W2_list)
-    V = np.array(V_list)
-
-    A = eigenvector_space_to_angle(V)
+    # V = np.array(V_list)
+    # A = eigenvector_space_to_angle(V)
+    A = np.array(A_list) # v1.0.22
 
     R = np.array(R_list)
     C = np.array(C_list)

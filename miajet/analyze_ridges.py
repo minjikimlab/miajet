@@ -2005,6 +2005,8 @@ def plot_top_k(df_agg, df_features, K, ranking, hic_file, chromosome, resolution
     line_widths = []
     for rank, (indexer, df_ridge) in enumerate(gb):
 
+        df_ridge.sort_values(y_label, inplace=True, ignore_index=True, ascending=False)
+
         ridge_coords = convert_imagej_coord_to_numpy(df_ridge[[x_label, y_label]].values, im.shape[0], flip_y=True, start_bin=0)
 
         lines.append(ridge_coords)

@@ -19,10 +19,10 @@ python -m miajet /nfs/turbo/umms-minjilab/downloaded_data/Repli-HiC_K562_WT_tota
   --exp_type "replihic" \
   --resolution 50000 \
   --alpha 0.1 0.05 0.01 \
-  --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_output" \
+  --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_output_v1.0.22" \
   --num_cores 4 \
   --verbose \
-  --folder_name "Repli-HiC_K562_WT_totalS-stripiness-1" \
+  # --folder_name "Repli-HiC_K562_WT_totalS-stripiness-1" \
   # --normalization "VC_SQRT" \
   # --window_size 6000000 \
   # --data_type "observed" \

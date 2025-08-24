@@ -98,8 +98,8 @@ def parse_args():
                         help="Bin size for entropy histogram; if not specified, None")
     parser.add_argument("--points_min", type=float, required=False, default=0,
                         help="Minimum data range for entropy histogram (default: 0)")
-    parser.add_argument("--points_max", type=none_or_float, required=False, default=0.04,
-                        help="Maximum data range for entropy histogram (default: 0.04)")
+    parser.add_argument("--points_max", type=none_or_float, required=False, default=0.05,
+                        help="Maximum data range for entropy histogram (default: 0.05)")
     parser.add_argument("--eps_r", type=none_or_float, required=False, default=0.0005,
                         help="Epsilon value for ridge (default: 0.0005)")
     parser.add_argument("--eps_c1", type=none_or_float, required=False, default=0.1,

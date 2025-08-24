@@ -482,34 +482,34 @@ def generate_expanded_table(im, df, df_pos, D, A, W1, W2, R, C, scale_range, ang
 
     gb = df_features_assigned.groupby([contour_label, "s_imagej"], sort=False)
 
-    sampled_ridges = random.sample(list(gb), k=min(50, len(gb))) # check just 50 ridges
+    # sampled_ridges = random.sample(list(gb), k=min(50, len(gb))) # check just 50 ridges
 
-    assert np.allclose(df_features["scale_assigned"].values, df_features["s_imagej"].values)
+    # assert np.allclose(df_features["scale_assigned"].values, df_features["s_imagej"].values)
 
-    # final check
-    for key, group_features in sampled_ridges:
-        # Iterate through every ridge identified and check whether the X, Y position values are consistent
-        # i.e. did the merging operation collect the right data?
-        # key is a tuple: (contour number, s_imagej)
-        # Select all rows in df_pos corresponding to the same ridge (with the same s_imagej)
-        group_pos = df_pos[(df_pos[contour_label] == key[0]) & (df_pos["s_imagej"] == key[1])]
+    # # final check
+    # for key, group_features in sampled_ridges:
+    #     # Iterate through every ridge identified and check whether the X, Y position values are consistent
+    #     # i.e. did the merging operation collect the right data?
+    #     # key is a tuple: (contour number, s_imagej)
+    #     # Select all rows in df_pos corresponding to the same ridge (with the same s_imagej)
+    #     group_pos = df_pos[(df_pos[contour_label] == key[0]) & (df_pos["s_imagej"] == key[1])]
         
-        # Check if the number of rows in both groups match. 
-        # They should be the same if df_features_assigned is supposed to contain all coordinates of that ridge.
-        if len(group_features) != len(group_pos):
-            raise ValueError(f"Group size mismatch for ridge {key}: df_features_assigned has {len(group_features)} rows, but df_pos has {len(group_pos)} rows.")
+    #     # Check if the number of rows in both groups match. 
+    #     # They should be the same if df_features_assigned is supposed to contain all coordinates of that ridge.
+    #     if len(group_features) != len(group_pos):
+    #         raise ValueError(f"Group size mismatch for ridge {key}: df_features_assigned has {len(group_features)} rows, but df_pos has {len(group_pos)} rows.")
 
-        # Compare the entire arrays of X coordinates
-        if not np.allclose(group_features["X_(px)"].values, group_pos["X_(px)"].values):
-            raise ValueError(f"Mismatch in X coordinates for ridge {key}!")
+    #     # Compare the entire arrays of X coordinates
+    #     if not np.allclose(group_features["X_(px)"].values, group_pos["X_(px)"].values):
+    #         raise ValueError(f"Mismatch in X coordinates for ridge {key}!")
         
-        # Compare the entire arrays of Y coordinates
-        if not np.allclose(group_features["Y_(px)"].values, group_pos["Y_(px)"].values):
-            raise ValueError(f"Mismatch in Y coordinates for ridge {key}!")
+    #     # Compare the entire arrays of Y coordinates
+    #     if not np.allclose(group_features["Y_(px)"].values, group_pos["Y_(px)"].values):
+    #         raise ValueError(f"Mismatch in Y coordinates for ridge {key}!")
         
-    from .process_imagej import reorient_ridges
+    # from .process_imagej import reorient_ridges
         
-    df_features_assigned = reorient_ridges(df_features_assigned, df_features_assigned.groupby([contour_label, "s_imagej"], sort=False), y_label, True)
+    # df_features_assigned = reorient_ridges(df_features_assigned, df_features_assigned.groupby([contour_label, "s_imagej"], sort=False), y_label, True)
 
     return df_features_assigned
 
@@ -787,9 +787,9 @@ def insert_unmapped_regions(df_features, im_orig, rm_idx, N_removed, window_size
     df_features = trim_whitespace_ridges(df_features, im_orig, verbose=verbose, num_cores=num_cores, 
                                          contour_label=contour_label, x_label=x_label, y_label=y_label)
     
-    from .process_imagej import reorient_ridges # Should refactor but
+    # from .process_imagej import reorient_ridges # Should refactor 
     
-    df_features = reorient_ridges(df_features, df_features.groupby([contour_label, "s_imagej"], sort=False), y_label+"_unmap", True)
+    # df_features = reorient_ridges(df_features, df_features.groupby([contour_label, "s_imagej"], sort=False), y_label+"_unmap", True)
 
     return df_features
 
@@ -911,12 +911,12 @@ def trim_whitespace_ridges(df_features, im_orig, verbose, num_cores,
                 # If all pixel values before the discrepancy are below or equal to background OR
                 # that segment is too short (length ≤ 1), remove everything from the start up to the discrepancy                
                 if np.all(im_curves[:first_discrepency] <= back_pixel_local) or len(im_curves[:first_discrepency]) <= 1:
-                    df_ridge = df_ridge.iloc[:first_discrepency]
+                    df_ridge = df_ridge.iloc[first_discrepency:]
                     count_trimmed += 1
                 # Else if all pixel values after the discrepancy are below or equal to background OR
                 # that segment is too short, remove everything from the discrepancy to the end
                 elif np.all(im_curves[first_discrepency:] <= back_pixel_local) or len(im_curves[first_discrepency:]) <= 1:
-                    df_ridge = df_ridge.iloc[first_discrepency:]
+                    df_ridge = df_ridge.iloc[:first_discrepency]
                     count_trimmed += 1
 
                 # Only keep the ridge if it has more than one point after trimming

@@ -456,7 +456,7 @@ def process_imagej_results(df, df_pos, window_size, N, resolution, remove_kth_st
 
     if verbose: print(f"\tNum ridges after processing: {len(df)}")
 
-    df_pos = reorient_ridges(df_pos, df_pos.groupby([contour_label, "s_imagej"], sort=False), y_label, True)
+    # df_pos = reorient_ridges(df_pos, df_pos.groupby([contour_label, "s_imagej"], sort=False), y_label, True)
 
     assert check_ridge_order(df_pos)
 
@@ -486,6 +486,7 @@ def process_trim_corner(df_ridge):
     """
     Helper function for `trim_imagej_results_corner` that processes each ridge
     """
+    df_ridge.sort_values(y_label, inplace=True, ignore_index=True, ascending=False)
 
     if min_trim_size_in < 1:
         # interpret as percentile threshold
@@ -570,6 +571,9 @@ def trim_imagej_results_corner(df, df_pos, C, im_shape_0, min_trim_size_in, remo
     # print("\tWARNING: DEBUG MODE NO PARALLEILIZATION")
     if num_cores == 1:
         for indexer, df_ridge in tqdm(gb):
+
+            df_ridge.sort_values(y_label, inplace=True, ignore_index=True, ascending=False)
+
             # if indexer[0] == 49 and np.round(indexer[1], 2) == 6.59:
             #     pass
 
@@ -631,7 +635,7 @@ def trim_imagej_results_corner(df, df_pos, C, im_shape_0, min_trim_size_in, remo
     if verbose: print("\tNow removing small ridges (post corner trimming)...")
     df_pos_out, df_new = remove_small_ridges(df_pos_out, df_new, remove_min_size, contour_label, verbose)
 
-    df_pos_out = reorient_ridges(df_pos_out, df_pos_out.groupby([contour_label, "s_imagej"], sort=False), y_label, True)
+    # df_pos_out = reorient_ridges(df_pos_out, df_pos_out.groupby([contour_label, "s_imagej"], sort=False), y_label, True)
 
     return df_new, df_pos_out
 
@@ -653,6 +657,8 @@ def process_trim_angle(df_ridge):
     """
     Helper function for `trim_imagej_results_angle` that processes each ridge
     """
+    df_ridge.sort_values(y_label, inplace=True, ignore_index=True, ascending=False)
+
     # Extract coordinates and interpolate using the A tensor
     ridge_coords = convert_imagej_coord_to_numpy(df_ridge[[x_label, y_label]].values,
                                                  im_shape_0, flip_y=False, start_bin=0)
@@ -747,6 +753,8 @@ def trim_imagej_results_angle(df, df_pos, A, im_shape_0, min_trim_size_in, remov
     if num_cores == 1:
         for indexer, df_ridge in tqdm(gb):
 
+            df_ridge.sort_values(y_label, inplace=True, ignore_index=True, ascending=False)
+
             # if indexer[0] == 2838 and np.round(indexer[1], 2) == 1.67:
             #     pass
 
@@ -808,7 +816,7 @@ def trim_imagej_results_angle(df, df_pos, A, im_shape_0, min_trim_size_in, remov
     if verbose: print("\tNow removing small ridges (post angle trimming)...")
     df_pos_out, df_new = remove_small_ridges(df_pos_out, df_new, remove_min_size, contour_label, verbose)
 
-    df_pos_out = reorient_ridges(df_pos_out, df_pos_out.groupby([contour_label, "s_imagej"], sort=False), y_label, True)
+    # df_pos_out = reorient_ridges(df_pos_out, df_pos_out.groupby([contour_label, "s_imagej"], sort=False), y_label, True)
 
     return df_new, df_pos_out
 
@@ -832,6 +840,9 @@ def process_trim_eig2(df_ridge):
     """
     Helper function for `trim_imagej_results_eig2` that processes each ridge
     """
+    df_ridge.sort_values(y_label, inplace=True, ignore_index=True, ascending=False)
+
+
     # Extract coordinates using the provided helper function.
     ridge_coords = convert_imagej_coord_to_numpy(df_ridge[[x_label, y_label]].values,
                                                   im_shape_0, flip_y=False, start_bin=0)
@@ -952,6 +963,8 @@ def trim_imagej_results_eig2(df, df_pos, W2, im_shape_0, min_trim_size_in, remov
     if num_cores == 1:
         for indexer, df_ridge in tqdm(gb):
 
+            df_ridge.sort_values(y_label, inplace=True, ignore_index=True, ascending=False)
+
             ridge_coords = convert_imagej_coord_to_numpy(df_ridge[[x_label, y_label]].values,
                                                           im_shape_0, flip_y=False, start_bin=0)
             
@@ -1037,6 +1050,6 @@ def trim_imagej_results_eig2(df, df_pos, W2, im_shape_0, min_trim_size_in, remov
     if verbose: print("\tNow removing small ridges (post eig2 trimming)...")
     df_pos_out, df_new = remove_small_ridges(df_pos_out, df_new, remove_min_size, contour_label, verbose)
 
-    df_pos_out = reorient_ridges(df_pos_out, df_pos_out.groupby([contour_label, "s_imagej"], sort=False), y_label, True)
+    # df_pos_out = reorient_ridges(df_pos_out, df_pos_out.groupby([contour_label, "s_imagej"], sort=False), y_label, True)
 
     return df_new, df_pos_out
