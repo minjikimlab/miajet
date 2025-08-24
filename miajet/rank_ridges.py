@@ -833,7 +833,7 @@ def aggregate_ridge_features(group, ranking, angle_label, angle_range,
         coeffs = np.polyfit(x_ev, expected_values, deg=3)
         y_fit_ev = np.polyval(coeffs, x_ev)
         residuals = expected_values - y_fit_ev
-        rmse = np.sqrt(np.mean(residuals**2)) / len(expected_values)
+        rmse = np.sqrt(np.mean(residuals ** 2))
 
     exp_scale_deriv = masked_abs_diff(group["expected_scale"].values, N=2) # ignore the first two positions
     exp_scale_deriv = np.max(exp_scale_deriv) # take the maximum derivative value

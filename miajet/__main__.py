@@ -186,11 +186,11 @@ def main():
     #                 save_path=config.save_sub_dir, 
     #                 angle_range=config.angle_range, verbose=config.verbose)
     # simulate_filter_ridges(df_agg, df_features, 
-    #                        rmse=config.rmse,
+    #                        rmse=0.2,
     #                        entropy_thresh=config.entropy_thresh,
     #                        c0_filter=None, # Greater than 0 (i.e. select ridges whose scale is increasing only)
-    #                        exp_scale_deriv=0.6, # first derivative threshold
-    #                        exp_scale_deriv2=0.2, # first derivative threshold
+    #                        exp_scale_deriv=None, # first derivative threshold
+    #                        exp_scale_deriv2=None, # first derivative threshold
     #                        col_mean_diff_std=None, # 0.025
     #                        ridge_cond_type=None, # frac_zeros, num_zeros or None
     #                        ridge_cond_val=None, # higher, more stringent

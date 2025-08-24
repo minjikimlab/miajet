@@ -97,7 +97,7 @@ def assign_defaults(args: argparse.Namespace) -> argparse.Namespace:
             "entropy_thresh":   0.5,
             "angle_trim":       0.5,
             "corner_trim":      0,
-            "rmse":             0.01,
+            "rmse":             0.2,
             "eig2_trim":        0.0,
             "im_vmin":          0,
             "im_vmax":          99, # 99
