@@ -109,9 +109,6 @@ def plot_overlap_diagnostic(hic_file, plot_chrom, resolution, data_type, normali
 
     plt.close()
 
-
-
-
 def match_by_iou(dfA: pd.DataFrame, dfB: pd.DataFrame, 
                  x_label, y_label,
                  buffer_radius=1.0, iou_threshold=0.0, verbose=False):
@@ -135,7 +132,7 @@ def match_by_iou(dfA: pd.DataFrame, dfB: pd.DataFrame,
     """
     # Precompute buffered geometries for dfB
     geomsB = dict()
-    for uid_b, grp_b in dfB.groupby("unique_id"):
+    for uid_b, grp_b in dfB.groupby("unique_id", sort=False):
         coords_b = list(zip(grp_b[x_label], grp_b[y_label]))
         if len(coords_b) < 2:
             geom_b = Point(coords_b[0]).buffer(buffer_radius)
@@ -146,7 +143,7 @@ def match_by_iou(dfA: pd.DataFrame, dfB: pd.DataFrame,
     matches = []
 
     # Now for each unique_id in dfA, find best‐matching unique_id in dfB
-    gb = dfA.groupby("unique_id")
+    gb = dfA.groupby("unique_id", sort=False)
     for uid_a, grp_a in tqdm(gb, total=len(gb), disable=not verbose):
         coords_a = list(zip(grp_a[x_label], grp_a[y_label]))
         if len(coords_a) < 2:

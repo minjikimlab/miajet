@@ -317,38 +317,38 @@ def construct_scale_space_helper(s, im, gamma, ridge_strength_method, scale_spac
         raise ValueError
 
     # Enforce gradient magnitude conditions (Haralick)
-    grad_nonzero = (im_Lv >= eps_r)   # Nonflat ridges
-    grad_zero    = ~grad_nonzero         # Flat ridges
+    grad_nonzero = (im_Lv >= eps_r) # Nonflat ridges
+    grad_zero = ~grad_nonzero # Flat ridges
 
     # First derivative conditions 
     im_p_nearzero = zerocross(im_p, zc_method, zc_ks)
     im_q_nearzero = zerocross(im_q, zc_method, zc_ks)
 
     # Second derivative conditions using epsilon thresholds
-    im_pp_neg      = (im_pp < -eps_r)                     # Significantly negative
+    im_pp_neg = (im_pp < -eps_r) # Significantly negative
     im_pp_nearzero = (~im_pp_neg) & (np.abs(im_pp) <= eps_r) # Effectively zero, only if not negative
 
     # For the q-direction:
-    im_qq_neg      = (im_qq < -eps_r)
+    im_qq_neg = (im_qq < -eps_r)
     im_qq_nearzero = (~im_qq_neg) & (np.abs(im_qq) <= eps_r)
 
     # Nonflat ridges: Case 1 and Case 2
     ridges1 = np.logical_and.reduce([
-        grad_nonzero,   # Gradient is non-zero 
-        im_p_nearzero,  # Zero crossing in p-direction  Lp
-        im_pp_neg       # Negative curvature in p-direction Lpp
+        grad_nonzero, # Gradient is non-zero 
+        im_p_nearzero, # Zero crossing in p-direction  Lp
+        im_pp_neg # Negative curvature in p-direction Lpp
     ])
     ridges2 = np.logical_and.reduce([
-        grad_nonzero,   # Gradient is non-zero
-        im_q_nearzero,  # Zero crossing in q-direction
-        im_qq_neg       # Negative curvature in q-direction
+        grad_nonzero, # Gradient is non-zero
+        im_q_nearzero, # Zero crossing in q-direction
+        im_qq_neg # Negative curvature in q-direction
     ])
 
     # Flat ridges (Case 3)
     ridges3a = np.logical_and.reduce([
-        grad_zero,      # Gradient is zero
-        im_pp_neg,      # Negative curvature in p-direction
-        im_qq_nearzero  # Near-zero curvature in q-direction
+        grad_zero, # Gradient is zero
+        im_pp_neg, # Negative curvature in p-direction
+        im_qq_nearzero # Near-zero curvature in q-direction
     ])
     ridges3b = np.logical_and.reduce([
         grad_zero,
@@ -359,16 +359,16 @@ def construct_scale_space_helper(s, im, gamma, ridge_strength_method, scale_spac
     # We populate the tensor R with the actual value where each is true
     # in order of priority
     R_s = np.zeros_like(im_Lv)
-    R_s[ridges3b]  = True
-    R_s[ridges3a]  = True
-    R_s[ridges2]   = True
-    R_s[ridges1]   = True
+    R_s[ridges3b] = True
+    R_s[ridges3a] = True
+    R_s[ridges2] = True
+    R_s[ridges1] = True
 
     # Construct CORNER boolean condition
     # Have a separate epsilon to control 
     # gradient floating `eps_c1` and the determinant condition `eps_c2`
     grad_nonzero = (im_Lv >= eps_c1)  
-    grad_zero    = ~grad_nonzero         
+    grad_zero = ~grad_nonzero         
     det_neg = im_pp * im_qq < -eps_c2
     C_s = np.logical_and.reduce([grad_zero, det_neg])
 
@@ -377,8 +377,8 @@ def construct_scale_space_helper(s, im, gamma, ridge_strength_method, scale_spac
         np.array([[im_xx, im_xy], [im_xy, im_yy]]))
 
     V_s = im_eigvecs
-    W1_s = im_eigvals[1]  # Larger eigenvalue
-    W2_s = im_eigvals[0]  # Smaller eigenvalue
+    W1_s = im_eigvals[1] # Larger eigenvalue
+    W2_s = im_eigvals[0] # Smaller eigenvalue
 
     # Compute ridge strength
     d = local_contrast_enhancement(im_eigvals, ridge_strength_method)
@@ -427,7 +427,7 @@ def construct_scale_space(im, s_range, gamma, ridge_strength_method,
         Type of filter to use for scale space construction, either 'gaussian' or '2d-mean'
     filter_mode : str
         Convolution padding mode for scipy.ndimage.correlate1d
-        {‘reflect’, ‘constant’, ‘nearest’, ‘mirror’, ‘wrap’}
+        {'reflect', 'constant', 'nearest', 'mirror', 'wrap'}
     eps_r : float
         Epsilon tolerances for the corner condition
     eps_c1 : float
@@ -457,7 +457,7 @@ def construct_scale_space(im, s_range, gamma, ridge_strength_method,
 
     References:
     [1] Lindeberg, T. Edge Detection and Ridge Detection with Automatic Scale Selection. 
-    International Journal of Computer Vision 30, 117–156 (1998). https://doi.org/10.1023/A:1008097225773
+    International Journal of Computer Vision 30, 117-156 (1998). https://doi.org/10.1023/A:1008097225773
     """
     # Prepare the partial function with fixed arguments
     process_s_partial = partial(

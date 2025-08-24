@@ -222,6 +222,7 @@ def read_hic_rectangle(filename, chrom, resolution, window_size_bin, data_type, 
                 mat[rm_idx, :] = np.mean(mean_values)
                 mat[:, rm_idx] = np.mean(mean_values)  
 
+    # The size of the square matrix
     N = mat.shape[0]
     
     # moved center computation after removing zero indices
@@ -449,7 +450,7 @@ def read_hic_corr_rectangle(filename, chrom, resolution, window_size_bin, data_t
         # Identical to `read_hic_rectangle`
         # We ensure that off-diagonal regions are zeroed out on `mat` itself
         mat[np.triu_indices_from(mat, k=window_size_buffer)] = 0
-        mat[np.tril_indices_from(mat, k=-1)] = 0   
+        mat[np.tril_indices_from(mat, k=-1)] = 0
 
         if handle_zero_sum is not None:
             # padding effect goes here before we rotate
@@ -463,7 +464,7 @@ def read_hic_corr_rectangle(filename, chrom, resolution, window_size_bin, data_t
             elif handle_zero_sum == "mean":
                 mean_values, rm_idx = remove_zero_sum(mat, verbose=verbose)
                 mat[rm_idx, :] = np.mean(mean_values)
-                mat[:, rm_idx] = np.mean(mean_values)          
+                mat[:, rm_idx] = np.mean(mean_values)
 
 
     if data_type == "observed":

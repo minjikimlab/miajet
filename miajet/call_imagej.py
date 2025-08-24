@@ -96,11 +96,11 @@ def process_sigma_pyvd(s, lt, ut, image_path, save_path, root, memory_alloc, mac
                            str(current_ut), str(current_lt), root])
 
         # Check if results already exist
-        expected_csv = os.path.join(save_path, f"{root}_imagej_results_s-{s_rounded}_table.csv")
-        if os.path.exists(expected_csv):
-            if verbose:
-                print("Results already exist, skipping processing.")
-            return
+        # expected_csv = os.path.join(save_path, f"{root}_imagej_results_s-{s_rounded}_table.csv")
+        # if os.path.exists(expected_csv):
+        #     if verbose:
+        #         print("Results already exist, skipping processing.")
+        #     return
 
         if verbose:
             print(f"\tAttempt {attempt+1}: s={s:.2f}, ut={current_ut:.2f}, lt={current_lt:.2f}")

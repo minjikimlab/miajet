@@ -34,7 +34,7 @@ h = HiCFile("$hic")
 print(max(min(h.getResolutions()), 5000))
 PYCODE
 )
-echo "  Selected resolution: ${res} bp"
+echo "  Selected resolution: ${res} bp"
 
 # convert .hic -> .cool
 prefix="${tmp_dir}/${sample}.cool"

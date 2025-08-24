@@ -7,6 +7,7 @@ from utils.file_io import save_csv
 import json
 from scipy.optimize import curve_fit
 from .analyze_ridges import plot_top_k
+from scipy.signal import find_peaks
 
 
 def count_alternating_01(boolean_array):
@@ -522,9 +523,105 @@ def masked_abs_second_diff(x, N, edge_order=1):
     d2[:N] = 0
     return d2
 
+
+def peaks_with_borders(mat):
+    """
+    Adds relative maxima for end-points too 
+    """
+    n_rows, n_cols = mat.shape
+    out = []
+    for j in range(n_cols):
+        col = mat[:, j]
+        peaks = list(find_peaks(col)[0])
+        # manual border checks:
+        if n_rows > 1:
+            if col[0] > col[1]:
+                peaks.insert(0, 0)
+            if col[-1] > col[-2]:
+                peaks.append(n_rows - 1)
+        out.append(np.array(peaks, dtype=int))
+    return out
+
+
+def detect_conflicting_structures(local_maxima, D_curves, s_idx, conflicting_pmf, conflicting_assignment):
+    mu = []
+    for i in range(len(local_maxima)):
+        l_maxima = local_maxima[i]
+
+        # Subset local maxima to those before the ImageJ scale
+        closest_idx = np.argmin(np.abs(l_maxima - s_idx))
+        closest_s_idx = l_maxima[closest_idx]
+        l_maxima = np.array([m for m in l_maxima if m <= closest_s_idx])
+
+        if len(l_maxima) == 0:
+            mu.append(0)
+        elif len(l_maxima) == 1:
+            mu.append(1)
+        else:
+
+            # there is conflicting structures
+            Q = np.zeros(len(D_curves[:, i]))
+            if conflicting_pmf == "uniform":
+                for j in range(len(l_maxima)):
+                    Q[l_maxima[j]] = 1 / len(l_maxima)
+            elif conflicting_pmf == "ridge_strength":
+                for j in range(len(l_maxima)):
+                    Q[l_maxima[j]] = D_curves[:, i][l_maxima[j]]
+                Q /= np.sum(Q)
+            elif conflicting_pmf == "stringent":
+                # Assign 0 to any position with > 1 local maxima 
+                pass
+
+            if conflicting_assignment == "entropy":
+                if conflicting_pmf == "stringent":
+                    raise ValueError("conflicting_pmf='stringent' is not compatible with conflicting_assignment='entropy'.")
+                # Compute normalized entropy as probability of conflicting structure
+                mu.append(-np.sum(Q * np.log(Q + 1e-10)) / np.log(len(l_maxima)))
+            
+            elif conflicting_assignment == "closest":
+                # The probability of the local maxima closest to the imageJ scale
+                closest_idx = np.argmin(np.abs(l_maxima - s_idx))
+                mu.append(Q[l_maxima[closest_idx]])
+
+    return np.array(mu)
+
+# def compute_consistency(group, scale_range, conflicting_pmf, conflicting_assignment, col_sim, col_agg, adj_nondec):
+#     s = group.iloc[0]["s"]
+#     s_idx = np.argmin(np.abs(scale_range - s))
+
+#     # Ridge strength at this scale
+#     ridge_strength = group["ridge_strength"].values[s_idx, :] 
+
+#     # 1. Conflicting structures
+#     local_maxima = peaks_with_borders(group["ridge_strength"]) # absolute value (?)
+#     mu = detect_conflicting_structures(local_maxima=local_maxima, D_curves=group["ridge_strength"].values, s_idx=s_idx,
+#                                        conflicting_pmf=conflicting_pmf, conflicting_assignment=conflicting_assignment)
+    
+#     # 2. Fast moving scale
+#     if col_sim == "derivative":
+#         nu, f, f_1, f_2 = detect_rapid_scale_change(rec=rec, scale_range=scale_range, col_sim=col_sim, N=2)
+#     else:
+#         nu = detect_rapid_scale_change(rec=rec, scale_range=scale_range, col_sim=col_sim, N=2)
+#         f, f_1, f_2 = np.zeros_like(ridge_strength), np.zeros_like(ridge_strength), np.zeros_like(ridge_strength)  
+#         # no derivatives computed in this case
+
+#     # 3. Fast changing scale intensity
+#     g, g_1 = detect_rapid_intensity_change(rec, intensity_method=intensity_method, N=2)
+
+#     # 4. Adjacent non-decreasing scale selected
+#     if adj_nondec:
+#         adj = detect_adjacent_nondecreasing_local_maxima(rec)
+#     else:
+#         adj = np.ones_like(ridge_strength, dtype=float)
+
+#     perc_satisfied = np.mean(mu * nu * adj)
+
+#     return perc_satisfied
+
 def aggregate_ridge_features(group, ranking, angle_label, angle_range,
                              noise_consec_in, noise_alt_in, sum_cond, agg, 
-                             num_bins, bin_size, points_min, points_max, ang_frac):
+                             num_bins, bin_size, points_min, points_max, ang_frac, 
+                             scale_range):
     """
     Aggregate Ridge Features
     
@@ -728,7 +825,7 @@ def aggregate_ridge_features(group, ranking, angle_label, angle_range,
     if len(group) <= 4:
         # then too small
         # simply assign any polynomial
-        coeffs = (0, 0, 0, 0)
+        coeffs = [0, 0, 0, 0]
         rmse = 0
     else:
         expected_values = group["expected_scale"].values
@@ -744,6 +841,7 @@ def aggregate_ridge_features(group, ranking, angle_label, angle_range,
     exp_scale_deriv2 = masked_abs_second_diff(group["expected_scale"].values, N=2) # ignore the first two positions
     exp_scale_deriv2 = np.max(exp_scale_deriv2) # take the maximum
 
+    # consistency = compute_consistency(group, scale_range, conflicting_pmf, conflicting_assignment, col_sim, col_agg, adj_nondec)
     
     # Build Result
     result = {
@@ -778,7 +876,7 @@ def aggregate_ridge_features(group, ranking, angle_label, angle_range,
 
 
 def generate_summary_table(df_features, ranking, angle_label, angle_range, noise_consec, noise_alt, sum_cond, 
-                           agg, save_path, root, parameter_str, num_bins, bin_size, points_min, points_max, ang_frac,
+                           agg, save_path, root, parameter_str, num_bins, bin_size, points_min, points_max, ang_frac, scale_range,
                            verbose, contour_label="Contour Number"):
     
     """
@@ -863,7 +961,7 @@ def generate_summary_table(df_features, ranking, angle_label, angle_range, noise
             print(f"\tNOTE: angle lb {angle_range[0]} > ub {angle_range[1]}")
             print(f"\tWill be interpreted as the following range: [{angle_range[0]}, 180] U [0, {angle_range[1]}]")
     
-    df_agg = df_features.groupby([contour_label, 's_imagej']).apply(lambda x : aggregate_ridge_features(x, 
+    df_agg = df_features.groupby([contour_label, 's_imagej'], sort=False).apply(lambda x : aggregate_ridge_features(x, 
                                                                                                         ranking=ranking,
                                                                                                         angle_label=angle_label,
                                                                                                         angle_range=angle_range, 
@@ -876,6 +974,7 @@ def generate_summary_table(df_features, ranking, angle_label, angle_range, noise
                                                                                                         points_min=points_min,
                                                                                                         points_max=points_max,
                                                                                                         ang_frac=ang_frac,
+                                                                                                        scale_range=scale_range,
                                                                                                         ), 
                                                                                                         include_groups=False).reset_index()
     

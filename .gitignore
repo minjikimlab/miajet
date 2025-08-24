@@ -48,7 +48,12 @@ notebooks/_contact_map_intensity_value_histogram.jpg
 notebooks/convert_summary_to_bed.ipynb
 notebooks/diagnose_scale_space.ipynb
 notebooks/single.ipynb
-
-
+notebooks/K562_overlap.ipynb
+notebooks/corner_diagnosis.ipynb
+notebooks/miajet_figure_s1.ipynb
+notebooks/miajet_figure_s1_examples.ipynb
+notebooks/parameter_selection.ipynb
+notebooks/sum_pairwise_contacts.ipynb
+notebooks/miajet_figure1.ipynb
 
 slurm_out/

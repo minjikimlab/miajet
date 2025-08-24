@@ -71,7 +71,7 @@ def find_and_remove_overlaps(df_agg, df_features, iou_threshold=0.6, verbose=Fal
         indices = np.unique(np.concatenate(indices))
 
         overlapping_points = df_agg_merge.iloc[indices].reset_index(drop=True)
-        overlapping_groups = overlapping_points.groupby([contour_label, "s_imagej"])
+        overlapping_groups = overlapping_points.groupby([contour_label, "s_imagej"], sort=False)
 
         for neigh_indexer, df_neigh in overlapping_groups: 
 

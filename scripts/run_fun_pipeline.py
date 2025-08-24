@@ -20,7 +20,7 @@ def main(hic_file, data_name, genome, resolution, window_size):
     # HARD-CODED PARAMETER: signal_noise_background = 1.3
     base_save_dir = "/nfs/turbo/umms-minjilab/sionkim/benchmark"
 
-    ext_length = int(window_size * 0.75) # STANDARDIZE to 0.75 of window size
+    ext_length = int(window_size * 0.75) # DEPRECATED – SEE NOTEBOOK
     offset = 5 * resolution
     interval_length = 5 * resolution
     max_merge_distance = 5 * resolution

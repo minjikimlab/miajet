@@ -155,7 +155,7 @@ def plot_distribution_diagnostic(
     y_points = []
     surface_values = []
 
-    grouped = df_agg_sorted.groupby([contour_label, "s_imagej"])
+    grouped = df_agg_sorted.groupby([contour_label, "s_imagej"], sort=False)
     for _, df_ridge in grouped:
         # Convert min/max x from pixel to “genomic” dimension
         df_min = df_ridge[x_label].min() * resolution / np.sqrt(2)
@@ -1919,25 +1919,25 @@ def save_scale_space(df_agg, df_features,
             f"ridge_{contour}_{np.round(s_img, 3):.3f}.npz"
         )
 
-        np.savez_compressed(
-            fname,
-            im_curves=im_curves,
-            es_curves=es_curves,
-            I_curves=I_curves,
-            D_curves=D_curves,
-            A_curves=A_curves,
-            A_bool_curves=A_bool_curves,
-            W1_curves=W1_curves,
-            W2_curves=W2_curves,
-            R_curves=R_curves,
-            C_curves=C_curves,
-            contour=np.array(contour),
-            s_idx = int(np.argmin(np.abs(np.asarray(scale_range) - float(s_img)))),  # convert to bin index
-            rank=np.array(rank + 1),
-            score=np.array(df_ridge.iloc[0][ranking]),
-            chromosome=np.array(chromosome if chromosome is not None else ""),
-            resolution=np.array(resolution if resolution is not None else -1)
-        )
+        # np.savez_compressed(
+        #     fname,
+        #     im_curves=im_curves,
+        #     es_curves=es_curves,
+        #     I_curves=I_curves,
+        #     D_curves=D_curves,
+        #     A_curves=A_curves,
+        #     A_bool_curves=A_bool_curves,
+        #     W1_curves=W1_curves,
+        #     W2_curves=W2_curves,
+        #     R_curves=R_curves,
+        #     C_curves=C_curves,
+        #     contour=np.array(contour),
+        #     s_idx = int(np.argmin(np.abs(np.asarray(scale_range) - float(s_img)))),  # convert to bin index
+        #     rank=np.array(rank + 1),
+        #     score=np.array(df_ridge.iloc[0][ranking]),
+        #     chromosome=np.array(chromosome if chromosome is not None else ""),
+        #     resolution=np.array(resolution if resolution is not None else -1)
+        # )
 
         out_files.append(fname)
         written += 1
@@ -1998,7 +1998,7 @@ def plot_top_k(df_agg, df_features, K, ranking, hic_file, chromosome, resolution
     df_agg_topK = df_agg_topK.merge(df_features[[contour_label, "s_imagej", x_label, y_label, "width"]], how="inner", on=[contour_label, "s_imagej"])
 
     # Groupby for iterating through each ridge and plotting
-    gb = df_agg_topK.groupby([contour_label, "s_imagej"])
+    gb = df_agg_topK.groupby([contour_label, "s_imagej"], sort=False)
 
     # Collect lines
     lines = []
@@ -2044,7 +2044,7 @@ def plot_corner_diagnostic(df_agg, df_features, K, ranking, im, im_corner, corne
     df_agg_topK = df_agg_topK.merge(df_features[[contour_label, "s_imagej", x_label, y_label]], how="inner", on=[contour_label, "s_imagej"])
 
     # Groupby for iterating through each ridge and plotting
-    gb = df_agg_topK.groupby([contour_label, "s_imagej"])
+    gb = df_agg_topK.groupby([contour_label, "s_imagej"], sort=False)
 
     # Collect lines
     lines = []
@@ -2132,7 +2132,7 @@ def format_summary_table(df_agg_in, df_features_in, chromosome, resolution, rank
     df_agg["chrom"] = chromosome
     df_agg["p-val_raw"] = df_agg["p-val"]
 
-    agg = df_features.groupby("unique_id").agg(start=("x (bp)", lambda x : np.min(x)),
+    agg = df_features.groupby("unique_id", sort=False).agg(start=("x (bp)", lambda x : np.min(x)),
                                                end=("x (bp)", lambda x : np.max(x)),
                                                length=(x_label, lambda x : x.count() * resolution)).reset_index()
 

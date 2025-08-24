@@ -204,7 +204,7 @@ def remove_kth_off_diagonal(df_pos, df, k, window_size_bin, contour_label, y_lab
 
 def remove_small_ridges(df_pos, df, min_points, contour_label, verbose=False):
     """
-    Removes small ridges whose length is less than `min_points`
+    Removes small ridges whose length is less than or equal to `min_points`
     Updates both the expanded and summary tables
 
     Parameters
@@ -225,7 +225,7 @@ def remove_small_ridges(df_pos, df, min_points, contour_label, verbose=False):
     df : pd.DataFrame
         Updated summary table
     """
-    new_df_pos = df_pos.loc[df_pos.groupby([contour_label, "s_imagej"])[contour_label].transform('size') > min_points]
+    new_df_pos = df_pos.loc[df_pos.groupby([contour_label, "s_imagej"], sort=False)[contour_label].transform('size') > min_points]
     keep_rows = new_df_pos[[contour_label, "s_imagej"]]
 
     df_new = df.merge(keep_rows[[contour_label, "s_imagej"]], on=[contour_label, "s_imagej"], how="inner")
@@ -442,7 +442,7 @@ def process_imagej_results(df, df_pos, window_size, N, resolution, remove_kth_st
     df_pos[angle_label] = np.degrees(df_pos[angle_label]) % 180
 
     # Reorder ridges FIRST (although slightly more inefficient than filtering and then reorienting))
-    df_pos = reorient_ridges(df_pos, df_pos.groupby([contour_label, "s_imagej"]), y_label, True)
+    df_pos = reorient_ridges(df_pos, df_pos.groupby([contour_label, "s_imagej"], sort=False), y_label, True)
 
     if verbose: print(f"\tNum ridges before processing: {len(df)}")
     df_pos, df = remove_padding_positions(df_pos=df_pos, df=df, N=N, window_size_bin=window_size_bin, verbose=verbose)
@@ -456,7 +456,7 @@ def process_imagej_results(df, df_pos, window_size, N, resolution, remove_kth_st
 
     if verbose: print(f"\tNum ridges after processing: {len(df)}")
 
-    df_pos = reorient_ridges(df_pos, df_pos.groupby([contour_label, "s_imagej"]), y_label, True)
+    df_pos = reorient_ridges(df_pos, df_pos.groupby([contour_label, "s_imagej"], sort=False), y_label, True)
 
     assert check_ridge_order(df_pos)
 
@@ -631,7 +631,7 @@ def trim_imagej_results_corner(df, df_pos, C, im_shape_0, min_trim_size_in, remo
     if verbose: print("\tNow removing small ridges (post corner trimming)...")
     df_pos_out, df_new = remove_small_ridges(df_pos_out, df_new, remove_min_size, contour_label, verbose)
 
-    df_pos_out = reorient_ridges(df_pos_out, df_pos_out.groupby([contour_label, "s_imagej"]), y_label, True)
+    df_pos_out = reorient_ridges(df_pos_out, df_pos_out.groupby([contour_label, "s_imagej"], sort=False), y_label, True)
 
     return df_new, df_pos_out
 
@@ -808,7 +808,7 @@ def trim_imagej_results_angle(df, df_pos, A, im_shape_0, min_trim_size_in, remov
     if verbose: print("\tNow removing small ridges (post angle trimming)...")
     df_pos_out, df_new = remove_small_ridges(df_pos_out, df_new, remove_min_size, contour_label, verbose)
 
-    df_pos_out = reorient_ridges(df_pos_out, df_pos_out.groupby([contour_label, "s_imagej"]), y_label, True)
+    df_pos_out = reorient_ridges(df_pos_out, df_pos_out.groupby([contour_label, "s_imagej"], sort=False), y_label, True)
 
     return df_new, df_pos_out
 
@@ -1037,6 +1037,6 @@ def trim_imagej_results_eig2(df, df_pos, W2, im_shape_0, min_trim_size_in, remov
     if verbose: print("\tNow removing small ridges (post eig2 trimming)...")
     df_pos_out, df_new = remove_small_ridges(df_pos_out, df_new, remove_min_size, contour_label, verbose)
 
-    df_pos_out = reorient_ridges(df_pos_out, df_pos_out.groupby([contour_label, "s_imagej"]), y_label, True)
+    df_pos_out = reorient_ridges(df_pos_out, df_pos_out.groupby([contour_label, "s_imagej"], sort=False), y_label, True)
 
     return df_new, df_pos_out

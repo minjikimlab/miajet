@@ -49,7 +49,7 @@ def main():
                                                                                   root=config.root,
                                                                                   vmax_perc=config.im_vmax, 
                                                                                   vmin_perc=config.im_vmin)
-    edge_strength = compute_edge_strength(im)
+    # edge_strength = compute_edge_strength(im)
     config = check_im_vmin_vmax(im, config) # check if vmin and vmax are valid
     # For corner detection (and trimming of ridges)
     im_corner = generate_hic_corr_image(hic_file=config.hic_file, 
@@ -143,7 +143,6 @@ def main():
                                           num_cores=config.num_cores, verbose=config.verbose, save_path=config.save_dir, root=config.root)
     df_features = insert_unmapped_regions(df_features, im_orig, rm_idx, square_size, config.window_size,
                                           config.resolution, config.verbose, num_cores=config.num_cores)
-    # save_expanded_table(df_features, save_path=config.save_dir, root=config.root, parameter_str=config.parameter_str) # Save later 
     total_time += time.time() - t0
     if config.verbose: print(f"Generating expanded table... {time.time() - t0:.0f}s Done")
 
@@ -166,6 +165,7 @@ def main():
                                     points_min=config.points_min, # entropy
                                     points_max=config.points_max, # entropy
                                     ang_frac=config.ang_frac, # angle fraction
+                                    scale_range=config.scale_range, # scale range
                                     verbose=config.verbose)
     total_time += time.time() - t0
     if config.verbose: print(f"Ranking ridges... {time.time() - t0:.0f}s Done")
@@ -176,8 +176,8 @@ def main():
 
 
     # DIAGNOSE RIDGES
-    if config.verbose: print("\tWARNING: Diagnosing ridges...")
-    t0 = time.time()
+    # if config.verbose: print("\tWARNING: Diagnosing ridges...")
+    # t0 = time.time()
     # save_scale_space(df_agg, df_features,
     #                 K="all", im=im, edge_strength=edge_strength,
     #                 I=I, D=D, A=A, W1=W1, W2=W2, R=R, C=C,
@@ -185,24 +185,24 @@ def main():
     #                 scale_range=config.scale_range, 
     #                 save_path=config.save_sub_dir, 
     #                 angle_range=config.angle_range, verbose=config.verbose)
-    simulate_filter_ridges(df_agg, df_features, 
-                           rmse=config.rmse,
-                           entropy_thresh=config.entropy_thresh,
-                           c0_filter=None, # Greater than 0 (i.e. select ridges whose scale is increasing only)
-                           exp_scale_deriv=0.6, # first derivative threshold
-                           exp_scale_deriv2=0.2, # first derivative threshold
-                           col_mean_diff_std=None, # 0.025
-                           ridge_cond_type=None, # frac_zeros, num_zeros or None
-                           ridge_cond_val=None, # higher, more stringent
-                           angle_mean_type=None, # or None
-                           angle_range=None,
-                           angle_deriv_thresh=None, # lower, more stringent
-                           verbose=config.verbose,
-                           save_path=config.save_sub_dir,
-                           config=config, # for the plot top K variables
-                           )
-    total_time += time.time() - t0
-    if config.verbose: print(f"Diagnosing ridges... {time.time() - t0:.0f}s Done")
+    # simulate_filter_ridges(df_agg, df_features, 
+    #                        rmse=config.rmse,
+    #                        entropy_thresh=config.entropy_thresh,
+    #                        c0_filter=None, # Greater than 0 (i.e. select ridges whose scale is increasing only)
+    #                        exp_scale_deriv=0.6, # first derivative threshold
+    #                        exp_scale_deriv2=0.2, # first derivative threshold
+    #                        col_mean_diff_std=None, # 0.025
+    #                        ridge_cond_type=None, # frac_zeros, num_zeros or None
+    #                        ridge_cond_val=None, # higher, more stringent
+    #                        angle_mean_type=None, # or None
+    #                        angle_range=None,
+    #                        angle_deriv_thresh=None, # lower, more stringent
+    #                        verbose=config.verbose,
+    #                        save_path=config.save_sub_dir,
+    #                        config=config, # for the plot top K variables
+    #                        )
+    # total_time += time.time() - t0
+    # if config.verbose: print(f"Diagnosing ridges... {time.time() - t0:.0f}s Done")
 
     # FILTER RIDGES
     if config.verbose: print("Filtering ridges...")
@@ -244,49 +244,49 @@ def main():
     if config.verbose: print("Removing overlaps...")
     t0 = time.time()
     df_agg = find_and_remove_overlaps(df_agg, df_features, iou_threshold=0.25, verbose=config.verbose, 
-                                    #   resolve_conflict=config.ranking, # (Changed v1.0.21)
+                                    #   resolve_conflict=config.ranking, 
                                       resolve_conflict="p-val", 
                                       )
     total_time += time.time() - t0
     if config.verbose: print(f"Removing overlaps... {time.time() - t0:.0f}s Done")
 
     # DIAGNOSE AFTER OVERLAPS
-    if config.verbose: print("\tWARNING: Diagnosing ridges after removing overlaps...")
-    t0 = time.time()
-    save_scale_space(df_agg, df_features,
-                    K="all", im=im, edge_strength=edge_strength,
-                    I=I, D=D, A=A, W1=W1, W2=W2, R=R, C=C,
-                    ranking=config.ranking, resolution=config.resolution, chromosome=config.chrom,
-                    scale_range=config.scale_range, 
-                    save_path=config.save_sub_dir, 
-                    angle_range=config.angle_range, verbose=config.verbose)
-    simulate_filter_ridges(df_agg, df_features, 
-                        rmse=None,
-                        entropy_thresh=None,
-                        c0_filter=None, # Greater than 0 (i.e. select ridges whose scale is increasing only)
-                        exp_scale_deriv=None, # first derivative threshold
-                        exp_scale_deriv2=None, # first derivative threshold
-                        col_mean_diff_std=None, # 0.025
-                        ridge_cond_type=None, # frac_zeros, num_zeros or None
-                        ridge_cond_val=None, # higher, more stringent
-                        angle_mean_type=None, # or None
-                        angle_range=None,
-                        angle_deriv_thresh=None, # lower, more stringent
-                        verbose=config.verbose,
-                        save_path=config.save_dir,
-                        config=config, # for the plot top K variables
-                        )
-    total_time += time.time() - t0
-    if config.verbose: print(f"Diagnosing ridges after removing overlaps... {time.time() - t0:.0f}s Done")
+    # if config.verbose: print("\tWARNING: Diagnosing ridges after removing overlaps...")
+    # t0 = time.time()
+    # save_scale_space(df_agg, df_features,
+    #                 K="all", im=im, edge_strength=edge_strength,
+    #                 I=I, D=D, A=A, W1=W1, W2=W2, R=R, C=C,
+    #                 ranking=config.ranking, resolution=config.resolution, chromosome=config.chrom,
+    #                 scale_range=config.scale_range, 
+    #                 save_path=config.save_sub_dir, 
+    #                 angle_range=config.angle_range, verbose=config.verbose)
+    # simulate_filter_ridges(df_agg, df_features, 
+    #                     rmse=None,
+    #                     entropy_thresh=None,
+    #                     c0_filter=None, # Greater than 0 (i.e. select ridges whose scale is increasing only)
+    #                     exp_scale_deriv=None, # first derivative threshold
+    #                     exp_scale_deriv2=None, # first derivative threshold
+    #                     col_mean_diff_std=None, # 0.025
+    #                     ridge_cond_type=None, # frac_zeros, num_zeros or None
+    #                     ridge_cond_val=None, # higher, more stringent
+    #                     angle_mean_type=None, # or None
+    #                     angle_range=None,
+    #                     angle_deriv_thresh=None, # lower, more stringent
+    #                     verbose=config.verbose,
+    #                     save_path=config.save_dir,
+    #                     config=config, # for the plot top K variables
+    #                     )
+    # total_time += time.time() - t0
+    # if config.verbose: print(f"Diagnosing ridges after removing overlaps... {time.time() - t0:.0f}s Done")
 
     # COMPUTE STRIPINESS 
-    if config.verbose: print("Computing stripiness...")
-    t0 = time.time()
-    max_width_bin = None # hard-code 
-    p_norm = 1 # hard-code 
-    df_agg = compute_stripiness(df_agg, df_features, im_oe=im_oe, stripiness_factor_lr=1, p_norm=p_norm, max_width_bin=max_width_bin)
-    total_time += time.time() - t0
-    if config.verbose: print(f"Computing stripiness... {time.time() - t0:.0f}s Done")
+    # if config.verbose: print("Computing stripiness...")
+    # t0 = time.time()
+    # max_width_bin = None # hard-code 
+    # p_norm = 1 # hard-code 
+    # df_agg = compute_stripiness(df_agg, df_features, im_oe=im_oe, stripiness_factor_lr=1, p_norm=p_norm, max_width_bin=max_width_bin)
+    # total_time += time.time() - t0
+    # if config.verbose: print(f"Computing stripiness... {time.time() - t0:.0f}s Done")
 
     # CORRECT AND THRESHOLD JETS
     if config.verbose: print("Correcting and thresholding jets...")

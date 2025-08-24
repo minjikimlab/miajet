@@ -6,7 +6,9 @@ def round_and_json(x, dp):
     """
     Round a numeric array and convert to json using dumps
     """
-    x_dp = np.round(x, decimals=dp)
+    # x_dp = np.round(x, decimals=dp)
+    # Round significant figures instead
+    x_dp = np.array([float(f"{val:.{dp}g}") if pd.notnull(val) else val for val in x])
     return json.dumps(x_dp.tolist())
 
 def save_csv(df_in, save_name, root, parameter_str, dp=3, exclude_rounding=["s_imagej"], convert_json=None):
@@ -39,9 +41,12 @@ def save_csv(df_in, save_name, root, parameter_str, dp=3, exclude_rounding=["s_i
 
     rounding_dict = {col: dp for col in df.select_dtypes(include="number").columns if col not in exclude_rounding}
 
-    # round first
-    # print("\tNOTE: Disabling rounding for columns")
-    df = df.round(rounding_dict)
+    # Round dp
+    # df = df.round(rounding_dict)
+
+    # Round signifciant figures instead (v1.0.22)
+    for col, sf in rounding_dict.items():
+        df[col] = df[col].apply(lambda x: float(f"{x:.{sf}g}") if pd.notnull(x) else x)
 
     # convert any numpy arrays to a json format string
     if convert_json is not None:

@@ -190,7 +190,7 @@ def add_pairwise_sig(ax, positions, groups, y_pad=0.05):
     # Compute min/max on just the non-empty slices
     y_max = max(max(groups[i]) for i in non_empty_idx)
     y_min = min(min(groups[i]) for i in non_empty_idx)
-    h     = (y_max - y_min) * y_pad
+    h = (y_max - y_min) * y_pad
 
     # Only compare non-empty groups
     pairs = list(itertools.combinations(non_empty_idx, 2))

@@ -105,6 +105,8 @@ def combine_results(results_dir, folder_pattern, result_type, exp_name=None, enf
     summary_frames = []
     expanded_frames = []
     bedpe_frames = []
+    agg_frames = []
+    feature_frames = []
     no_comment_found = True
     successful_chroms = []
     for i, folder in enumerate(matched_folders):
@@ -122,13 +124,16 @@ def combine_results(results_dir, folder_pattern, result_type, exp_name=None, enf
             # basename is the actual folder name without the path
             base = os.path.basename(folder)
 
-        # path to the results‐type subdirectory
+        # path to the results-type subdirectory
         res_subdir = os.path.join(folder, f"{base}_results_{result_type}")
 
         # csv paths
         summary_csv = os.path.join(res_subdir, f"{base}_summary_table.csv")
         expanded_csv = os.path.join(res_subdir, f"{base}_expanded_table.csv")
         juicer_bedpe = os.path.join(res_subdir, f"{base}_juicer-visualize.bedpe")
+        meta_subdir = os.path.join(folder, f"{base}_results_all") # metafiles (df_agg and df_features only exist in 'all' result_type)
+        df_agg_csv = os.path.join(meta_subdir, "df_agg.csv")
+        df_features_csv = os.path.join(meta_subdir, "df_features.csv")
 
         # Load and collect
         if not os.path.isfile(summary_csv):
@@ -162,6 +167,11 @@ def combine_results(results_dir, folder_pattern, result_type, exp_name=None, enf
         bedpe_frames.append(pd.read_csv(juicer_bedpe, comment='#', sep='\t', header=None, index_col=False, 
                                         names=['chrom1', 'start1', 'end1', 'chrom2', 'start2', 'end2']))
         
+        if os.path.isfile(df_agg_csv):
+            agg_frames.append(pd.read_csv(df_agg_csv, comment='#'))
+        if os.path.isfile(df_features_csv):
+            feature_frames.append(pd.read_csv(df_features_csv, comment='#'))
+        
     if len(summary_frames) == 0:
         print(f"No results found at all for {folder_pattern} with result type {result_type}")
         # return pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), []
@@ -175,6 +185,8 @@ def combine_results(results_dir, folder_pattern, result_type, exp_name=None, enf
     combined_summary = pd.concat(summary_frames,  ignore_index=True)
     combined_expanded = pd.concat(expanded_frames, ignore_index=True)
     combined_bedpe = pd.concat(bedpe_frames, ignore_index=True)
+    combine_df_agg = pd.concat(agg_frames, ignore_index=True) if agg_frames else None
+    combine_df_features = pd.concat(feature_frames, ignore_index=True) if feature_frames else None
 
     # Sort 
     # First convert chromosomes to a numerical value for sorting
@@ -196,7 +208,7 @@ def combine_results(results_dir, folder_pattern, result_type, exp_name=None, enf
     combined_expanded.reset_index(drop=True, inplace=True)
     combined_bedpe.reset_index(drop=True, inplace=True)
 
-    return combined_summary, combined_expanded, combined_bedpe, comments
+    return combined_summary, combined_expanded, combined_bedpe, comments, combine_df_agg, combine_df_features
 
 # Save the combined tables
 def save_csv(df, save_dir, parameter_str_comment):

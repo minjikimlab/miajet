@@ -166,7 +166,7 @@ def compute_angle_fraction(df_features, angle_range, expectation, contour_label=
 
         out = np.zeros(len(df_features), float)
 
-        for indexer, group in df_features.groupby([contour_label, "s_imagej", "pos"]):
+        for indexer, group in df_features.groupby([contour_label, "s_imagej", "pos"], sort=False):
 
             # if indexer[0] == 18 and np.round(indexer[1], 3) == 17.086:
             #     pass
@@ -215,7 +215,7 @@ def compute_angle_fraction(df_features, angle_range, expectation, contour_label=
         
         return frac
 
-    return df_features.groupby([contour_label, "s_imagej", "pos"])["angle"].transform(frac)
+    return df_features.groupby([contour_label, "s_imagej", "pos"], sort=False)["angle"].transform(frac)
 
 
 def adjacent_abs_mean_diffs(D_curves_in):
@@ -368,7 +368,7 @@ def generate_expanded_table(im, df, df_pos, D, A, W1, W2, R, C, scale_range, ang
     #     if verbose: print("\tExpanded table already exists. Skipping...")
     #     return pd.read_csv(save_name, index_col=False, comment="#")
 
-    gb = df_pos.groupby([contour_label, "s_imagej"]) # no need for chromosome selection 
+    gb = df_pos.groupby([contour_label, "s_imagej"], sort=False) # no need for chromosome selection 
 
     scale_assignment = dict()
     df_features = []
@@ -378,6 +378,9 @@ def generate_expanded_table(im, df, df_pos, D, A, W1, W2, R, C, scale_range, ang
         # print("WARNING: NON-PARALLEL")
         for indexer, df_ridge in tqdm(gb):
             # Each ridge
+
+            # if indexer[0] == 39 and np.round(indexer[1], 3) == 3.886:
+            #     pass
             
             # for curve extraction, do NOT flip y axis AND ensure coordinates are GLOBAL (i.e. start_bin=0)
             ridge_coords = convert_imagej_coord_to_numpy(df_ridge[[x_label, y_label]].values, im.shape[0], flip_y=False, start_bin=0)
@@ -477,7 +480,7 @@ def generate_expanded_table(im, df, df_pos, D, A, W1, W2, R, C, scale_range, ang
         print("\t`df_agg` (that is `df_features` grouped by the appropriate columns) to ensure consistency with scales assigned.")
 
 
-    gb = df_features_assigned.groupby([contour_label, "s_imagej"])
+    gb = df_features_assigned.groupby([contour_label, "s_imagej"], sort=False)
 
     sampled_ridges = random.sample(list(gb), k=min(50, len(gb))) # check just 50 ridges
 
@@ -506,7 +509,7 @@ def generate_expanded_table(im, df, df_pos, D, A, W1, W2, R, C, scale_range, ang
         
     from .process_imagej import reorient_ridges
         
-    df_features_assigned = reorient_ridges(df_features_assigned, df_features_assigned.groupby([contour_label, "s_imagej"]), y_label, True)
+    df_features_assigned = reorient_ridges(df_features_assigned, df_features_assigned.groupby([contour_label, "s_imagej"], sort=False), y_label, True)
 
     return df_features_assigned
 
@@ -521,7 +524,7 @@ def intersect_with_true(df_features, f_true_bed, chromosome, tolerance, resoluti
     tp["start"] -= tolerance # don't care about out of chromosome issues
     tp["end"] += tolerance # don't care about out of chromosome issues
 
-    gb = df_features.groupby([contour_label, "s_imagej"])
+    gb = df_features.groupby([contour_label, "s_imagej"], sort=False)
 
     frames = []
 
@@ -786,7 +789,7 @@ def insert_unmapped_regions(df_features, im_orig, rm_idx, N_removed, window_size
     
     from .process_imagej import reorient_ridges # Should refactor but
     
-    df_features = reorient_ridges(df_features, df_features.groupby([contour_label, "s_imagej"]), y_label+"_unmap", True)
+    df_features = reorient_ridges(df_features, df_features.groupby([contour_label, "s_imagej"], sort=False), y_label+"_unmap", True)
 
     return df_features
 
@@ -881,7 +884,7 @@ def trim_whitespace_ridges(df_features, im_orig, verbose, num_cores,
     # This is more for computational efficiency, as we do not want to process ridges that are not affected by unmapped regions
     discrepency_threshold = 5
 
-    gb = df_features.groupby([contour_label, "s_imagej"])
+    gb = df_features.groupby([contour_label, "s_imagej"], sort=False)
     frames = []
     count_trimmed = 0
 
