@@ -1,5 +1,7 @@
 output/
-localfiji/
+
+Network_Enhancement/
+
 .vscode/
 
 __pycache__/

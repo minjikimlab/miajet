@@ -6,36 +6,34 @@
 #SBATCH --mem=30g 
 #SBATCH --gpus=0 
 #SBATCH --profile=all
-#SBATCH --time=2:00:00  
+#SBATCH --time=1:00:00  
 #SBATCH --mail-type=FAIL 
+#SBATCH --output=slurm_out/slurm-%j.out
 
 my_job_header
 
-conda activate jet-env
+conda activate jet-env-test
 
 # Use the CHROM environment variable passed by the wrapper
 python -m miajet /nfs/turbo/umms-minjilab/downloaded_data/GSE199059_CD69negDPWTR1R2R3R4_merged.hic \
   --chrom "${CHROM}" \
   --exp_type "hic" \
-  --resolution 25000 \
-  --alpha 0.4 0.3 0.2 \
-  --saliency_thresh 80 \
-  --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_output_v1.0.25" \
+  --resolution 50000 \
+  --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_test" \
   --num_cores 4 \
   --verbose \
-  --root_within 10 \
-  # --folder_name "v1.0.25_plus_plus" \
+  --root_within 5 \
+  --eig2_trim 0.5 \
+  --folder_name "v1.0.25_pp-fixed-reorient-eig0.5" \
   # --angle_trim "None" \
   # --entropy_thresh "None" \
   # --rmse "None" \
   # --corner_trim "None" \
-  # --eig2_trim "None" \
   # --sum_cond "r" \
   # --angle_trim 0.5 \
   # --corner_trim "None" \
   # --entropy_thresh 0.75 \
   # --im_corner_vmax 100 \
-  # --root_within 2 \
   # --normalization "KR" \
   # --window_size 6000000 \
   # --data_type "oe" \

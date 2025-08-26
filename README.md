@@ -3,31 +3,35 @@
 
 
 ## Release notes
-* There are several improvements to version v1.0.20, namely in efficiency and optimizations for higher resolutions (e.g. 25 kb)
+* There are several improvements to version v1.0.26 (over v1.0.20), namely in efficiency and optimizations for higher resolutions (e.g. 25 kb)
 * Recommended parameters have been slightly adjusted (see below)
+* The current program is optimized for linux or macOS systems (HPC clusters)
 
 ## Overview
 
 At its most basic input, MIA-Jet requires only 4 parameters (Required). However, MIA-Jet also offers advanced customization for various types of 3C data via the extended and advanced parameters. 
 
-### Input
+## Input
 
 * `hic_file` (str): Path to Hi-C data file (`.hic` or `.mcool`).
 
-### Parameters 
+## Parameters 
 
 
 #### Required
 
-* `--exp_type` (`"hic"` | `"replihic"`): Experiment type. This influences the parameter values that are set. We denote the default for <span style="color:red">"hic"</span> (red) and <span style="color:blue">"replihic"</span> (blue).
+* `--exp_type` (`"hic"` | `"replihic"`): Experiment type. Setting this automatically sets some of the parameters. We denote <span style="color:red">"hic"</span> (red) and <span style="color:blue">"replihic"</span> (blue) for this automatic assignment. Nevertheless, directly specifying any one of these parameters will take precedence over automatic assignment. 
 * `--chrom` (str): Chromosome (e.g. `"chr1"`).
 * `--resolution` (int): Hi-C resolution in base pairs (e.g. `50000` for 50 kbp).
 * `--save_dir_root` (str): Absolute path to directory where results will be saved.
 
 
+---
+
+
 #### Extended
 
-* `--alpha` (float, or multiple floats; default: `0.4 0.3 0.2`): One or more α values for p-value cutoffs.
+* `--alpha` (float, or multiple floats; default: `0.2, 0.1, 0.05`): One or more α values for p-value cutoffs.
 * `--window_size` (int; default: `6000000`): Max distance from main diagonal in which jets are expected (e.g. `6000000` for 6 Mbp).
 * `--normalization` (str; optional): Hi-C normalization method (e.g. `"KR"`, `"VC_SQRT"`, `"NONE"`). If omitted, uses dataset/tooling defaults.
     * <span style="color:red">"hic"</span>: "KR"
@@ -37,7 +41,7 @@ At its most basic input, MIA-Jet requires only 4 parameters (Required). However,
     * <span style="color:blue">"replihic"</span>: "observed"
 * `--thresholds` (float float; default: `None`): Lower/upper thresholds for ImageJ Curve Tracing. If `None`, thresholds are suggested automatically from `scale_range` or `jet_widths`.
 * `--angle_range` (float float; default: `80 100`): Angle bounds (degrees) with 90° being the perpendicular (uncurved) jet
-* `--saliency_thresh` (float; default: `90`): Percentile (computed from non-zero saliency) used for saliency thresholding.
+* `--saliency_thresh` (float; default: `80`): Percentile (computed from non-zero saliency) used for saliency thresholding.
 * `--jet_widths` (float,float; default: `None`): Lower/upper bounds of jet widths _in pixels_ to detect. It is important to ensure this parameter is set accurately, as this determines the scales considered. Nevertheless, if omitted, a default log-spaced scale range is used (≈ $1.5^1$ … $1.5^7$ with 24 steps). 
 * `--root_within` (int; optional): Enforce ridge root ≤ this many bins from the main diagonal. This parameter is used to ensure that we see jets "connected" to the main diagonal
     * <span style="color:red">"hic"</span>: 3
@@ -105,40 +109,52 @@ At its most basic input, MIA-Jet requires only 4 parameters (Required). However,
     * <span style="color:blue">"replihic"</span>: None
 * `--ang_frac` (flag): **Disable** angle-fraction multipliers in saliency. (By default it is **on**; passing this flag turns them off.)
 
----
 
-**Notes**
+### Notes
+* “`None`|float” means that the CLI accepts the literal string `"None"` (case-insensitive) to mean Python `None`, or a numeric value.
+* For different resolutions, the `root_within` may need to be adjusted (see examples).
 
-* Anywhere a parameter says “`None`|float”, the CLI accepts the literal string `"None"` (case-insensitive) to mean Python `None`, or a numeric value.
+### Running across chromosomes
+* See `submit_DP_thymocyte_50Kb.sh` and corresponding `job_DP_thymocyte_50Kb.sbat` to see how to call MIA-Jet across chromosomes for one cell-line
+* See `./notebooks/combine_results.ipynb` to see how to combine MIA-Jet results (once they finish generating)
 
 
-
-
-**Examples**
+## Examples
 ```
 python -m miajet /nfs/turbo/umms-minjilab/downloaded_data/GSE199059_CD69negDPWTR1R2R3R4_merged.hic \
-  --chrom "${CHROM}" \
+  --chrom "chr3" \
   --exp_type "hic" \
   --resolution 25000 \
-  --alpha 0.4 0.3 0.2 \
-  --saliency_thresh 80 \
   --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_output_v1.0.25" \
   --num_cores 4 \
   --verbose \
   --root_within 10 \
 ```
 ```
-python -m miajet /nfs/turbo/umms-minjilab/downloaded_data/Repli-HiC_K562_WT_totalS.hic \
-  --chrom "${CHROM}" \
-  --exp_type "replihic" \
-  --resolution 25000 \
-  --alpha 0.4 0.3 0.2 \
-  --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_debug" \
+python -m miajet /nfs/turbo/umms-minjilab/downloaded_data/GSE199059_CD69negDPWTR1R2R3R4_merged.hic \
+  --chrom "chr3" \
+  --exp_type "hic" \
+  --resolution 50000 \
+  --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_output_v1.0.25" \
   --num_cores 4 \
   --verbose \
-  --folder_name "test" \
+  --root_within 5 \
+```
+```
+python -m miajet /nfs/turbo/umms-minjilab/downloaded_data/Repli-HiC_K562_WT_totalS.hic \
+  --chrom "chr3" \
+  --exp_type "replihic" \
+  --resolution 50000 \
+  --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_output_v1.0.25" \
+  --num_cores 4 \
+  --verbose \
 ```
 
+## Installing MIA-Jet
+1. Clone directory
+2. Create conda environment: `conda env create -f environment.yml` (default name is `jet-env`)
+3. Activate environment: `conda activate jet-env`
+4. Run examples
 
 
 

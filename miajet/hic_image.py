@@ -12,7 +12,8 @@ from utils.plotting import save_histogram
 import copy
 
 
-def zero_outside_window(mat, window_size_bin):
+def zero_outside_window(mat_in, window_size_bin):
+    mat = np.copy(mat_in)
     window_size_buffer = min(window_size_bin + 5, mat.shape[0])
     mat[np.triu_indices_from(mat, k=window_size_buffer)] = 0
     mat[np.tril_indices_from(mat, k=-1)] = 0
@@ -21,7 +22,7 @@ def zero_outside_window(mat, window_size_bin):
 
 def compute_rm_idx(mat, window_size_bin, verbose=False):
     mat_rm = np.copy(mat)
-    zero_outside_window(mat_rm, window_size_bin)
+    mat_rm = zero_outside_window(mat_rm, window_size_bin)
     _, rm_idx = remove_zero_sum(mat_rm, verbose=verbose)
     return rm_idx
 
@@ -99,17 +100,17 @@ def generate_hic_bundle(hic_file, chromosome, resolution, window_size, data_type
     else:
         raise ValueError(f"data_type {data_type} not supported. Use 'oe' or 'observed'.")
     
-    im_pval_sq = np.log10(mat_obs_sub + 1)
 
     # IMAGE
     im_sq = clip_and_normalize(im_sq, im_vmin_perc, im_vmax_perc)
 
     # P-VALUE OBSERVED
+    im_pval_sq = np.log10(mat_obs_sub + 1)
     im_pval_sq = clip_and_normalize(im_pval_sq, im_vmin_perc, im_vmax_perc)
 
     # IMAGE CORNER (correlation of oe)
     coe_sq = mat_oe_sub.copy()
-    zero_outside_window(coe_sq, window_size_bin)
+    coe_sq = zero_outside_window(coe_sq, window_size_bin) # TEST
     coe_sq = np.log10(coe_sq + 1)
     coe_sq = clip_and_normalize(coe_sq, corner_vmin_perc, corner_vmax_perc)
     coe_sq = scalar_products(coe_sq, out="correlation")
@@ -118,6 +119,7 @@ def generate_hic_bundle(hic_file, chromosome, resolution, window_size, data_type
     # P-VALUE NULL
     cob_sq = np.log10(mat_obs_sub + 1)
     cob_sq = clip_and_normalize(cob_sq, im_vmin_perc, im_vmax_perc)
+    # cob_sq = zero_outside_window(cob_sq, window_size_bin) # new addition
     cob_sq = scalar_products(cob_sq, out="correlation")
     cob_sq = cv.normalize(cob_sq, None, alpha=0, beta=1, norm_type=cv.NORM_MINMAX, dtype=cv.CV_32F)
 
@@ -150,7 +152,6 @@ def generate_hic_bundle(hic_file, chromosome, resolution, window_size, data_type
     # Rotation and extract
     mat_orig_rot = rotate(mat_orig, 45, reshape=True, order=1, mode=rotation_padding, cval=0)
     im_orig = mat_orig_rot[center_orig-window_size_bin_rect_orig:center_orig, :]
-
     im_orig = clip_and_normalize(im_orig, im_vmin_perc, im_vmax_perc)
 
     return im, im_orig, im_p_value, im_corner, corr_im_p_value, rm_idx, save_name, N

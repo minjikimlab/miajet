@@ -79,6 +79,7 @@ def get_free_display(low=1000, high=9999, max_tries=10):
 #         sys.exit(1)
 
 from pyvirtualdisplay import Display
+from pathlib import Path
 
 def process_sigma_pyvd(s, lt, ut, image_path, save_path, root, memory_alloc, macro_path, verbose):
     s_str = str(s)
@@ -88,6 +89,9 @@ def process_sigma_pyvd(s, lt, ut, image_path, save_path, root, memory_alloc, mac
     attempt = 0
     current_ut, current_lt = ut, lt
     t0 = time.time()
+
+    repo_root = Path(__file__).resolve().parent.parent
+    fiji_bin = repo_root / "localfiji" / "ImageJ-linux64"
 
     if verbose:
         print(f"\tFiji-with-Xvfb: max_attempts={max_attempts}, initial timeout={timeout_seconds}s")
@@ -111,7 +115,8 @@ def process_sigma_pyvd(s, lt, ut, image_path, save_path, root, memory_alloc, mac
 
             try:
                 fiji_cmd = [
-                    "/nfs/turbo/umms-minjilab/sionkim/finding_jets/localfiji/ImageJ-linux64",
+                    # "/nfs/turbo/umms-minjilab/sionkim/finding_jets/localfiji/ImageJ-linux64",
+                    str(fiji_bin),
                     "--forbid-single-instance",
                     "-Dij.no-legacy-single-instance=true",
                     f"--mem={int(memory_alloc / (1024 * 1024))}M",

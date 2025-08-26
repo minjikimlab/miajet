@@ -655,8 +655,14 @@ def rect_to_square(N, window_size_bin, coords):
     j_ = N - j_ - 1
 
     # ensure the final (i2, j2) is upper-triangular, i.e. i2 <= j2
-    i_new = np.minimum(i_, j_)
-    j_new = np.maximum(i_, j_)
+    # i_new = np.minimum(i_, j_)
+    # j_new = np.maximum(i_, j_)
+
+    # New code to enforce UT (previous bug)
+    keep_order = (i_ <= j_)
+    i_new = np.where(keep_order, i_, j_)
+    j_new = np.where(keep_order, j_, i_)
+
     return np.array((i_new, j_new)).T
 
 

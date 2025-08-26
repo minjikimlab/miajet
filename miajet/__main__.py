@@ -90,13 +90,21 @@ def main():
     # TRIMMING 
     if config.verbose: print("Trimming ridges based on scale space features...")
     t0 = time.time()
-    df, df_pos = trim_imagej_results_all(df, df_pos, im_shape_0=im.shape[0], scale_range=config.scale_range,
-                                         C=C, corner_trim=config.corner_trim,
-                                         A=A, angle_trim=config.angle_trim, angle_range=config.angle_range, 
-                                         W2=W2, eig2_trim=config.eig2_trim,
-                                         remove_min_size=1,
-                                         num_cores=config.num_cores,
-                                         verbose=config.verbose)  
+    # df, df_pos = trim_imagej_results_all(df, df_pos, im_shape_0=im.shape[0], scale_range=config.scale_range,
+    #                                      C=C, corner_trim=config.corner_trim,
+    #                                      A=A, angle_trim=config.angle_trim, angle_range=config.angle_range, 
+    #                                      W2=W2, eig2_trim=config.eig2_trim,
+    #                                      remove_min_size=1,
+    #                                      num_cores=config.num_cores,
+    #                                      verbose=config.verbose)   # NO SORT
+    df, df_pos = trim_imagej_results_corner(df, df_pos, C=C, im_shape_0=im.shape[0], min_trim_size_in=config.corner_trim, 
+                                            remove_min_size=1, num_cores=config.num_cores, verbose=config.verbose)
+    df, df_pos = trim_imagej_results_angle(df, df_pos, A=A, scale_range=config.scale_range, angle_range=config.angle_range, 
+                                           min_trim_size_in=config.angle_trim, im_shape_0=im.shape[0], remove_min_size=1,
+                                           num_cores=config.num_cores, verbose=config.verbose)
+    df, df_pos = trim_imagej_results_eig2(df, df_pos, W2=W2, scale_range=config.scale_range, 
+                                          min_trim_size_in=config.eig2_trim, im_shape_0=im.shape[0], remove_min_size=1,
+                                          num_cores=config.num_cores, verbose=config.verbose)    
     total_time += time.time() - t0
     if config.verbose: print(f"Trimming ridges based on scale space features... {time.time() - t0:.0f}s Done")    
 

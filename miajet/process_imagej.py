@@ -104,7 +104,7 @@ def load_imagej_results(save_path, scale_range, verbose, root,
     # drop duplicates according to the unique identifier
     df = df_results.drop_duplicates([contour_label, "s_imagej"], ignore_index=True) 
 
-    df = df[["Label", frame_label, contour_label, "s_imagej"]]
+    df = df[["Label", frame_label, contour_label, "s_imagej", "Response"]]
         
     return df, df_results
 
@@ -308,9 +308,71 @@ def enforce_root_position(df_pos, df, root_within, window_size_bin, verbose,
     return df_pos_out, df_new
 
 
+def enforce_y_displacement(df_pos, df, verbose, 
+                           contour_label="Contour Number", 
+                           y_label="Y_(px)",
+                           displacement_thresh=2):
+    """
+    Enforces that each ridge has a vertical displacement greater than the given threshold.
+    Ridges failing this criterion (i.e. displacement <= threshold) are discarded.
+    
+    Updates both the expanded and summary tables.
+
+    Parameters
+    ----------
+    df_pos : pd.DataFrame
+        DataFrame containing the expanded table of ImageJ curve tracing results
+    df : pd.DataFrame
+        DataFrame containing the summary table of ImageJ curve tracing results
+    verbose : bool
+        Whether to print progress and discarded counts
+    contour_label : str, default="Contour Number"
+        Column name identifying ridges in the expanded table
+    y_label : str, default="Y_(px)"
+        Column containing y-coordinates
+    displacement_thresh : int or float, default=2
+        Minimum required y displacement (max - min). Ridges with <= this value are discarded.
+    
+    Returns
+    -------
+    df_pos_out : pd.DataFrame
+        Updated expanded table with ridges filtered
+    df_new : pd.DataFrame
+        Updated summary table with ridges filtered
+    """
+    if df is None and df_pos is None:
+        if verbose:
+            print("\tSkipping enforce_y_displacement...")
+        return None, None
+
+    keys = [contour_label, "s_imagej"]
+
+    # Compute displacement per ridge
+    displacement = (
+        df_pos.groupby(keys, sort=False)[y_label]
+        .transform(lambda x: x.max() - x.min())
+    )
+    keep_mask = displacement > displacement_thresh
+
+    # Filter expanded table
+    df_pos_out = df_pos.loc[keep_mask].reset_index(drop=True)
+
+    # Filter summary table (using unique kept keys)
+    keep_rows = df_pos_out[keys].drop_duplicates()
+    df_new = df.merge(keep_rows, on=keys, how="inner")
+    df_new.drop_duplicates(keys, inplace=True, ignore_index=True)
+
+    if verbose:
+        total_groups = df_pos[keys].drop_duplicates().shape[0]
+        kept_groups = keep_rows.shape[0]
+        discarded = total_groups - kept_groups
+        print(f"\tEnforcing y displacement > {displacement_thresh}: discarded {discarded} of {total_groups} ridges.")
+
+    return df_pos_out, df_new
 
 
-def reorient_ridges(df_results, gb_results, y_label, verbose=False):
+
+def reorient_ridges(df_results, gb_results, y_label, verbose=False, window_size_bin=None):
     '''
     Reorients the ridges based on the y positions of the first and last points in each ridge
     The invariant is that the y position (vertical axis of the rectangle) should be decreasing along the ridge
@@ -333,6 +395,11 @@ def reorient_ridges(df_results, gb_results, y_label, verbose=False):
     df_results : pd.DataFrame
         Updated expanded table
     '''
+    # Determine 3 points to main diagonal
+    root_within_fixed = 3
+    num_rows_image = np.ceil(window_size_bin / np.sqrt(2)).astype(int)
+    thresh_val = (num_rows_image - 1 - root_within_fixed) if root_within_fixed is not None else 0
+
     count = 0  # count how many ridges 
 
     frames = []
@@ -341,10 +408,36 @@ def reorient_ridges(df_results, gb_results, y_label, verbose=False):
         # select ridge
         df_ridge = df_results.iloc[gb_results.indices.get(cid)].copy()
 
-        # sort rows so y_label is in decreasing order
-        if not df_ridge[y_label].is_monotonic_decreasing:
-            count += 1
-            df_ridge = df_ridge.sort_values(by=y_label, ascending=False)
+        # OLD SORT
+        # # sort rows so y_label is in decreasing order
+        # if not df_ridge[y_label].is_monotonic_decreasing:
+        #     count += 1
+        #     df_ridge = df_ridge.sort_values(by=y_label, ascending=False)
+
+        # NEW SORT
+        point_a = df_ridge[y_label].values[0]
+        point_b = df_ridge[y_label].values[-1]
+        point_c = df_ridge[y_label].min()
+
+        if point_c < point_a and point_c < point_b:
+            # C-shaped ridges 
+            # Its ambiguous how to sort.. so do not do an actual sort of values for these
+            # ridges
+            if point_a == point_b or (point_a > thresh_val and point_b > thresh_val and point_c < thresh_val):
+                # Set the root as the larger value
+                if df_ridge["Response"].values[0] < df_ridge["Response"].values[-1]:
+                    # Flip order
+                    df_ridge = df_ridge[::-1].reset_index(drop=True)
+                    count += 1
+            elif df_ridge[y_label].values[0] < df_ridge[y_label].values[-1]:
+                # Flip order
+                df_ridge = df_ridge[::-1].reset_index(drop=True)
+                count += 1
+        else:
+            # But if its not C-shaped, we should sort rigorously i.e. monotonic decreasing
+            if not df_ridge[y_label].is_monotonic_decreasing:
+                df_ridge = df_ridge.sort_values(by=y_label, ascending=False)
+                count += 1
 
         frames.append(df_ridge)
 
@@ -433,6 +526,7 @@ def process_imagej_results(df, df_pos, window_size, N, resolution, remove_kth_st
     if verbose: print(f"\tNum ridges before processing: {len(df)}")
     df_pos, df = enforce_root_position(df_pos=df_pos, df=df, root_within=root_within, window_size_bin=window_size_bin, 
                                        verbose=verbose, contour_label=contour_label, y_label=y_label)
+    # df_pos, df = enforce_y_displacement(df_pos=df_pos, df=df, verbose=verbose, contour_label=contour_label, y_label=y_label, displacement_thresh=2)
     df_pos, df = remove_padding_positions(df_pos=df_pos, df=df, N=N, window_size_bin=window_size_bin, verbose=verbose)
     df_pos, df = remove_kth_off_diagonal(df_pos=df_pos, df=df, k=remove_kth_strata, window_size_bin=window_size_bin, 
                                          contour_label=contour_label, y_label=y_label, verbose=verbose)
@@ -442,9 +536,9 @@ def process_imagej_results(df, df_pos, window_size, N, resolution, remove_kth_st
 
     if verbose: print(f"\tNum ridges after processing: {len(df)}")
 
-    df_pos = reorient_ridges(df_pos, df_pos.groupby([contour_label, "s_imagej"], sort=False), y_label, True)
+    df_pos = reorient_ridges(df_pos, df_pos.groupby([contour_label, "s_imagej"], sort=False), y_label, True, window_size_bin)
 
-    assert check_ridge_order(df_pos)
+    # assert check_ridge_order(df_pos)
 
     return df, df_pos
 
@@ -1075,7 +1169,7 @@ def process_trim_all(df_ridge):
     Precomputes curves once; later stages operate on the current prefix [ : end_idx ].
     Returns (trimmed_df_or_None, trimmed_corner_flag, trimmed_angle_flag, trimmed_eig2_flag).
     """
-    df_ridge.sort_values(y_label, inplace=True, ignore_index=True, ascending=False)
+    # df_ridge.sort_values(y_label, inplace=True, ignore_index=True, ascending=False)
 
     L0 = len(df_ridge)
     if L0 <= remove_min_size:
@@ -1283,7 +1377,8 @@ def trim_imagej_results_all(df, df_pos, im_shape_0,
             initargs=(im_shape_0, x_label, y_label, C, A_mask, W2, np.array(scale_range),
                       corner_trim, angle_trim, eig2_trim, remove_min_size)
         ) as pool:
-            for out, c, a, e2 in tqdm(pool.imap_unordered(process_trim_all, (g[1] for g in groups)), total=total, disable=not verbose):
+            for out, c, a, e2 in tqdm(pool.imap_unordered(process_trim_all, (g[1] for g in groups), chunksize=8), 
+                                      total=total, disable=not verbose):
                 results.append((out, c, a, e2))
         for out, c, a, e2 in results:
             n_corner += int(bool(c))

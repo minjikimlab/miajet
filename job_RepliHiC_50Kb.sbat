@@ -3,10 +3,10 @@
 #SBATCH --account=minjilab0 
 #SBATCH --partition=standard 
 #SBATCH --cpus-per-task=4
-#SBATCH --mem=90g 
+#SBATCH --mem=30g 
 #SBATCH --gpus=0 
 #SBATCH --profile=all
-#SBATCH --time=6:00:00  
+#SBATCH --time=2:00:00  
 #SBATCH --mail-type=FAIL 
 
 my_job_header
@@ -17,12 +17,11 @@ conda activate jet-env
 python -m miajet /nfs/turbo/umms-minjilab/downloaded_data/Repli-HiC_K562_WT_totalS.hic \
   --chrom "${CHROM}" \
   --exp_type "replihic" \
-  --resolution 10000 \
-  --alpha 0.1 0.05 0.01 \
-  --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_debug" \
+  --resolution 50000 \
+  --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_output_v1.0.25" \
   --num_cores 4 \
   --verbose \
-  --folder_name "v1.0.25_plus_plus_Repli-HiC_K562_both_types" \
+  # --folder_name "v1.0.25_plus_plus_Repli-HiC_K562_both_types" \
   # --normalization "VC_SQRT" \
   # --window_size 6000000 \
   # --data_type "observed" \

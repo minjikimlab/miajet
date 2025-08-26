@@ -30,8 +30,8 @@ def parse_args():
                         help="Absolute path to directory where results will be saved")
 
     # Extended Parameters
-    parser.add_argument("--alpha", nargs="+", type=float, required=False, default=[0.1, 0.05],
-                        help="Alpha or a list of alpha values for p-value cutoffs (default: 0.1 0.05)") # 
+    parser.add_argument("--alpha", nargs="+", type=float, required=False, default=[0.2, 0.1, 0.05],
+                        help="Alpha or a list of alpha values for p-value cutoffs (default: 0.2 0.1 0.05)") # 
     parser.add_argument("--window_size", type=int, required=False, default=6_000_000,
                         help="Distance from main diagonal (default: 6_000_000 for 6 Mbp)") # 
     parser.add_argument("--normalization", type=str, required=False, default=_MISSING,
@@ -43,7 +43,7 @@ def parse_args():
                         "The default of None automatically generates suggested thresholds based on scale_range or jet_widths") # 
     parser.add_argument("--angle_range", nargs="+", required=False, type=float, default=[80, 100],
                         help="Angle lower and upper bound of jets in degrees with 90˚ being the secondary diagonal of contact map (default: 80 100)") # 
-    parser.add_argument("--saliency_thresh", default=90, type=float,
+    parser.add_argument("--saliency_thresh", default=80, type=float,
                         help="Percentile for saliency thresholding. Percentile is computed from non-zero saliency values only (default: 90)") # 
     parser.add_argument("--jet_widths", nargs="+", required=False, type=float, default=None,
                         help="The lower and upper bound of widths in pixels of jets to be detected"
