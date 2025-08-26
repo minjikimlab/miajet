@@ -647,7 +647,7 @@ def aggregate_ridge_features(group, ranking, angle_label, angle_range,
     angle_mean = group["angle"].mean() # all 3 angles
     angle_unwrapped_mean = group["angle_unwrapped"].mean() # all 3 angles
     angle_imagej_mean = group["angle_imagej"].mean() # all 3 angles
-    angle_deriv_max = group["angle_deriv"].max()
+    # angle_deriv_max = group["angle_deriv"].max()s
     eig1_mean = group["eig1"].mean()
     eig2_mean = group["eig2"].mean()
     width_mean = group["width"].mean()
@@ -835,11 +835,11 @@ def aggregate_ridge_features(group, ranking, angle_label, angle_range,
         residuals = expected_values - y_fit_ev
         rmse = np.sqrt(np.mean(residuals ** 2)) / len(expected_values) # normalized RMSE
 
-    exp_scale_deriv = masked_abs_diff(group["expected_scale"].values, N=2) # ignore the first two positions
-    exp_scale_deriv = np.max(exp_scale_deriv) # take the maximum derivative value
+    # exp_scale_deriv = masked_abs_diff(group["expected_scale"].values, N=2) # ignore the first two positions
+    # exp_scale_deriv = np.max(exp_scale_deriv) # take the maximum derivative value
 
-    exp_scale_deriv2 = masked_abs_second_diff(group["expected_scale"].values, N=2) # ignore the first two positions
-    exp_scale_deriv2 = np.max(exp_scale_deriv2) # take the maximum
+    # exp_scale_deriv2 = masked_abs_second_diff(group["expected_scale"].values, N=2) # ignore the first two positions
+    # exp_scale_deriv2 = np.max(exp_scale_deriv2) # take the maximum
 
     # consistency = compute_consistency(group, scale_range, conflicting_pmf, conflicting_assignment, col_sim, col_agg, adj_nondec)
     
@@ -854,7 +854,7 @@ def aggregate_ridge_features(group, ranking, angle_label, angle_range,
         "angle_mean": angle_mean,
         "angle_unwrapped_mean": angle_unwrapped_mean,
         "angle_imagej_mean": angle_imagej_mean,
-        "angle_deriv_max": angle_deriv_max,
+        # "angle_deriv_max": angle_deriv_max,
         "ridge_cond_mean": ridge_cond_mean,
         "ridge_cond_fraction": ridge_cond_fraction,
         "ridge_cond_num": ridge_cond_num,
@@ -868,8 +868,8 @@ def aggregate_ridge_features(group, ranking, angle_label, angle_range,
         "direction": 0,
         "rmse": rmse,
         "coeffs": coeffs, # parameters of RMSE
-        "exp_scale_deriv": exp_scale_deriv,
-        "exp_scale_deriv2": exp_scale_deriv2,
+        # "exp_scale_deriv": exp_scale_deriv,
+        # "exp_scale_deriv2": exp_scale_deriv2,
         ranking: final_value
     }
     return pd.Series(result)

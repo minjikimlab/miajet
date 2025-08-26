@@ -34,19 +34,9 @@ def process_ridge(args):
                                                                                                 ])
     
     A_curves = round_line_scale_space(ridge_coords, scale_space_container=[A]) # round
-    # A_curves = extract_angle_scale_space(ridge_coords, A) # angle interpolate
 
-    # IMPORTANT: scale selection method
-    # assigned_s, assigned_s_ridge_cond, global_max, global_max_ridge_cond, local_max, local_max_ridge_cond = create_maxima_set(scale_range, D_curves, R_curves,
-    #                                                                                                                            method=scale_selection)
+    ang_frac = angle_fraction_from_curves(A_curves, D_curves, angle_range[0], angle_range[1], weighted=True)
 
-    # if len(assigned_s) > 0 and not np.isnan(assigned_s).all():
-    #     # Save the median scale for this ridge
-    #     scale_value = np.nanpercentile(assigned_s, 50, method='lower')
-    # else:
-    #     scale_value = np.nan
-
-    # 03/19/25: using ImageJ scales as scale assigned
     scale_value = indexer[1]
 
     # Save the data assigned for this ridge
@@ -63,7 +53,7 @@ def process_ridge(args):
         "angle_imagej" : np.tile(df_ridge[angle_label], len(scale_range)), 
         "angle" : A_curves.reshape(-1), 
         "angle_unwrapped" : angle_unwrap(A_curves).reshape(-1),
-        "angle_deriv" : np.abs(angle_first_derivative_vectorized(A_curves)).reshape(-1),
+        # "angle_deriv" : np.abs(angle_first_derivative_vectorized(A_curves)).reshape(-1),
         "eig1" : W1_curves.reshape(-1),
         "eig2" : W2_curves.reshape(-1), 
         "ridge_condition" : R_curves.reshape(-1),
@@ -72,17 +62,18 @@ def process_ridge(args):
         # "col_scale_diff" : np.tile(adj_expected_value(D_curves, scale_range), len(scale_range)), 
         "corner_condition" : C_curves.reshape(-1), 
         "expected_scale" : np.tile(expected_value(D_curves, scale_range), len(scale_range)), # FOR SIGMOID FITTING
+        "angle_fraction" : np.tile(ang_frac, len(scale_range)),
         "width" : np.tile(df_ridge["width"], len(scale_range)),
         })
 
     return (indexer, scale_value, features_data)
 
-def init_globals(im_, D_, A_, W1_, W2_, R_, C_, scale_range_, x_label_, y_label_, contour_label_, angle_label_):
+def init_globals(im_, D_, A_, W1_, W2_, R_, C_, scale_range_, x_label_, y_label_, contour_label_, angle_label_, angle_range_):
     """
     Helper function for `generate_expanded_table` to initialize global variables
     This is used for parallel processing to avoid passing large objects back and forth
     """
-    global im, D, A, W1, W2, R, C, scale_range, x_label, y_label, contour_label, angle_label
+    global im, D, A, W1, W2, R, C, scale_range, x_label, y_label, contour_label, angle_label, angle_range
     im = im_
     D = D_
     A = A_
@@ -95,6 +86,7 @@ def init_globals(im_, D_, A_, W1_, W2_, R_, C_, scale_range_, x_label_, y_label_
     y_label = y_label_
     contour_label = contour_label_
     angle_label = angle_label_
+    angle_range = angle_range_
 
 def angle_unwrap(angles_deg):
     """
@@ -125,6 +117,26 @@ def angle_first_derivative_vectorized(angles_deg):
     angles_rad = np.radians(angles_deg)
     angles_unwrapped = np.unwrap(angles_rad, axis=1, period=np.pi)
     return np.gradient(np.degrees(angles_unwrapped), axis=1)
+
+def angle_fraction_from_curves(A_curves, D_curves, lb, ub, weighted=False):
+    """
+    Identical to `compute_angle_fraction` except that we do this on a per-ridge level directly via 
+        A_curves and D_curves
+    """
+    if lb > ub:
+        mask = (A_curves >= lb) | (A_curves <= ub)
+    else:
+        mask = (A_curves >= lb) & (A_curves <= ub)
+
+    if weighted:
+        strengths = np.clip(D_curves, 0, None)
+        denom = strengths.sum(axis=0, keepdims=True)
+        # uniform 
+        p = np.divide(strengths, denom, out=np.full_like(strengths, 1.0 / strengths.shape[0]), where=denom>0)
+        frac = (p * mask).sum(axis=0)
+    else:
+        frac = mask.mean(axis=0)
+    return frac
 
 
 def compute_angle_fraction(df_features, angle_range, expectation, contour_label="Contour Number"):
@@ -389,20 +401,11 @@ def generate_expanded_table(im, df, df_pos, D, A, W1, W2, R, C, scale_range, ang
                                                                                                      scale_space_container=[np.expand_dims(im, 0), D, W1, W2, R, C])
             
             A_curves = round_line_scale_space(ridge_coords, scale_space_container=[A]) # round
-            # A_curves = extract_angle_scale_space(ridge_coords, A) # angle interpolate (takes much longer)
 
-            # assigned_s, assigned_s_ridge_cond, global_max, global_max_ridge_cond, local_max, local_max_ridge_cond = create_maxima_set(scale_range, D_curves, R_curves, 
-            #                                                                                                                         method=scale_selection) 
-        
-            # if len(assigned_s) > 0 and not np.isnan(assigned_s).all():
-            #     # Save the scale assigned for this ridge
-            #     scale_assignment[indexer[0], indexer[1]] = np.nanpercentile(assigned_s, 50, method='lower')
-            # else:
-            #     scale_assignment[indexer[0], indexer[1]] = np.nan
-
-            # 03/19/25: do not use median but the imageJ scale for the scale assignment
             scale_assignment[indexer[0], indexer[1]] = indexer[1]
-            
+
+            ang_frac = angle_fraction_from_curves(A_curves, D_curves, angle_range[0], angle_range[1], weighted=True)
+
             # Save the data assigned for this ridge
             # The features dataframe will be an EVEN bigger dataframe that the position dataframe
             # It will contain the postiion dataframe multiplied for each scale of scale space
@@ -418,7 +421,7 @@ def generate_expanded_table(im, df, df_pos, D, A, W1, W2, R, C, scale_range, ang
                 "angle_imagej" : np.tile(df_ridge[angle_label], len(scale_range)), 
                 "angle" : A_curves.reshape(-1), 
                 "angle_unwrapped" : angle_unwrap(A_curves).reshape(-1),
-                "angle_deriv" : np.abs(angle_first_derivative_vectorized(A_curves)).reshape(-1),
+                # "angle_deriv" : np.abs(angle_first_derivative_vectorized(A_curves)).reshape(-1),
                 "eig1" : W1_curves.reshape(-1),
                 "eig2" : W2_curves.reshape(-1), 
                 "ridge_condition" : R_curves.reshape(-1), 
@@ -428,19 +431,20 @@ def generate_expanded_table(im, df, df_pos, D, A, W1, W2, R, C, scale_range, ang
                 "expected_scale" : np.tile(expected_value(D_curves, scale_range), len(scale_range)), # FOR SIGMOID FITTING
                 "corner_condition" : C_curves.reshape(-1), 
                 "width" : np.tile(df_ridge["width"], len(scale_range)),
+                "angle_fraction" : np.tile(ang_frac, len(scale_range)),
                 })
             
             df_features.append(features_data)
 
     else:
         # parallel
-        initializer_args = (im, D, A, W1, W2, R, C, scale_range, x_label, y_label, contour_label, angle_label)
+        initializer_args = (im, D, A, W1, W2, R, C, scale_range, x_label, y_label, contour_label, angle_label, angle_range)
         # Collect the total number of groups for progress tracking
-        total_groups = sum(1 for _ in gb)
+        total_groups = gb.ngroups
         # Create a pool of worker processes
         with Pool(num_cores, initializer=init_globals, initargs=initializer_args) as pool:
             results = []
-            for result in tqdm(pool.imap_unordered(process_ridge, gb), total=total_groups):
+            for result in tqdm(pool.imap_unordered(process_ridge, gb, chunksize=8), total=total_groups):
                 results.append(result)
         # Process the results
         for indexer, scale_value, features_data in results:
@@ -460,7 +464,7 @@ def generate_expanded_table(im, df, df_pos, D, A, W1, W2, R, C, scale_range, ang
     df_features = df_features.merge(df[[contour_label, "s_imagej", "scale_assigned"]], on=[contour_label, "s_imagej"], how="left")
 
     # Before we assign the scales, compute the angle fraction satisfying scores for each row of expanded table
-    df_features["angle_fraction"] = compute_angle_fraction(df_features, expectation=False, angle_range=angle_range)
+    # df_features["angle_fraction"] = compute_angle_fraction(df_features, expectation=False, angle_range=angle_range)
 
     # Now we can drop "pos" since it was used only for computing the angle fraction
     df_features.drop(["pos"], axis=1, inplace=True)

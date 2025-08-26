@@ -2,10 +2,10 @@ from miajet._version import __version__
 
 from .cli import parse_args
 from .config import assign_defaults, process_args, print_parameters
-from .hic_image import generate_hic_image, generate_hic_corr_image, check_im_vmin_vmax, check_im_corner_vmin_vmax, compute_edge_strength
+from .hic_image import generate_hic_image, generate_hic_corr_image, check_im_vmin_vmax, check_im_corner_vmin_vmax, compute_edge_strength, generate_hic_bundle
 from .call_imagej import call_imagej_scale_space
 from .process_imagej import load_imagej_results, process_imagej_results, \
-    trim_imagej_results_corner, trim_imagej_results_angle, trim_imagej_results_eig2
+    trim_imagej_results_corner, trim_imagej_results_angle, trim_imagej_results_eig2, trim_imagej_results_all
 from .expanded_table import generate_expanded_table, save_expanded_table, insert_unmapped_regions, intersect_with_true
 from .rank_ridges import generate_summary_table, filter_ridges, simulate_filter_ridges
 from .analyze_ridges import plot_distribution_diagnostic, plot_top_k_diagnostic, plot_top_k_diagnostic_parallel, plot_top_k, \
@@ -15,7 +15,7 @@ from .overlaps import find_and_remove_overlaps
 from .stripiness import compute_stripiness
 from .threshold_saliency import threshold_saliency_q
 from .tee import set_logging_file
-from utils.scale_space import construct_scale_space, clip_scale_range_and_update_thresholds
+from utils.scale_space import construct_scale_space_pair, clip_scale_range_and_update_thresholds
 import time
 
 
@@ -36,53 +36,26 @@ def main():
     # GENERATE HI-C IMAGE
     if config.verbose: print("Generating Hi-C image...")
     t0 = time.time()
-    im, im_orig, im_p_value, im_oe, rm_idx, image_path, square_size = generate_hic_image(hic_file=config.hic_file,
-                                                                                  chromosome=config.chrom, 
-                                                                                  resolution=config.resolution,
-                                                                                  window_size=config.window_size, 
-                                                                                  data_type=config.data_type, 
-                                                                                  normalization=config.normalization,
-                                                                                  rotation_padding=config.rotation_padding, 
-                                                                                  whiten=config.whiten,
-                                                                                  save_path=config.save_dir, 
-                                                                                  verbose=config.verbose,
-                                                                                  root=config.root,
-                                                                                  vmax_perc=config.im_vmax, 
-                                                                                  vmin_perc=config.im_vmin)
-    # edge_strength = compute_edge_strength(im)
-    # check if vmin and vmax are valid
-    config = check_im_vmin_vmax(im, config) 
-    # update the thresholds 
+    im, im_orig, im_p_value, im_corner, corr_im_p_value, rm_idx, image_path, square_size = generate_hic_bundle(
+        hic_file=config.hic_file,
+        chromosome=config.chrom,
+        resolution=config.resolution,
+        window_size=config.window_size,
+        data_type=config.data_type,
+        normalization=config.normalization,
+        rotation_padding=config.rotation_padding,
+        whiten=config.whiten,
+        save_path=config.save_dir,
+        verbose=config.verbose,
+        root=config.root,
+        im_vmax_perc=config.im_vmax,
+        im_vmin_perc=config.im_vmin,
+        corner_vmax_perc=config.im_corner_vmax,
+        corner_vmin_perc=config.im_corner_vmin
+    )
+    # config = check_im_vmin_vmax(im, config) # Remove this because we no longer reference config.vmin/config.vmax
+    # Update the thresholds 
     config = clip_scale_range_and_update_thresholds(im, config, b_vmax=90, b_vmin=25) 
-    # For corner detection (and trimming of ridges)
-    im_corner = generate_hic_corr_image(hic_file=config.hic_file, 
-                                        chromosome=config.chrom, 
-                                        resolution=config.resolution, 
-                                        window_size=config.window_size,
-                                        data_type="coe", # hard-code to be correlation OE
-                                        zero_before_corr=True, # zero off-diagonal regions before correlation – worth investigating
-                                        vmin_perc=config.im_corner_vmin, 
-                                        vmax_perc=config.im_corner_vmax, 
-                                        save_path=config.save_dir, 
-                                        normalization=config.normalization, 
-                                        rotation_padding=config.rotation_padding, 
-                                        root=config.root,
-                                        verbose=config.verbose)  
-    config = check_im_corner_vmin_vmax(im_corner, config) # check if vmin and vmax are valid
-    # For the null model
-    corr_im_p_value = generate_hic_corr_image(hic_file=config.hic_file, 
-                                              chromosome=config.chrom, 
-                                              resolution=config.resolution, 
-                                              window_size=config.window_size, 
-                                              data_type="cobserved",  # hard-code to correlation log observed "cobserved"
-                                              zero_before_corr=False, 
-                                              save_path=config.save_dir, 
-                                              normalization=config.normalization, 
-                                              rotation_padding=config.rotation_padding,
-                                              root=config.root,
-                                              vmin_perc=config.im_vmin, 
-                                              vmax_perc=config.im_vmax, 
-                                              verbose=config.verbose)
     total_time += time.time() - t0
     if config.verbose: print(f"Generating Hi-C image... {time.time() - t0:.0f}s Done")
 
@@ -107,32 +80,23 @@ def main():
     # GENERATE SCALE SPACE FEATURES
     if config.verbose: print("Generating scale space features...")
     t0 = time.time()
-    # Normal scale space tensor generation
-    I, D, W1, W2, A, R, _ = construct_scale_space(im, config.scale_range, config.gamma, config.ridge_method, 
-                                            filter_mode=config.convolution_padding, 
-                                            eps_r=config.eps_r, eps_c1=config.eps_c1, eps_c2=config.eps_c2,
-                                            zc_method=2, zc_ks=5, # hard-code zero crossing settings (lenient)
-                                            num_pools=config.num_cores)
-    # Corner only scale space tensor generation
-    _, _, _, _, _, _, C = construct_scale_space(im_corner, config.scale_range, config.gamma, config.ridge_method, 
-                                            filter_mode=config.convolution_padding, 
-                                            eps_r=config.eps_r, eps_c1=config.eps_c1, eps_c2=config.eps_c2,
-                                            zc_method=2, zc_ks=5, # hard-code zero crossing settings (lenient)
-                                            num_pools=config.num_cores)
+    I, D, W1, W2, A, R, C = construct_scale_space_pair(im, im_corner, config.scale_range, config.gamma, config.ridge_method,
+        filter_mode=config.convolution_padding,
+        eps_r=config.eps_r, eps_c1=config.eps_c1, eps_c2=config.eps_c2,
+        zc_method=2, zc_ks=5, num_pools=config.num_cores)
     total_time += time.time() - t0
     if config.verbose: print(f"Generating scale space features... {time.time() - t0:.0f}s Done")
 
     # TRIMMING 
     if config.verbose: print("Trimming ridges based on scale space features...")
     t0 = time.time()
-    df, df_pos = trim_imagej_results_corner(df, df_pos, C=C, im_shape_0=im.shape[0], min_trim_size_in=config.corner_trim, 
-                                            remove_min_size=1, num_cores=config.num_cores, verbose=config.verbose)
-    df, df_pos = trim_imagej_results_angle(df, df_pos, A=A, scale_range=config.scale_range, angle_range=config.angle_range, 
-                                           min_trim_size_in=config.angle_trim, im_shape_0=im.shape[0], remove_min_size=1,
-                                           num_cores=config.num_cores, verbose=config.verbose)
-    df, df_pos = trim_imagej_results_eig2(df, df_pos, W2=W2, scale_range=config.scale_range, 
-                                          min_trim_size_in=config.eig2_trim, im_shape_0=im.shape[0], remove_min_size=1,
-                                          num_cores=config.num_cores, verbose=config.verbose)    
+    df, df_pos = trim_imagej_results_all(df, df_pos, im_shape_0=im.shape[0], scale_range=config.scale_range,
+                                         C=C, corner_trim=config.corner_trim,
+                                         A=A, angle_trim=config.angle_trim, angle_range=config.angle_range, 
+                                         W2=W2, eig2_trim=config.eig2_trim,
+                                         remove_min_size=1,
+                                         num_cores=config.num_cores,
+                                         verbose=config.verbose)  
     total_time += time.time() - t0
     if config.verbose: print(f"Trimming ridges based on scale space features... {time.time() - t0:.0f}s Done")    
 

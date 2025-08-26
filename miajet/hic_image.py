@@ -4,10 +4,157 @@ import matplotlib.pyplot as plt
 import cv2 as cv
 import os
 import scipy
+from scipy.ndimage import rotate
 
-from utils.processing import read_hic_rectangle, read_hic_corr_rectangle, read_hic_network_enhancement
+from utils.processing import read_hic_rectangle, read_hic_corr_rectangle, read_hic_network_enhancement, \
+    read_hic_file, remove_zero_sum, whiten_matrix, scalar_products
 from utils.plotting import save_histogram
 import copy
+
+
+def zero_outside_window(mat, window_size_bin):
+    window_size_buffer = min(window_size_bin + 5, mat.shape[0])
+    mat[np.triu_indices_from(mat, k=window_size_buffer)] = 0
+    mat[np.tril_indices_from(mat, k=-1)] = 0
+    return mat
+
+
+def compute_rm_idx(mat, window_size_bin, verbose=False):
+    mat_rm = np.copy(mat)
+    zero_outside_window(mat_rm, window_size_bin)
+    _, rm_idx = remove_zero_sum(mat_rm, verbose=verbose)
+    return rm_idx
+
+def clip_and_normalize(image, vmin_perc, vmax_perc):
+    vmin_perc_eff = vmin_perc
+    vmax_perc_eff = vmax_perc
+    if np.percentile(image, vmin_perc) == np.percentile(image, vmax_perc):
+        vmin_perc_eff = 0
+        vmax_perc_eff = 100
+    image = np.clip(image, np.percentile(image, vmin_perc_eff), np.percentile(image, vmax_perc_eff))
+    image = cv.normalize(image, None, alpha=0, beta=1, norm_type=cv.NORM_MINMAX, dtype=cv.CV_32F)
+    return image
+
+
+def rotate_stack_extract_rectangle(mats, rotate_mode, cval, center, window_size_bin_rect):
+    """
+    Rotate a stack of 2D arrays (C, H, W) once using scipy.ndimage.rotate across (H, W).
+    Returns a list of rotated 2D arrays preserving order
+    """
+    stack = np.stack(mats, axis=0) # (C, H, W)
+    stack_rot = rotate(stack, 45, axes=(1, 2), reshape=True, order=1, mode=rotate_mode, cval=cval)
+    stack_rot = stack_rot[:, center-window_size_bin_rect:center, :]
+    return [stack_rot[i] for i in range(stack_rot.shape[0])]
+
+def generate_hic_bundle(hic_file, chromosome, resolution, window_size, data_type, normalization, whiten,
+                        rotation_padding, save_path, verbose, root,
+                        im_vmax_perc, im_vmin_perc, corner_vmax_perc, corner_vmin_perc):
+    """
+    Generate all downstream images with a single rotation pass for shared shapes:
+    - im: primary contact map (oe or observed)
+    - im_oe: always OE (used for stripiness and plotting, currently deprecated)
+    - im_p_value: log10(observed+1)
+    - im_corner: correlation of OE (zero_before_corr=True)
+    - corr_im_p_value: correlation of observed (zero_before_corr=False)
+    - im_orig: same as `im` data_type but without zero-sum removal (rotated separately)
+    Returns also rm_idx, save_name, and N (post-removal).
+    """
+    save_name = os.path.join(save_path, f"{root}_contact_map.jpg")
+    window_size_bin = np.ceil(window_size / resolution).astype(int)
+
+    # Single access via hic-straw
+    mat_obs = read_hic_file(filename=hic_file, chrom=chromosome, resolution=resolution,
+                            positions="all", data_type="observed", normalization=normalization, verbose=verbose)
+    mat_oe = read_hic_file(filename=hic_file, chrom=chromosome, resolution=resolution,
+                           positions="all", data_type="oe", normalization=normalization, verbose=verbose)
+
+    if mat_obs.shape == (1, 1) or mat_oe.shape == (1, 1):
+        raise ValueError(f".hic file read in error. This is most likely due to the normalization vectors not being present in the .hic file. "
+                         f"Suggestion: retry with a different normalization method than '{normalization}'")
+
+    mat_obs = mat_obs.astype(np.float32)
+    mat_oe = mat_oe.astype(np.float32)
+
+    # Fill nans with 0
+    mat_obs[np.isnan(mat_obs)] = 0
+    mat_oe[np.isnan(mat_oe)] = 0
+
+    # Determine the common removed indices 
+    rm_idx = compute_rm_idx(mat_obs, window_size_bin, verbose=verbose)
+    mat_obs_sub = np.delete(np.delete(mat_obs, rm_idx, axis=0), rm_idx, axis=1)
+    mat_oe_sub = np.delete(np.delete(mat_oe, rm_idx, axis=0), rm_idx, axis=1)
+
+    if mat_obs_sub.shape[0] == 0 or mat_obs_sub.shape[1] == 0:
+        raise ValueError(f"Empty contact map generated for chromosome {chromosome} with resolution {resolution} and window size {window_size}. "
+                         f"Please check the Hi-C file {hic_file} for coverage and/or parameters")
+
+    if data_type == "observed":
+        im_sq = np.log10(mat_obs_sub + 1)
+        if whiten is not None:
+            # If not None, then interpret the `whiten` parameter as the epsilon parameter
+            im_sq = cv.normalize(im_sq, None, alpha=0, beta=1, norm_type=cv.NORM_MINMAX, dtype=cv.CV_32F)
+            im_sq, _ = whiten_matrix(A_for_corr=im_sq, A_for_whiten=im_sq, epsilon=whiten)
+    elif data_type == "oe":
+        im_sq = mat_oe_sub.copy()
+    else:
+        raise ValueError(f"data_type {data_type} not supported. Use 'oe' or 'observed'.")
+    
+    im_pval_sq = np.log10(mat_obs_sub + 1)
+
+    # IMAGE
+    im_sq = clip_and_normalize(im_sq, im_vmin_perc, im_vmax_perc)
+
+    # P-VALUE OBSERVED
+    im_pval_sq = clip_and_normalize(im_pval_sq, im_vmin_perc, im_vmax_perc)
+
+    # IMAGE CORNER (correlation of oe)
+    coe_sq = mat_oe_sub.copy()
+    zero_outside_window(coe_sq, window_size_bin)
+    coe_sq = np.log10(coe_sq + 1)
+    coe_sq = clip_and_normalize(coe_sq, corner_vmin_perc, corner_vmax_perc)
+    coe_sq = scalar_products(coe_sq, out="correlation")
+    coe_sq = cv.normalize(coe_sq, None, alpha=0, beta=1, norm_type=cv.NORM_MINMAX, dtype=cv.CV_32F)
+
+    # P-VALUE NULL
+    cob_sq = np.log10(mat_obs_sub + 1)
+    cob_sq = clip_and_normalize(cob_sq, im_vmin_perc, im_vmax_perc)
+    cob_sq = scalar_products(cob_sq, out="correlation")
+    cob_sq = cv.normalize(cob_sq, None, alpha=0, beta=1, norm_type=cv.NORM_MINMAX, dtype=cv.CV_32F)
+
+    # ROTATION CODE
+    # Some basic statistics for the rotation code
+    N = im_sq.shape[0]
+    window_size_bin_rect = np.ceil(window_size_bin / np.sqrt(2)).astype(int)
+    center = np.ceil(N * np.sqrt(2) / 2).astype(int)
+
+    # Single rotation with all images stacked as channel dim
+    mats_to_rotate = [im_sq, im_pval_sq, coe_sq, cob_sq]
+    rot_list = rotate_stack_extract_rectangle(mats_to_rotate, rotate_mode=rotation_padding, cval=0, 
+                                              center=center, window_size_bin_rect=window_size_bin_rect)
+    im, im_p_value, im_corner, corr_im_p_value = rot_list
+
+    # Save statistics histogram for the IMAGE only
+    plt.imsave(save_name, im, cmap="gray", vmax=np.percentile(im, im_vmax_perc), vmin=np.percentile(im, im_vmin_perc))
+    save_histogram(im, save_path, file_name=f"{root}_contact_map_intensity_value_histogram.jpg", vmin_perc=im_vmin_perc, vmax_perc=im_vmax_perc)
+
+    # Finally, return the image that has no 0 sum rows/columns removed (i.e. fully intact matrix)
+    if data_type == "oe":
+        mat_orig = mat_oe 
+    else:
+        mat_orig = np.log10(mat_obs + 1)
+
+    # Rotation statistics 
+    N_orig = mat_orig.shape[0]
+    center_orig = np.ceil(N_orig * np.sqrt(2) / 2).astype(int)
+    window_size_bin_rect_orig = np.ceil(window_size_bin / np.sqrt(2)).astype(int)
+    # Rotation and extract
+    mat_orig_rot = rotate(mat_orig, 45, reshape=True, order=1, mode=rotation_padding, cval=0)
+    im_orig = mat_orig_rot[center_orig-window_size_bin_rect_orig:center_orig, :]
+
+    im_orig = clip_and_normalize(im_orig, im_vmin_perc, im_vmax_perc)
+
+    return im, im_orig, im_p_value, im_corner, corr_im_p_value, rm_idx, save_name, N
+
 
 def compute_edge_strength(im):
     """

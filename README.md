@@ -2,133 +2,141 @@
 ![Latest tag](https://img.shields.io/github/v/tag/sion23/miajet?sort=semver)
 
 
+## Release notes
+* There are several improvements to version v1.0.20, namely in efficiency and optimizations for higher resolutions (e.g. 25 kb)
+* Recommended parameters have been slightly adjusted (see below)
 
 ## Overview
-### Inputs
-* Hi-C data (`.hic`)
 
-### Parameters
-#### Generating expanded table
-* `chrom`: chromosome (e.g. `"chr1"`)
-* `normalization=["KR", "VC_SQRT", "VC", "NONE"`]: Hi-C normalization method 
-* `data_type=["observed", "oe"]`: Hi-C data type 
-* `resolution`: Hi-C resolution (e.g. `50000` for 50 kbp)
-* TODO: add thresholds
-* `window_size`: distance from main diagonal, in which every jet is expected to be within (e.g. `6000000` for 6 mbp)
-* `data_type=["observed", "oe"]`: Hi-C data-type (default: "observed")
-* `scale_range`: standard deviation of Gaussian blurs considered in scale space. This can either be specified using the same parameters as [numpy.logspace](https://numpy.org/doc/stable/reference/generated/numpy.logspace.html) or as a custom list of values
-    * `(start, stop, num, base)` corresponding to `scale_range_mode="logspace"`. Please refer to [numpy.logspace](https://numpy.org/doc/stable/reference/generated/numpy.logspace.html) for a description of these parameters (default: `1 7 24 1.5`). 
-    * `(s0, s1, ...)`, where `s0` is the first standard deviation, `s1` is the second etc. corresponding to `scale_range_mode="custom"`.
-* `scale_range_mode=["logspace", "custom"]`: Specify whether `scale_range` supplied is log space or a list of standard deviation values (default: `"logspace"`).
-* `gamma`: The $\gamma$ parameter in scale space between 0 and 1 (default: `0.75`). A value of 0.75 is recommended for ridges and a value of 1 is recommended for edges. 
-* `ridge_method=[1, 2, 3, 5, 6, 7]`: the ridge strength measure to be used as the saliency measure (default: `1`)
+At its most basic input, MIA-Jet requires only 4 parameters (Required). However, MIA-Jet also offers advanced customization for various types of 3C data via the extended and advanced parameters. 
+
+### Input
+
+* `hic_file` (str): Path to Hi-C data file (`.hic` or `.mcool`).
+
+### Parameters 
+
+
+#### Required
+
+* `--exp_type` (`"hic"` | `"replihic"`): Experiment type. This influences the parameter values that are set. We denote the default for <span style="color:red">"hic"</span> (red) and <span style="color:blue">"replihic"</span> (blue).
+* `--chrom` (str): Chromosome (e.g. `"chr1"`).
+* `--resolution` (int): Hi-C resolution in base pairs (e.g. `50000` for 50 kbp).
+* `--save_dir_root` (str): Absolute path to directory where results will be saved.
+
+
+#### Extended
+
+* `--alpha` (float, or multiple floats; default: `0.4 0.3 0.2`): One or more α values for p-value cutoffs.
+* `--window_size` (int; default: `6000000`): Max distance from main diagonal in which jets are expected (e.g. `6000000` for 6 Mbp).
+* `--normalization` (str; optional): Hi-C normalization method (e.g. `"KR"`, `"VC_SQRT"`, `"NONE"`). If omitted, uses dataset/tooling defaults.
+    * <span style="color:red">"hic"</span>: "KR"
+    * <span style="color:blue">"replihic"</span>: "VC_SQRT"
+* `--data_type` (`"observed"` | `"oe"`; default: `"observed"`): Hi-C data type.
+    * <span style="color:red">"hic"</span>: "oe"
+    * <span style="color:blue">"replihic"</span>: "observed"
+* `--thresholds` (float float; default: `None`): Lower/upper thresholds for ImageJ Curve Tracing. If `None`, thresholds are suggested automatically from `scale_range` or `jet_widths`.
+* `--angle_range` (float float; default: `80 100`): Angle bounds (degrees) with 90° being the perpendicular (uncurved) jet
+* `--saliency_thresh` (float; default: `90`): Percentile (computed from non-zero saliency) used for saliency thresholding.
+* `--jet_widths` (float,float; default: `None`): Lower/upper bounds of jet widths _in pixels_ to detect. It is important to ensure this parameter is set accurately, as this determines the scales considered. Nevertheless, if omitted, a default log-spaced scale range is used (≈ $1.5^1$ … $1.5^7$ with 24 steps). 
+* `--root_within` (int; optional): Enforce ridge root ≤ this many bins from the main diagonal. This parameter is used to ensure that we see jets "connected" to the main diagonal
+    * <span style="color:red">"hic"</span>: 3
+    * <span style="color:blue">"replihic"</span>: None
+* `--folder_name` (str; default: `None`): Output subfolder name. If `None`, defaults to the Hi-C file’s stem.
+* `--num_cores` (int; default: `1`): Number of CPU cores to use.
+* `--verbose` (flag; default: off): Print debug/details.
+* `--rmse` (`None`|float; default: `None`): Normalized RMSE threshold.
+    * <span style="color:red">"hic"</span>: 0.01
+    * <span style="color:blue">"replihic"</span>: None
+* `--entropy_thresh` (`None`|float; default: `None`): Normalized entropy threshold.
+    * <span style="color:red">"hic"</span>: 0.5
+    * <span style="color:blue">"replihic"</span>: None
+
+#### Optional
+
+* `--scale_range` (float, or multiple floats; default: `None`): Standard deviations of Gaussian blurs used in scale space (list). **Alternative to** `jet_widths`; if given, overrides `jet_widths`. Recommended to be log-spaced. With v1.0.25, it is now recommended to use the `--jet_widths` parameter.
+
+#### Advanced
+
+* `--gamma` (float; default: `0.75`): Scale space parameter $\gamma$ in $[0,1]$ (0.75 recommended for ridges; 1.0 for edges).
+* `--ridge_method` (int; choices: `1,2,3,4,5,6,7`; default: `1`): Ridge strength/saliency formulation. Option 1 is the recommended.
     * 1: D1: $\lambda_1$, where $\lambda_1$ is the largest eigenvalue of the Hessian matrix $H$
     * 2: D2: $(\lambda_1^2 - \lambda_2^2)^2$
     * 3: D3: $(\lambda_1 - \lambda_2)^2$
-    * 5: D5: $\lambda_1 + sign(det(H)) * \sqrt(|det(H)|)$
-    * There are other possible options: such as (6) $\lambda_1 - \sqrt(|det(M)|)$ or (7) $(\lambda_1^2 - \lambda_2^2)^{1/2} - \sqrt(|det(M)|)$, although these are less tested than the others
-* `rotation_padding`: the padding method for filling in the trapezoid corners in the [scipy.ndimage.rotate](https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.rotate.html) rotation step in step (1) (default: `"mirror"`)
-* `convolution_padding`: the padding method for [scipy.ndimage.correlate1d](https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.correlate1d.html), [scipy.ndimage.correlate](https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.correlate.html) convolution operation in step (3) (default: `"nearest"`)
-* `scale_selection=["local", "min_scale"]`: The method to select a single scale $s$ for a position $(x, y)$ in an image (default: `"local"`). 
-    * Local: Selects scale for an $(x, y)$ position that is (1) global maxima of ridge strength in scale space AND passes 1st, 2nd deriv tests (2) If no global maxima exists but local maxima exists, then select the local maxima that maximizes ridge strength (3) Otherwise, does not assign a scale to this position.
-    * Min scale: Selects scale for an $(x, y)$ position that is simply the minimum scale out of all global and local maxima in scale space. 
-    * Note: this is in development and am testing DBSCAN to link scales appropriately
+* `--rotation_padding` (choice; default: `"nearest"`): Padding for `scipy.ndimage.rotate`. Choices: `"reflect"`, `"grid-mirror"`, `"constant"`, `"grid-constant"`, `"nearest"`, `"mirror"`, `"grid-wrap"`, `"wrap"`.
+* `--convolution_padding` (choice; default: `"nearest"`): Padding for `scipy.ndimage.correlate`/`correlate1d`. Choices: `"reflect"`, `"constant"`, `"nearest"`, `"mirror"`, `"wrap"`.
+* `--sum_cond` (choice; default: `"a-r"`): Which condition masks to **sum** (or **average** if `--agg "mean"`) into the saliency score. Choices: `"a"`, `"r"`, `"c"`, `"a-r"`, `"a-c"`, `"r-c"`, `"a-r-c"`, where 
+    * `"a"` denotes angle boolean condition (i.e. sum current pixel's ridge strength if it is within the specified `angle_range`), 
+    * `"r"` denotes the ridge condition (i.e. sum current pixel's ridge strength if it is a ridge or not), 
+    * `"c"` denotes the corner condition (i.e. sum current pixels' ridge strength if it is not a corner). 
+* `--noise_consec` (str; default: `""`): Consecutive-True noise adjustment. Format: `"INTEGER-TYPE"`, where `INTEGER` is the min run length and `TYPE` ∈ `{ "a", "r", "a-r" }`. Empty string disables.
+* `--noise_alt` (choice; default: `""`): Alternating 0/1 normalization selector. Choices: `""`, `"a"`, `"r"`, `"c"`, `"a-r"`, `"a-c"`, `"r-c"`, `"a-r-c"`.
+* `--agg` (`"sum"` | `"mean"`; default: `"sum"`): Aggregation for final jet saliency score.
+* `--rem_k_strata` (int; default: `1`): Remove jets located within the k-th off-diagonal strata.
+* **Entropy histogram settings**
+
+  * `--num_bins` (int; default: `10`)
+  * `--bin_size` (float; default: `None`)
+  * `--points_min` (float; default: `0`)
+  * `--points_max` (`None`|float; default: `0.05`)
+* **Epsilon thresholds**
+
+  * `--eps_r` (`None`|float; default: `0.0005`)
+  * `--eps_c1` (`None`|float; default: `0.1`)
+  * `--eps_c2` (`None`|float; default: `1e-5`)
+* `--whiten` (`None`|float; default: `None`): Enable ZCA whitening of the image; value is the epsilon (e.g. `1e-5`).
+* **Intensity percentiles (0–100)**
+
+  * `--im_vmax` (`None`|float): Max intensity percentile for Hi-C image.
+    * <span style="color:red">"hic"</span>: 99
+    * <span style="color:blue">"replihic"</span>: 100
+  * `--im_vmin` (`None`|float): Min intensity percentile for Hi-C image.
+  * `--im_corner_vmax` (`None`|float): Max intensity percentile for corner image.
+      * <span style="color:red">"hic"</span>: 98
+    * <span style="color:blue">"replihic"</span>: 100
+  * `--im_corner_vmin` (`None`|float): Min intensity percentile for corner image.
+* **Trim controls** (each accepts `None`, a **float** in `[0,1]` as a fraction of original length, or an **int ≥1\`** as an absolute minimum length in pixels). Note that a value of `0` means that trimming can occur anywhere, `0.5` means that trimming cannot cause the ridge to be less than half of its original length etc.
+  * `--angle_trim` (default 0.5)
+  * `--corner_trim`
+    * <span style="color:red">"hic"</span>: 0
+    * <span style="color:blue">"replihic"</span>: None
+  * `--eig2_trim`
+    * <span style="color:red">"hic"</span>: 0
+    * <span style="color:blue">"replihic"</span>: None
+* `--ang_frac` (flag): **Disable** angle-fraction multipliers in saliency. (By default it is **on**; passing this flag turns them off.)
+
+---
+
+**Notes**
+
+* Anywhere a parameter says “`None`|float”, the CLI accepts the literal string `"None"` (case-insensitive) to mean Python `None`, or a numeric value.
 
 
-Recommended Parameter Settings across resolutions
-| Hi-C resolution `resolution` | `root_within` |
-|---|---|
-| 50 kb | 3 |
-| 25 kb | 6 |
-| 10 kb | 15 |
-
-
-
-#### Ranking ridges
-# Parameter Descriptions
-
-## noise_consec
-* `noise_consec` is a string in the format `"INTEGER-TYPE"` (default: `"2-a"`). Here, `INTEGER` specifies the minimum number of consecutive True values required for filtering, and `TYPE` determines which mask(s) to use. Allowed `TYPE` values are:
-    - **"a"** – Use only the **angle** conditions.
-    - **"r"** – Use only the **ridge** conditions.
-    - **"c"** – Use only the **corner** conditions.
-    - **"a-r"** – Use the intersection of the **angle** and **ridge** conditions.
-    - **"a-c"** – Use the intersection of the **angle** and **corner** conditions.
-    - **"r-c"** – Use the intersection of the **ridge** and **corner** conditions.
-    - **"a-r-c"** – Use the intersection of **angle**, **ridge**, and **corner** conditions.
-* `noise_alt` is a string that specifies the boolean mask for alternating normalization (i.e., the final score is divided by the number of alternating True/False transitions). The default value is `"a"`. Allowed values are:
-    - **"a"** – Use only the **angle** conditions.
-    - **"r"** – Use only the **ridge** conditions.
-    - **"c"** – Use only the **corner** conditions.
-    - **"a-r"** – Use the intersection of the **angle** and **ridge** conditions.
-    - **"a-c"** – Use the intersection of the **angle** and **corner** conditions.
-    - **"r-c"** – Use the intersection of the **ridge** and **corner** conditions.
-    - **"a-r-c"** – Use the intersection of **angle**, **ridge**, and **corner** conditions.
-* `sum_cond` is a string that specifies the baseline mask for final aggregation. This mask determines which conditions are summed (or averaged if `agg="mean"`) when calculating the final score. Allowed values are:
-    - **"a"** – Use only the **angle** conditions.
-    - **"r"** – Use only the **ridge** conditions.
-    - **"c"** – Use only the **corner** conditions.
-    - **"a-r"** – Use the intersection of the **angle** and **ridge** conditions.
-    - **"a-c"** – Use the intersection of the **angle** and **corner** conditions.
-    - **"r-c"** – Use the intersection of the **ridge** and **corner** conditions.
-    - **"a-r-c"** – Use the intersection of **angle**, **ridge**, and **corner** conditions.
-* `angle_range`: imposes angle lower and upper bound in degrees to each pixel (e.g. `[80, 100]`).
-* `agg=["sum", "mean"]`: aggregation function
-* `top_k`: the percentile threshold [0, 1] to plot the ridges with score above this cutoff 
-
-#### General parameters
-* `folder_name`: the folder name to store generated files (default: `"debug"`). If `"debug"` then all the parameter values are combined. The folder is located in `./output/<folder_name>`. If you specify it yourself, then this value should be distinct from all other file/folder names in `./output/` in order to prevent conflicts (unless you want to overwrite the results).
-* `save_dir_root`: Root directory to store generated files (default: `"./output"` in the project directory `finding_jets/`)
-* `num_cores`: Number of CPU cores available for parallelizing. 
-* `verbose`: Whether debug statements are used (default: True) 
-
-
-### Steps
-#### Generating expanded table
-1. **Generate Hi-C Image**: reads in Hi-C data, removes *unmapped regions* (i.e. columns and rows whose sum is $0$), extracts the upper-diagonal trapezoid, with the height determined by `window_size`. 
-    * The Hi-C image is saved in `output/<folder_name>/`.
-2. **Run ImageJ**: runs [CurveTracing Plugin](https://github.com/ekatrukha/CurveTrace/wiki/Source-Steger%27s-Algorithm) at all scales specified by `scale_range`. ImageJ returns the set of ridge positions as pixel coordinates of the Hi-C image. 
-3. **Process ImageJ**: combines the results of ImageJ and performs preliminary filtering, namely
-    - Remove ridges within `k=3` off-diagonal
-    - Remove ridges with size less than or equal to `1`
-    - Reorients ridges based on a simple check of the ridge end-points (i.e. is one end of the ridge closer to the main diagonal?)
-3. **Generate scale space features**: generates scale space features (e.g. eigenvalues, eigenvectors of the image Hessian) using python packages, resulting in a tensor of Hi-C features. For reference, steps 2 and 3 are independent.
-4. **Generate expanded table** generates an *expanded table*, where each row is a position of a ridge with features as columns.
-    * Note that the scale space tensors and the ridge positions from ImageJ have unmapped regions removed. This means that we may generate the expanded table without inserting the 0 regions, where simple indexing should work. 
-    * The output should be a large table containing multiple ridges, with each pixel of a ridge having an x-y position on the Hi-C image and features of (3). 
-    * Once the table has been generated, we insert the unmapped regions by an indexing scheme. 
-        > Note to developer: none of the objects like `I, D, W1, W2, A, R` or `df`, `df_pos` have the unmapped regions inserted, so they should be discarded and not used for downstream analysis. 
-    * The output table is stored in `output/<folder_name>/`.
-
-#### Ranking ridges
-1. For each ridge in the _expanded table_,
-    1. Generates a boolean mask of **ridge condition** and/or **angle constraints**. If noise parameters are not specified, this mask is all true. 
-    2. Aggregates the ridge only where the boolean mask is true, using either sum or mean aggregation and the values determined by ridge strength. The output of this step is a single number.
-    3. Noise adjustment is applied if specified. The output of this step is called the ridge score. 
-2. The ridge scores for all ridges are then collected in a table and saved
-    * The *summary table* is saved in `output/<folder_name>/`
-3. The top K ridges in terms of ridge scores has its features plotted (e.g. ridge strength map, eigenvector, ridge conditions, angle constraints etc.).
-    * The feature plots are saved in `output/<folder_name>/`
 
 
 **Examples**
 ```
-python -m miajet /nfs/turbo/umms-minjilab/mingjiay/GSE199059_wt_selected_30_new.hic \
-    --chrom "chr1" --normalization "KR" --resolution 50000 --window_size 6000000 \
-    --data_type "observed" --thresholds 0.01 0.05 --rem_k_strata 3 \
-    --scale_range 1 7 24 1.5 --scale_range_mode "logspace" --gamma 0.75 --ridge_method 1 \
-    --rotation_padding "nearest" --convolution_padding "nearest" --scale_selection "min_scale" \
-    --angle_range 80 100 --noise_consec "" --noise_alt "" --sum_cond "a-r" --agg "sum" --top_k 30 \
-    --num_cores 6 --verbose true
+python -m miajet /nfs/turbo/umms-minjilab/downloaded_data/GSE199059_CD69negDPWTR1R2R3R4_merged.hic \
+  --chrom "${CHROM}" \
+  --exp_type "hic" \
+  --resolution 25000 \
+  --alpha 0.4 0.3 0.2 \
+  --saliency_thresh 80 \
+  --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_output_v1.0.25" \
+  --num_cores 4 \
+  --verbose \
+  --root_within 10 \
 ```
 ```
 python -m miajet /nfs/turbo/umms-minjilab/downloaded_data/Repli-HiC_K562_WT_totalS.hic \
-    --chrom "chr1" --normalization "VC_SQRT" --resolution 25000 --window_size 6000000 \
-    --data_type "observed" --thresholds 0.01 0.05 --rem_k_strata 3 \
-    --scale_range 1 7 24 1.5 --scale_range_mode "logspace" --gamma 0.75 --ridge_method 1 \
-    --rotation_padding "mirror" --convolution_padding "nearest" --scale_selection "min_scale" \
-    --angle_range 80 100 --noise_consec "" --noise_alt "" --sum_cond "a-r" --agg "sum" --top_k 10 \
-    --num_cores 6 --verbose true
+  --chrom "${CHROM}" \
+  --exp_type "replihic" \
+  --resolution 25000 \
+  --alpha 0.4 0.3 0.2 \
+  --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_debug" \
+  --num_cores 4 \
+  --verbose \
+  --folder_name "test" \
 ```
 
 
