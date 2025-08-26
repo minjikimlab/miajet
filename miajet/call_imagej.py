@@ -7,6 +7,7 @@ import psutil
 import time
 import random
 import sys
+import numpy as np
 
 
 def get_free_display(low=1000, high=9999, max_tries=10):
@@ -96,11 +97,11 @@ def process_sigma_pyvd(s, lt, ut, image_path, save_path, root, memory_alloc, mac
                            str(current_ut), str(current_lt), root])
 
         # Check if results already exist
-        # expected_csv = os.path.join(save_path, f"{root}_imagej_results_s-{s_rounded}_table.csv")
-        # if os.path.exists(expected_csv):
-        #     if verbose:
-        #         print("Results already exist, skipping processing.")
-        #     return
+        expected_csv = os.path.join(save_path, f"{root}_imagej_results_s-{s_rounded}_table.csv")
+        if os.path.exists(expected_csv):
+            if verbose:
+                print("Results already exist, skipping processing.")
+            return
 
         if verbose:
             print(f"\tAttempt {attempt+1}: s={s:.2f}, ut={current_ut:.2f}, lt={current_lt:.2f}")
@@ -380,7 +381,8 @@ def call_imagej_scale_space(scale_range, lt, ut, image_path, save_path, root, nu
     Returns:
     None, but saves the output images and (.csv) tables directly from the imageJ macro
     """
-    memory_alloc = allocate_mem(0.5, verbose)
+    # memory_alloc = allocate_mem(0.5, verbose)
+    memory_alloc = 16 * (1024 ** 3)  # Hard code to be 16 GB
 
     # Find the ImageJ macro file
     current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -392,18 +394,30 @@ def call_imagej_scale_space(scale_range, lt, ut, image_path, save_path, root, nu
     if num_cores == 1: 
         # print("\tWARNING: ImageJ parallelization DISABLED")
         # no parallelization
-        for s in scale_range:
-            process_sigma_pyvd(s, lt, ut, image_path, save_path, root, memory_alloc, macro_path, verbose)
-            # process_sigma_pyimagej(s, lt, ut, image_path, save_path, root, memory_alloc, macro_path, verbose)
-            # process_sigma(s, lt, ut, image_path, save_path, root, memory_alloc, macro_path, verbose)
-            # process_sigma_python(s, image_path, save_path, memory_alloc, macro_path, verbose)
+
+        if type(lt) == list:
+            for s, i in enumerate(scale_range):
+                process_sigma_pyvd(s, lt[i], ut[i], image_path, save_path, root, memory_alloc, macro_path, verbose)
+                # process_sigma_pyimagej(s, lt[i], ut[i], image_path, save_path, root, memory_alloc, macro_path, verbose)
+                # process_sigma(s, lt[i], ut[i], image_path, save_path, root, memory_alloc, macro_path, verbose)
+                # process_sigma_python(s, image_path, save_path, memory_alloc, macro_path, verbose)
+        else:
+            for s in scale_range:
+                process_sigma_pyvd(s, lt, ut, image_path, save_path, root, memory_alloc, macro_path, verbose)
+                # process_sigma_pyimagej(s, lt, ut, image_path, save_path, root, memory_alloc, macro_path, verbose)
+                # process_sigma(s, lt, ut, image_path, save_path, root, memory_alloc, macro_path, verbose)
+                # process_sigma_python(s, image_path, save_path, memory_alloc, macro_path, verbose)
 
     else:
-        # Allocate memory for each core
-        args = [(s, lt, ut, image_path, save_path, root, memory_alloc / num_cores, macro_path, verbose) for s in scale_range]
+        # Allocate memory for each core (hard-code minimum per core to be 4 GB)
+        memory_alloc_per_core = np.clip(memory_alloc / num_cores, 4 * (1024 ** 3), None)
+        if type(lt) == list:
+            args = [(s, lt[i], ut[i], image_path, save_path, root, memory_alloc_per_core, macro_path, verbose) for i, s in enumerate(scale_range)]
+        else:
+            args = [(s, lt, ut, image_path, save_path, root, memory_alloc_per_core, macro_path, verbose) for s in scale_range]
         with Pool(int(num_cores)) as pool:
-            # pool.starmap(process_sigma, args)
             pool.starmap(process_sigma_pyvd, args)
+            # pool.starmap(process_sigma, args)
             # pool.starmap(process_sigma_pyimagej, args)
 
     print()

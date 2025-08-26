@@ -441,8 +441,8 @@ def process_imagej_results(df, df_pos, window_size, N, resolution, remove_kth_st
     # convert ImageJ angles from [0 to 2pi] to [0, 180]
     df_pos[angle_label] = np.degrees(df_pos[angle_label]) % 180
 
-    # Reorder ridges FIRST (although slightly more inefficient than filtering and then reorienting))
-    df_pos = reorient_ridges(df_pos, df_pos.groupby([contour_label, "s_imagej"], sort=False), y_label, True)
+    # Reorder ridges 
+    # df_pos = reorient_ridges(df_pos, df_pos.groupby([contour_label, "s_imagej"], sort=False), y_label, True)
 
     if verbose: print(f"\tNum ridges before processing: {len(df)}")
     df_pos, df = remove_padding_positions(df_pos=df_pos, df=df, N=N, window_size_bin=window_size_bin, verbose=verbose)
@@ -456,7 +456,7 @@ def process_imagej_results(df, df_pos, window_size, N, resolution, remove_kth_st
 
     if verbose: print(f"\tNum ridges after processing: {len(df)}")
 
-    # df_pos = reorient_ridges(df_pos, df_pos.groupby([contour_label, "s_imagej"], sort=False), y_label, True)
+    df_pos = reorient_ridges(df_pos, df_pos.groupby([contour_label, "s_imagej"], sort=False), y_label, True)
 
     assert check_ridge_order(df_pos)
 

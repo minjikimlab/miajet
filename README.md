@@ -1,23 +1,6 @@
-# MIA-Jet
+# MIA-Jet: Multiscale Identification Algorithm for Chromatin Jets
 ![Latest tag](https://img.shields.io/github/v/tag/sion23/miajet?sort=semver)
 
-
-Multiscale Identification Algorithm for Chromatin Jets
-
-### Note: README is not up to date
-
-
-1. **Generating expanded table**
-    * **Input: Hi-C data, chromosome (and other parameters)**
-    * Converts Hi-C data into rectangular images
-    * Runs Curve Tracing ImageJ Plugin at various scales and gets ridge positions
-    * Runs scale-space on Hi-C image to generate features at the ridge positions
-    * **Output: an *expanded table*, defined by each row being a position of a ridge with features as columns**
-2. **Ranking ridges**
-    * **Input: _expanded table_, aggregation function $f$, threshold $\epsilon$**
-    * Collapses the *expanded table* to a *summary table* using the aggregation function $f$
-    * Plots features of all ridges that have score > threshold $\epsilon$. 
-    * **Output: a _summary table_, defined by each row being a ridge with associated score** 
 
 
 ## Overview
@@ -27,7 +10,7 @@ Multiscale Identification Algorithm for Chromatin Jets
 ### Parameters
 #### Generating expanded table
 * `chrom`: chromosome (e.g. `"chr1"`)
-* `normalization`: Hi-C normalization method (e.g. `"KR"`, `"VC_SQRT"`)
+* `normalization=["KR", "VC_SQRT", "VC", "NONE"`]: Hi-C normalization method 
 * `data_type=["observed", "oe"]`: Hi-C data type 
 * `resolution`: Hi-C resolution (e.g. `50000` for 50 kbp)
 * TODO: add thresholds
@@ -50,6 +33,16 @@ Multiscale Identification Algorithm for Chromatin Jets
     * Local: Selects scale for an $(x, y)$ position that is (1) global maxima of ridge strength in scale space AND passes 1st, 2nd deriv tests (2) If no global maxima exists but local maxima exists, then select the local maxima that maximizes ridge strength (3) Otherwise, does not assign a scale to this position.
     * Min scale: Selects scale for an $(x, y)$ position that is simply the minimum scale out of all global and local maxima in scale space. 
     * Note: this is in development and am testing DBSCAN to link scales appropriately
+
+
+Recommended Parameter Settings across resolutions
+| Hi-C resolution `resolution` | `root_within` |
+|---|---|
+| 50 kb | 3 |
+| 25 kb | 6 |
+| 10 kb | 15 |
+
+
 
 #### Ranking ridges
 # Parameter Descriptions

@@ -10,7 +10,6 @@ def none_or_float(x):
     except ValueError:
         raise argparse.ArgumentTypeError(f"Invalid float value: {x}. Use 'None' for no value.")
 
-
 def parse_args():
 
     # Instantiate the argument parser
@@ -39,8 +38,9 @@ def parse_args():
                         help="Hi-C normalization method (e.g. 'KR', 'VC_SQRT', 'NONE')") # 
     parser.add_argument("--data_type", type=str, required=False, choices=["observed", "oe"], default=_MISSING,
                         help="Hi-C data type (default: 'observed')") # 
-    parser.add_argument("--thresholds", nargs="+", type=float, required=False, default=[0.01, 0.05],
-                        help="The lower and upper thresholds for ImageJ Curve Tracing plugin (default: 0.01 0.05)") # 
+    parser.add_argument("--thresholds", nargs="+", type=float, required=False, default=None,
+                        help="The lower and upper thresholds for ImageJ Curve Tracing plugin (default: None)"
+                        "The default of None automatically generates suggested thresholds based on scale_range or jet_widths") # 
     parser.add_argument("--angle_range", nargs="+", required=False, type=float, default=[80, 100],
                         help="Angle lower and upper bound of jets in degrees with 90˚ being the secondary diagonal of contact map (default: 80 100)") # 
     parser.add_argument("--saliency_thresh", default=90, type=float,

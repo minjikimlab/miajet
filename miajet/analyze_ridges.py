@@ -2287,6 +2287,8 @@ def save_results(df_agg, df_features, K, ranking, save_path, chromosome, N_remov
 
     # Plot top K
     if plot:
+        if len(df_agg) > 100:
+            print(f"\tWARNING: More than 100 jets ({len(df_agg)}) being overlaid in plot. This may take a while. Consider disabling plot option...")
         plot_top_k(df_agg, df_features, K, ranking, hic_file, chromosome, resolution, window_size, normalization, rotation_padding,
                    save_path, im_vmax=im_vmax, im_vmin=im_vmin, root=root, parameter_str=parameter_str)
 

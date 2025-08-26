@@ -5,7 +5,7 @@ import contextlib
 import numpy as np
 from dataclasses import dataclass, field
 from typing import List, Optional
-from utils.scale_space import generate_scales_from_widths
+from utils.scale_space import generate_scales_from_widths, print_scale_width_conversion
 from utils.plotting import genomic_labels
 
 
@@ -97,7 +97,7 @@ def assign_defaults(args: argparse.Namespace) -> argparse.Namespace:
             "entropy_thresh":   0.5,
             "angle_trim":       0.5,
             "corner_trim":      0,
-            "rmse":             0.2,
+            "rmse":             0.01,
             "eig2_trim":        0.0,
             "im_vmin":          0,
             "im_vmax":          99, # 99
@@ -200,6 +200,8 @@ def process_args(args: argparse.Namespace) -> Config:
         # Then use the development mode scale_range 
         config.scale_range = np.logspace(1, 7, num=24, base=1.5)
         print(f"Warning: jet_widths or scale_range is not specified, using development mode scale_range: {config.scale_range}")
+    
+    print_scale_width_conversion(config.scale_range)
 
     # Main direcotry (level 1): ImageJ parameters
     hic_file_name = os.path.basename(config.hic_file)

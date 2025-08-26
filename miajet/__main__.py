@@ -15,7 +15,7 @@ from .overlaps import find_and_remove_overlaps
 from .stripiness import compute_stripiness
 from .threshold_saliency import threshold_saliency_q
 from .tee import set_logging_file
-from utils.scale_space import construct_scale_space, clip_scale_range, generate_scales_from_widths
+from utils.scale_space import construct_scale_space, clip_scale_range_and_update_thresholds
 import time
 
 
@@ -50,7 +50,10 @@ def main():
                                                                                   vmax_perc=config.im_vmax, 
                                                                                   vmin_perc=config.im_vmin)
     # edge_strength = compute_edge_strength(im)
-    config = check_im_vmin_vmax(im, config) # check if vmin and vmax are valid
+    # check if vmin and vmax are valid
+    config = check_im_vmin_vmax(im, config) 
+    # update the thresholds 
+    config = clip_scale_range_and_update_thresholds(im, config, b_vmax=90, b_vmin=25) 
     # For corner detection (and trimming of ridges)
     im_corner = generate_hic_corr_image(hic_file=config.hic_file, 
                                         chromosome=config.chrom, 
@@ -80,8 +83,6 @@ def main():
                                               vmin_perc=config.im_vmin, 
                                               vmax_perc=config.im_vmax, 
                                               verbose=config.verbose)
-    # Clip scale range based on image dimensions
-    config.scale_range = clip_scale_range(scale_range=config.scale_range, im_shape=im.shape, verbose=config.verbose) 
     total_time += time.time() - t0
     if config.verbose: print(f"Generating Hi-C image... {time.time() - t0:.0f}s Done")
 

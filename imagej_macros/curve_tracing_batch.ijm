@@ -52,7 +52,10 @@ function runCurveTracing(sigma, ut_value, lt_value, root, baseDir) {
         + "upper=" + ut_value + " lower=" + lt_value
     );
 
-    saveAs("PNG", baseDir + File.separator + root + "_imagej_results_s-" + sigma_rounded + "_lt-" + lt_value + "_ut-" + ut_value + ".png");
+    lt_rounded = d2s(lt_value, 3);
+    ut_rounded = d2s(ut_value, 3);
+
+    saveAs("PNG", baseDir + File.separator + root + "_imagej_results_s-" + sigma_rounded + "_lt-" + lt_rounded + "_ut-" + ut_rounded + ".png");
     
     saveAs("Results", baseDir + File.separator + root + "_imagej_results_s-" + sigma_rounded + "_table.csv");
 

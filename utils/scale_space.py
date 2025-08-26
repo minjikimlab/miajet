@@ -6,6 +6,12 @@ import pyscsp
 
 import numpy as np
 
+def print_scale_width_conversion(scale_range):
+    w0 = scale_to_width(np.min(scale_range))
+    w1 = scale_to_width(np.max(scale_range))
+    print(f"The current scale_range of ({np.min(scale_range)}, {np.max(scale_range)}) corresponds to width range of ({w0}, {w1}) (pixels)")
+    print("We advise that you inspect the contact map generated to confirm at least the viability of these scales.")
+
 def clip_scale_range(scale_range, im_shape, verbose, k=2):
     """
     Computes a maximum sigma (scale) for Gaussian convolution
@@ -450,6 +456,54 @@ def construct_scale_space(im, s_range, gamma, ridge_strength_method, filter_mode
 
     return I, D, W1, W2, A, R, C
 
+def clip_scale_range_and_update_thresholds(im, config, b_vmax, b_vmin):
+
+
+    if config.verbose:
+        print("Clipping scale range...")
+
+    config.scale_range = clip_scale_range(scale_range=config.scale_range, im_shape=im.shape, verbose=config.verbose)
+
+    if config.thresholds is not None:
+        return config
+    
+    print("Generating hysteresis thresholding parameters...")
+
+    # Simulate what happens in ImageJ with image loading in via `open`
+    I_rec_01 = cv.normalize(im, None, norm_type=cv.NORM_MINMAX, alpha=0, beta=1, dtype=cv.CV_32F)
+    I_rec_8bit = (I_rec_01 * 255).astype(np.uint8)
+
+    contrast_upper = np.percentile(I_rec_8bit[I_rec_8bit > 0], b_vmax)
+    contrast_lower = np.percentile(I_rec_8bit[I_rec_8bit > 0], b_vmin)
+
+    while contrast_upper == contrast_lower:
+        b_vmax = np.clip(b_vmax + 5, 0, 100)
+        b_vmin = np.clip(b_vmin - 5, 0, 100)
+        contrast_upper = np.percentile(I_rec_8bit[I_rec_8bit > 0], b_vmax)
+        contrast_lower = np.percentile(I_rec_8bit[I_rec_8bit > 0], b_vmin)
+    
+    if config.verbose:
+        print(f"\tStructure {b_vmax}-th percentile estimate: {contrast_upper:.3f}")
+        print(f"\tBackground {b_vmin}-th percentile estimate: {contrast_lower:.3f}")
+
+    lts = []
+    uts = []
+    for sigma in config.scale_range:
+        w = scale_to_width(sigma)
+
+        t_upper = 0.17 * (2 * contrast_upper * w / 2) / (np.sqrt(2 * np.pi) * (sigma ** 3)) * np.exp(- (w / 2) ** 2 / (2 * (sigma ** 2)))
+        t_lower = 0.17 * (2 * contrast_lower * w / 2) / (np.sqrt(2 * np.pi) * (sigma ** 3)) * np.exp(- (w / 2) ** 2 / (2 * (sigma ** 2)))
+
+        if config.verbose:
+            print(f'sigma: {sigma}, w: {w}, contrast upper: {contrast_upper}, contrast lower: {contrast_lower}, t_upper: {t_upper}, t_lower: {t_lower}')
+        
+        lts.append(t_lower)
+        uts.append(t_upper)
+
+    config.thresholds = [lts, uts]
+
+    return config
+        
 
 
 from scipy.interpolate import RegularGridInterpolator
