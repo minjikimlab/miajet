@@ -8,6 +8,7 @@
 #SBATCH --profile=all
 #SBATCH --time=2:00:00  
 #SBATCH --mail-type=FAIL 
+#SBATCH --output=slurm_out/slurm-%j.out
 
 my_job_header
 
@@ -18,7 +19,7 @@ python -m miajet /nfs/turbo/umms-minjilab/downloaded_data/Repli-HiC_K562_WT_tota
   --chrom "${CHROM}" \
   --exp_type "replihic" \
   --resolution 50000 \
-  --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_output_v1.0.25" \
+  --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_output_v1.0.27" \
   --num_cores 4 \
   --verbose \
   # --folder_name "v1.0.25_plus_plus_Repli-HiC_K562_both_types" \

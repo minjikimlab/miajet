@@ -19,12 +19,12 @@ python -m miajet /nfs/turbo/umms-minjilab/downloaded_data/GSE199059_CD69negDPWTR
   --chrom "${CHROM}" \
   --exp_type "hic" \
   --resolution 50000 \
-  --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_test" \
+  --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_output_v1.0.27" \
   --num_cores 4 \
   --verbose \
   --root_within 5 \
-  --eig2_trim 0.5 \
-  --folder_name "v1.0.25_pp-fixed-reorient-eig0.5" \
+  # --folder_name "v1.0.25_pp-fixed-reorient-eig0.5" \
+  # --eig2_trim 0.5 \
   # --angle_trim "None" \
   # --entropy_thresh "None" \
   # --rmse "None" \
