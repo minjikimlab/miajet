@@ -44,7 +44,7 @@ At its most basic input, MIA-Jet requires only 4 parameters (Required). However,
 * `--saliency_thresh` (float; default: `80`): Percentile (computed from non-zero saliency) used for saliency thresholding.
 * `--jet_widths` (float,float; default: `None`): Lower/upper bounds of jet widths _in pixels_ to detect. It is important to ensure this parameter is set accurately, as this determines the scales considered. Nevertheless, if omitted, a default log-spaced scale range is used (≈ $1.5^1$ … $1.5^7$ with 24 steps). 
 * `--root_within` (int; optional): Enforce ridge root ≤ this many bins from the main diagonal. This parameter is used to ensure that we see jets "connected" to the main diagonal
-    * <span style="color:red">"hic"</span>: 3
+    * <span style="color:red">"hic"</span>: 10
     * <span style="color:blue">"replihic"</span>: None
 * `--folder_name` (str; default: `None`): Output subfolder name. If `None`, defaults to the Hi-C file’s stem.
 * `--num_cores` (int; default: `1`): Number of CPU cores to use.
@@ -145,6 +145,7 @@ python -m miajet /nfs/turbo/umms-minjilab/downloaded_data/Repli-HiC_K562_WT_tota
   --chrom "chr3" \
   --exp_type "replihic" \
   --resolution 50000 \
+  --alpha 0.1 0.05 0.01 \
   --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_output_v1.0.25" \
   --num_cores 4 \
   --verbose \
