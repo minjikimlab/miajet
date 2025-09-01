@@ -59,6 +59,6 @@ notebooks/sum_pairwise_contacts.ipynb
 notebooks/miajet_figure1.ipynb
 notebooks/plot_aggregate.ipynb
 notebooks/plot_venn_diagram.ipynb
-
+notebooks/create_small_hic.ipynb
 
 slurm_out/

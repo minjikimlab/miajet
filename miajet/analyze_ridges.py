@@ -1798,9 +1798,12 @@ def plot_saliency_distribution(df_agg, ranking, q, save_path, bins=30):
     # Compute stats for full data
     N_all = len(data)
     mean_all = np.nanmean(data)
-    median_all = np.nanpercentile(data, q=q)
+    # median_all = np.nanpercentile(data, q=q)
     p25_all = np.nanpercentile(data, 25)
     p75_all = np.nanpercentile(data, 75)
+
+    percentiles = np.arange(0, 100, 10)
+    p_all = np.nanpercentile(data, percentiles) 
 
     # Compute stats for “zero‐bin”‐filtered data
     N_nz = len(nonzero_data)
@@ -1808,37 +1811,41 @@ def plot_saliency_distribution(df_agg, ranking, q, save_path, bins=30):
     median_nz = np.nanpercentile(nonzero_data, q=q)
     p25_nz = np.nanpercentile(nonzero_data, 25)
     p75_nz = np.nanpercentile(nonzero_data, 75)
+    p_all_nz = np.nanpercentile(nonzero_data, percentiles)
 
     # Create two subplots
-    fig, ax = plt.subplots(1, 2, figsize=(12, 6), layout="constrained")
+    fig, ax = plt.subplots(1, 2, figsize=(12, 7), layout="constrained")
 
     # Left: all data
     ax[0].hist(data, bins=bins)
-    ax[0].axvline(median_all, color='red', linestyle=':', label=f'{q}-Percentile={median_all:.2f}')
+    ax[0].axvline(median_nz, color='red', linestyle=':', label=f'{q}-Percentile={median_nz:.2f}')
     ax[0].legend()
     ax[0].set_xlabel('Saliency')
     ax[0].set_ylabel('Frequency')
     ax[0].set_title(
         f'Including zeros\n'
         f'Range: [{data.min():.2f}, {data.max():.2f}]\n'
-        f'Mean: {mean_all:.2f}, Median: {median_all:.2f}\n'
+        f'Mean: {mean_all:.2f}, {q}th: {median_nz:.2f}\n'
         f'25th: {p25_all:.2f}, 75th: {p75_all:.2f}, N={N_all}'
+        # f'\n{[f"{p}th: {v:.2f}" for p, v in zip(percentiles, p_all)]}'
     )
 
     # Right: with the zero‐bin removed
     ax[1].hist(nonzero_data, bins=bins)
-    ax[1].axvline(median_all, color='red', linestyle=':', label=f'{q}-Percentile={median_all:.2f}')
+    ax[1].axvline(median_nz, color='red', linestyle=':', label=f'{q}-Percentile={median_nz:.2f}')
     ax[1].legend()
     ax[1].set_xlabel('Saliency')
     ax[1].set_ylabel('Frequency')
     ax[1].set_title(
         f'Zero-bin removed\n'
         f'Range: [{nonzero_data.min():.2f}, {nonzero_data.max():.2f}], '
-        f'Mean: {mean_nz:.2f}, Median: {median_nz:.2f}\n'
+        f'Mean: {mean_nz:.2f}, {q}th: {median_nz:.2f}\n'
         f'25th: {p25_nz:.2f}, 75th: {p75_nz:.2f}, N={N_nz}'
+        # f'\n{[f"{p}th: {v:.2f}" for p, v in zip(percentiles, p_all_nz)]}'
     )
 
-    fig.suptitle(f'Distribution of Jet Saliency (for saliency thresholding diagnostics)')
+    fig.suptitle(f'Distribution of Jet Saliency (for saliency thresholding diagnostics)'
+                 f'\n{[f"{p}th: {v:.2f}" for p, v in zip(percentiles, p_all_nz)]}')
 
     # Save and close
     save_name = os.path.join(save_path, "saliency_histogram.png")

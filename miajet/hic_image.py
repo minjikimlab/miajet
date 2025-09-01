@@ -60,7 +60,10 @@ def generate_hic_bundle(hic_file, chromosome, resolution, window_size, data_type
     - im_orig: same as `im` data_type but without zero-sum removal (rotated separately)
     Returns also rm_idx, save_name, and N (post-removal).
     """
-    save_name = os.path.join(save_path, f"{root}_contact_map.jpg")
+    save_name = None
+    if save_path is not None:
+        save_name = os.path.join(save_path, f"{root}_contact_map.jpg")
+
     window_size_bin = np.ceil(window_size / resolution).astype(int)
 
     # Single access via hic-straw
@@ -136,8 +139,9 @@ def generate_hic_bundle(hic_file, chromosome, resolution, window_size, data_type
     im, im_p_value, im_corner, corr_im_p_value = rot_list
 
     # Save statistics histogram for the IMAGE only
-    plt.imsave(save_name, im, cmap="gray", vmax=np.percentile(im, im_vmax_perc), vmin=np.percentile(im, im_vmin_perc))
-    save_histogram(im, save_path, file_name=f"{root}_contact_map_intensity_value_histogram.jpg", vmin_perc=im_vmin_perc, vmax_perc=im_vmax_perc)
+    if save_path is not None:
+        plt.imsave(save_name, im, cmap="gray", vmax=np.percentile(im, im_vmax_perc), vmin=np.percentile(im, im_vmin_perc))
+        save_histogram(im, save_path, file_name=f"{root}_contact_map_intensity_value_histogram.jpg", vmin_perc=im_vmin_perc, vmax_perc=im_vmax_perc)
 
     # Finally, return the image that has no 0 sum rows/columns removed (i.e. fully intact matrix)
     if data_type == "oe":

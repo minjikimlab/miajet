@@ -148,7 +148,7 @@ def process_sigma_pyvd(s, lt, ut, image_path, save_path, root, memory_alloc, mac
                 sys.exit(e.returncode)
 
     else:
-        print("All attempts exhausted; please increase your thresholds or timeout.")
+        print("All attempts exhausted; Too many ridges detected at this scale. Recommended to increase jet-widths")
         sys.exit(1)
 
 

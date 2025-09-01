@@ -6,26 +6,38 @@
 #SBATCH --mem=60g 
 #SBATCH --gpus=0 
 #SBATCH --profile=all
-#SBATCH --time=2:00:00  
+#SBATCH --time=1:00:00  
 #SBATCH --mail-type=FAIL 
+#SBATCH --output=slurm_out/slurm-%j.out
 
 my_job_header
 
-echo "Using rjhyrna0 account"
+conda activate jet-env-test
 
-conda activate jet-env
-
-python -m miajet "${HIC_FILE}" \
-  --chrom "${CHROM}" \
-  --exp_type "${EXP}" \
-  --resolution "${RES}" \
-  --normalization "${NORM}" \
-  --window_size "${WIN}" \
-  --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_output_v1.0.27" \
-  --num_cores 4 \
-  --verbose \
-  # --alpha 0.1 0.05 0.01 \
-  # --folder_name "NEW_SUMMARY" \
+python -m miajet ./demo_data/GSE199059_CD69negDPWTR1R2R3R4_merged.hic \
+ --chrom "chr3" \
+ --exp_type "hic" \
+ --resolution 25000 \
+ --jet_widths 3 60 \
+ --alpha 0.1 0.05 0.01 \
+ --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_demo" \
+ --num_cores 4 \
+ --verbose \
+ --root_within 10 \
+  # --folder_name "v1.0.24_final" \
+  # --folder_name "v1.0.25_pp-fixed-reorient-eig0.5" \
+  # --eig2_trim 0.5 \
+  # --angle_trim "None" \
+  # --entropy_thresh "None" \
+  # --rmse "None" \
+  # --corner_trim "None" \
+  # --sum_cond "r" \
+  # --angle_trim 0.5 \
+  # --corner_trim "None" \
+  # --entropy_thresh 0.75 \
+  # --im_corner_vmax 100 \
+  # --normalization "KR" \
+  # --window_size 6000000 \
   # --data_type "oe" \
   # --rem_k_strata 1 \
   # --thresholds 0.01 0.05 \
@@ -55,6 +67,4 @@ python -m miajet "${HIC_FILE}" \
   # --saliency_thresh 90 \
   # --ang_frac \
   # --rmse 0.01 \
-  # --eig2_trim 0 \
   # --whiten 0.01 \
-
