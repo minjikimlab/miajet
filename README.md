@@ -6,7 +6,7 @@
 * There are several improvements to version v1.0.26 (over v1.0.20), namely in efficiency and optimizations for higher resolutions (e.g. 25 kb)
 * Recommended parameters have been slightly adjusted (see below)
 * The current program is optimized for linux or macOS systems (HPC clusters)
-* The [bioRxiv](https://www.biorxiv.org/content/10.1101/2025.08.27.672730v1) paper uses results from an earlier version of the program (v1.0.19), for which the processed data is available to download via [this link](https://www.dropbox.com/scl/fi/rp8sooa9wm0pp3qdry3pb/miajet_output_v1.0.19_paper_data_chr_combined.zip?rlkey=vbrlg3m3ijkgu2jnsbffvq658&st=luo39mcz&dl=0).
+* The [bioRxiv](https://www.biorxiv.org/content/10.1101/2025.08.27.672730v1) paper uses results (`saliency-90-p-0.1`) from an earlier version of the program (v1.0.19), for which the processed data is available to download via [this link](https://www.dropbox.com/scl/fi/rp8sooa9wm0pp3qdry3pb/miajet_output_v1.0.19_paper_data_chr_combined.zip?rlkey=vbrlg3m3ijkgu2jnsbffvq658&st=luo39mcz&dl=0).
 
 ## Overview
 
