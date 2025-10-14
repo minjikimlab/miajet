@@ -6,7 +6,7 @@
 * There are several improvements to version v1.0.26 (over v1.0.20), namely in efficiency and optimizations for higher resolutions (e.g. 25 kb)
 * Recommended parameters have been slightly adjusted (see below)
 * The current program is optimized for linux or macOS systems (HPC clusters)
-* The [biorXiv](https://www.biorxiv.org/content/10.1101/2025.08.27.672730v1) paper uses results from an earlier version of the program (v1.0.19), for which the processed data is available to download via [this link](https://www.dropbox.com/scl/fi/rp8sooa9wm0pp3qdry3pb/miajet_output_v1.0.19_paper_data_chr_combined.zip?rlkey=vbrlg3m3ijkgu2jnsbffvq658&st=luo39mcz&dl=0).
+* The [bioRxiv](https://www.biorxiv.org/content/10.1101/2025.08.27.672730v1) paper uses results from an earlier version of the program (v1.0.19), for which the processed data is available to download via [this link](https://www.dropbox.com/scl/fi/rp8sooa9wm0pp3qdry3pb/miajet_output_v1.0.19_paper_data_chr_combined.zip?rlkey=vbrlg3m3ijkgu2jnsbffvq658&st=luo39mcz&dl=0).
 
 ## Overview
 
@@ -188,7 +188,8 @@ The summary table summarizes each jet into a single row, with metrics detailing 
 The expanded table "expands" each jet into multiple rows, where each row corresponds to a single point of a jet. The `unique_id` column serves as a linker between the summary table and the expanded table (i.e. each `unique_id` corresponds to a single jet). Each row contains the genomic coordinates of each jet point in basepairs (`x (bp)`, `y (bp)`) and also in pixel coordinates with respect to the rotated image (`x (pixels)`, `y (pixels)`). Additionally, each jet point has an associated width `width` and angle that it is heading in `angle_imagej` as well as the ridge strength `ridge_strength`. 
 
 
+## Citation
+"MIA-Jet: Multi-scale Identification Algorithm of Chromatin Jets" by Sion Kim and Minji Kim. [bioRxiv](https://www.biorxiv.org/content/10.1101/2025.08.27.672730v1) (2025), 672730.
 
-
-
+For questions or bug reports, contact Sion (sionkim@umich.edu) or visit the "Issues" page.
 
