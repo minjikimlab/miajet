@@ -6,6 +6,7 @@
 * There are several improvements to version v1.0.26 (over v1.0.20), namely in efficiency and optimizations for higher resolutions (e.g. 25 kb)
 * Recommended parameters have been slightly adjusted (see below)
 * The current program is optimized for linux or macOS systems (HPC clusters)
+* The [biorXiv](https://www.biorxiv.org/content/10.1101/2025.08.27.672730v1) paper uses results from an earlier version of the program (v1.0.19), for which the processed data is available to download via [this link](https://www.dropbox.com/scl/fi/rp8sooa9wm0pp3qdry3pb/miajet_output_v1.0.19_paper_data_chr_combined.zip?rlkey=vbrlg3m3ijkgu2jnsbffvq658&st=luo39mcz&dl=0).
 
 ## Overview
 
@@ -156,6 +157,35 @@ python -m miajet /nfs/turbo/umms-minjilab/downloaded_data/Repli-HiC_K562_WT_tota
 2. Create conda environment: `conda env create -f environment.yml` (default name is `jet-env`)
 3. Activate environment: `conda activate jet-env`
 4. Run examples
+
+## Output Table
+There are 3 key outputs of the MIA-Jet program: 
+1. `*_expanded_table.csv`
+2. `*_summary_table.csv`
+3. `*_juicer-visualize.bedpe`
+
+The `*_juicer-visualize.bedpe` can be loaded into the [Juicebox program](https://github.com/aidenlab/Juicebox) as a 2D annotation for viewing. Note that the juicer visualized outputs do not contain outputs such as the width or angles, and is intended for simple visualization. The expanded and summary tables are formatted as follows:
+
+### Summary table (`*_summary_table.csv`)
+
+| unique_id     | chrom | start       | end         | length | input_mean | angle_mean | width_mean | jet_saliency | ks | p-val_raw | p-val_corr | stripiness |
+|----------------|--------|-------------|-------------|---------|-------------|-------------|-------------|---------------|----|------------|-------------|-------------|
+| chr1_1493_2    | chr1  | 52096283.31 | 52145898.04 | 100000  | 0.092       | 150.749     | 2.418       | 0             | 0  | 1          | 1           | 0           |
+| chr1_7908_0    | chr1  | 16042274.7  | 16088778.77 | 100000  | 0.077       | 42.156      | 1.057       | 0             | 1  | 0.167      | 0.294       | 0           |
+
+
+The summary table summarizes each jet into a single row, with metrics detailing the location of the jet (`chrom`, `start`, `end` i.e. genomic coordinates) and summaries of the jet, such as `length`, `input_mean`, `angle_mean`. An important column is the `jet_saliency` column, which is the final ranking metric for the jets, which can be interpreted as a weighted aggregate sum of the jet strength. We also include the significance statistics, namely the `ks` `p-val_raw` (uncorrected p-value) and `p-val_corr` (corrected p-value).
+
+
+
+### Expanded table (`*_expanded_table.csv`)
+
+| unique_id     | chrom | x (bp)       | y (bp)       | x (pixels) | y (pixels) | width  | angle_imagej | ridge_strength |
+|----------------|--------|--------------|--------------|-------------|-------------|--------|---------------|----------------|
+| chr1_237_16    | chr1  | 10020173.92  | 9917977.853  | 282.382     | 82.7        | 11.535 | 89.349        | 0.001          |
+| chr1_237_16    | chr1  | 10055521.32  | 9883785.156  | 282.399     | 81.717      | 11.535 | 88.876        | 0.001          |
+
+The expanded table "expands" each jet into multiple rows, where each row corresponds to a single point of a jet. The `unique_id` column serves as a linker between the summary table and the expanded table (i.e. each `unique_id` corresponds to a single jet). Each row contains the genomic coordinates of each jet point in basepairs (`x (bp)`, `y (bp)`) and also in pixel coordinates with respect to the rotated image (`x (pixels)`, `y (pixels)`). Additionally, each jet point has an associated width `width` and angle that it is heading in `angle_imagej` as well as the ridge strength `ridge_strength`. 
 
 
 
