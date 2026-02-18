@@ -156,7 +156,8 @@ python -m miajet /nfs/turbo/umms-minjilab/downloaded_data/Repli-HiC_K562_WT_tota
 1. Clone directory
 2. Create conda environment: `conda env create -f environment.yml` (default name is `jet-env`)
 3. Activate environment: `conda activate jet-env`
-4. Run examples
+4. Build: `python -m pip install -e .` 
+5. Run examples
 
 ## Output Table
 There are 3 key outputs of the MIA-Jet program: 

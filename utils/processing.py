@@ -1,8 +1,8 @@
 import numpy as np
-import pandas as pd
+# import pandas as pd
 import hicstraw
-import pyBigWig 
-import bioframe as bf
+# import pyBigWig 
+# import bioframe as bf
 from scipy.ndimage import rotate 
 
 def z_standardize(A):
@@ -239,104 +239,104 @@ def read_hic_rectangle(filename, chrom, resolution, window_size_bin, data_type, 
 
 from utils.plotting import save_histogram
 import cv2 as cv
-from Network_Enhancement.runner import enhance_network
+# from Network_Enhancement.runner import enhance_network
 
-def read_hic_network_enhancement(filename, chrom, resolution, window_size_bin, vmin_q, vmax_q, save_path,
-                                 root, ne_path, normalization='NONE', positions="all", handle_zero_sum=None, 
-                                 rotate_mode="nearest", cval=0, verbose=False):
-    """
-    In development
-    [1] Wang, B., Pourshafeie, A., Zitnik, M. et al. 
-    Network enhancement as a general method to denoise weighted biological networks. 
-    Nat Commun 9, 3108 (2018). https://doi-org.proxy.lib.umich.edu/10.1038/s41467-018-05469-x
-    """
+# def read_hic_network_enhancement(filename, chrom, resolution, window_size_bin, vmin_q, vmax_q, save_path,
+#                                  root, ne_path, normalization='NONE', positions="all", handle_zero_sum=None, 
+#                                  rotate_mode="nearest", cval=0, verbose=False):
+#     """
+#     In development
+#     [1] Wang, B., Pourshafeie, A., Zitnik, M. et al. 
+#     Network enhancement as a general method to denoise weighted biological networks. 
+#     Nat Commun 9, 3108 (2018). https://doi-org.proxy.lib.umich.edu/10.1038/s41467-018-05469-x
+#     """
 
-    mat = read_hic_file(filename=filename, chrom=chrom, resolution=resolution, positions=positions, 
-                        data_type="oe", # hard-code 
-                        normalization=normalization, verbose=False)
+#     mat = read_hic_file(filename=filename, chrom=chrom, resolution=resolution, positions=positions, 
+#                         data_type="oe", # hard-code 
+#                         normalization=normalization, verbose=False)
 
-    if mat.shape[0] == 1 and mat.shape[1] == 1:
-        # Most likely due to the normalization vectors not being present in the .hic file
-        raise ValueError(f".hic file read in error. This is most likely due to the normalization vectors not being present in the .hic file. "
-                         f"Suggestion: retry with a different normalizaiton method than '{normalization}'")
+#     if mat.shape[0] == 1 and mat.shape[1] == 1:
+#         # Most likely due to the normalization vectors not being present in the .hic file
+#         raise ValueError(f".hic file read in error. This is most likely due to the normalization vectors not being present in the .hic file. "
+#                          f"Suggestion: retry with a different normalizaiton method than '{normalization}'")
  
-    mat = mat.astype(np.float64)        
+#     mat = mat.astype(np.float64)        
 
-    # fill nans with 0
-    mat[np.isnan(mat)] = 0
+#     # fill nans with 0
+#     mat[np.isnan(mat)] = 0
 
-    window_size_buffer = min(window_size_bin + 5, mat.shape[0]) 
-    # the 5 bins is for aliasing artefacts
+#     window_size_buffer = min(window_size_bin + 5, mat.shape[0]) 
+#     # the 5 bins is for aliasing artefacts
 
-    # Zeroing off-diagonal does have an effect on the zero sum removed rows and columns
-    # However, for correlation this has the additional effect of causing issues with the dot products
-    # So we should just use this mat for computing the remove indices
-    mat_rm_idx = np.copy(mat)
+#     # Zeroing off-diagonal does have an effect on the zero sum removed rows and columns
+#     # However, for correlation this has the additional effect of causing issues with the dot products
+#     # So we should just use this mat for computing the remove indices
+#     mat_rm_idx = np.copy(mat)
 
-    mat_rm_idx[np.triu_indices_from(mat_rm_idx, k=window_size_buffer)] = 0
-    mat_rm_idx[np.tril_indices_from(mat_rm_idx, k=-1)] = 0
+#     mat_rm_idx[np.triu_indices_from(mat_rm_idx, k=window_size_buffer)] = 0
+#     mat_rm_idx[np.tril_indices_from(mat_rm_idx, k=-1)] = 0
 
-    # For correlation, we need to do zero sum computation BEFORE computing the correlations
-    if handle_zero_sum is not None:
-        # padding effect goes here before we rotate
-        if handle_zero_sum == "remove":
-            _, rm_idx = remove_zero_sum(mat_rm_idx, verbose=verbose)
-        elif isinstance(handle_zero_sum, (int, float)):
-            _, rm_idx = remove_zero_sum(mat_rm_idx, verbose=verbose)
-            mat[rm_idx, :] = handle_zero_sum
-            mat[:, rm_idx] = handle_zero_sum
+#     # For correlation, we need to do zero sum computation BEFORE computing the correlations
+#     if handle_zero_sum is not None:
+#         # padding effect goes here before we rotate
+#         if handle_zero_sum == "remove":
+#             _, rm_idx = remove_zero_sum(mat_rm_idx, verbose=verbose)
+#         elif isinstance(handle_zero_sum, (int, float)):
+#             _, rm_idx = remove_zero_sum(mat_rm_idx, verbose=verbose)
+#             mat[rm_idx, :] = handle_zero_sum
+#             mat[:, rm_idx] = handle_zero_sum
             
-        elif handle_zero_sum == "mean":
-            mean_values, rm_idx = remove_zero_sum(mat_rm_idx, verbose=verbose)
-            mat[rm_idx, :] = np.mean(mean_values)
-            mat[:, rm_idx] = np.mean(mean_values)  
+#         elif handle_zero_sum == "mean":
+#             mean_values, rm_idx = remove_zero_sum(mat_rm_idx, verbose=verbose)
+#             mat[rm_idx, :] = np.mean(mean_values)
+#             mat[:, rm_idx] = np.mean(mean_values)  
 
-    # New addition to correlation version: 
-    # Manually remove the rows and columsn in mat according to rm_idx
-    mat = np.delete(mat, rm_idx, axis=0)
-    mat = np.delete(mat, rm_idx, axis=1)
+#     # New addition to correlation version: 
+#     # Manually remove the rows and columsn in mat according to rm_idx
+#     mat = np.delete(mat, rm_idx, axis=0)
+#     mat = np.delete(mat, rm_idx, axis=1)
 
-    # Save histogram of the contact map intensity values
-    save_histogram(mat, save_path, vmax_perc=vmax_q, vmin_perc=vmin_q, file_name=f"{root}_network_enhancement_intensity_value_histogram.png")
+#     # Save histogram of the contact map intensity values
+#     save_histogram(mat, save_path, vmax_perc=vmax_q, vmin_perc=vmin_q, file_name=f"{root}_network_enhancement_intensity_value_histogram.png")
 
-    if np.percentile(mat, vmin_q) == np.percentile(mat, vmax_q):
-        # This should not occur as the vmin and vmax is already updated in the main function
-        # With the call to 
-        #   config = check_im_vmin_vmax(im, config) 
-        raise ValueError()
+#     if np.percentile(mat, vmin_q) == np.percentile(mat, vmax_q):
+#         # This should not occur as the vmin and vmax is already updated in the main function
+#         # With the call to 
+#         #   config = check_im_vmin_vmax(im, config) 
+#         raise ValueError()
 
-    # mat = cv.normalize(mat, None, alpha=0, beta=1, norm_type=cv.NORM_MINMAX, dtype=cv.CV_64F)
+#     # mat = cv.normalize(mat, None, alpha=0, beta=1, norm_type=cv.NORM_MINMAX, dtype=cv.CV_64F)
 
-    # before we rotate, we compute network enhancement
-    print("\tWarning: MATLAB module is required for network enhancement. May not work outside GL environment")
-    mat = enhance_network(A=mat, order=15, num_neighbors=50, alpha=0.99, workdir=save_path, ne_path=ne_path, matlab_module="matlab/R2024b")
+#     # before we rotate, we compute network enhancement
+#     print("\tWarning: MATLAB module is required for network enhancement. May not work outside GL environment")
+#     mat = enhance_network(A=mat, order=15, num_neighbors=50, alpha=0.99, workdir=save_path, ne_path=ne_path, matlab_module="matlab/R2024b")
 
-    # below is equivalent to `read_hic_rectangle`
-    window_size_buffer = min(window_size_bin + 5, mat.shape[0]) 
-    # the 5 bins is for aliasing artefacts
+#     # below is equivalent to `read_hic_rectangle`
+#     window_size_buffer = min(window_size_bin + 5, mat.shape[0]) 
+#     # the 5 bins is for aliasing artefacts
     
-    # Probably has no effect on performance, but we'll do it anyway 
-    mat[np.triu_indices_from(mat, k=window_size_buffer)] = 0
-    mat[np.tril_indices_from(mat, k=-1)] = 0
+#     # Probably has no effect on performance, but we'll do it anyway 
+#     mat[np.triu_indices_from(mat, k=window_size_buffer)] = 0
+#     mat[np.tril_indices_from(mat, k=-1)] = 0
         
-    N = mat.shape[0]
+#     N = mat.shape[0]
     
-    # moved center computation after removing zero indices
-    center = np.ceil(mat.shape[0] * np.sqrt(2) / 2).astype(int) # the new center after rotation
+#     # moved center computation after removing zero indices
+#     center = np.ceil(mat.shape[0] * np.sqrt(2) / 2).astype(int) # the new center after rotation
     
-    mat = rotate(mat, 45, reshape=True, order=1, mode=rotate_mode, cval=cval) # scipy.ndimage
+#     mat = rotate(mat, 45, reshape=True, order=1, mode=rotate_mode, cval=cval) # scipy.ndimage
 
-    # new is that we do a log transformation, normalize again, and clip AFTER the rotation
-    window_size_bin_rect = np.ceil(window_size_bin / np.sqrt(2)).astype(int) 
-    mat = mat[center-window_size_bin_rect:center, :]
+#     # new is that we do a log transformation, normalize again, and clip AFTER the rotation
+#     window_size_bin_rect = np.ceil(window_size_bin / np.sqrt(2)).astype(int) 
+#     mat = mat[center-window_size_bin_rect:center, :]
     
-    mat = np.log10(mat + 1)
-    mat = cv.normalize(mat, None, alpha=0, beta=1, norm_type=cv.NORM_MINMAX, dtype=cv.CV_64F)
-    mat = np.clip(mat, np.percentile(mat, vmin_q), np.percentile(mat, vmax_q))
+#     mat = np.log10(mat + 1)
+#     mat = cv.normalize(mat, None, alpha=0, beta=1, norm_type=cv.NORM_MINMAX, dtype=cv.CV_64F)
+#     mat = np.clip(mat, np.percentile(mat, vmin_q), np.percentile(mat, vmax_q))
     
-    if handle_zero_sum == "remove":
-        return mat, rm_idx, N
-    return mat
+#     if handle_zero_sum == "remove":
+#         return mat, rm_idx, N
+#     return mat
 
 
 def read_hic_corr_rectangle(filename, chrom, resolution, window_size_bin, data_type, vmin_q, vmax_q, save_path, zero_before_corr, 

@@ -5,6 +5,7 @@ import numpy as np
 from utils.plotting import convert_imagej_coord_to_numpy
 from tqdm import tqdm
 from multiprocessing import Pool
+from statsmodels.stats.multitest import multipletests
 
 def create_rotated_box(center, width, height, angle, use_radians=False):
     """
@@ -560,8 +561,6 @@ def compute_significance(df_agg, df_features, im_p_value, corr_im_p_value, agg, 
 
     return df_out
 
-
-from statsmodels.stats.multitest import multipletests
 
 
 def correct_significance(df_agg, method="fdr_bh"):

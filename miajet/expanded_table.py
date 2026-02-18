@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 import os
-import random
+# import random
 
 from utils.scale_space import extract_line_scale_space, create_maxima_set, round_line_scale_space, extract_angle_scale_space
 from utils.plotting import convert_imagej_coord_to_numpy

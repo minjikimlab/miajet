@@ -1,6 +1,6 @@
 import os
 import subprocess
-import imagej
+# import imagej
 from multiprocess import Pool 
 # import scyjava
 import psutil
@@ -8,6 +8,8 @@ import time
 import random
 import sys
 import numpy as np
+from pyvirtualdisplay import Display
+from pathlib import Path
 
 
 def get_free_display(low=1000, high=9999, max_tries=10):
@@ -78,8 +80,6 @@ def get_free_display(low=1000, high=9999, max_tries=10):
 #         print("All attempts exhausted; please increase your thresholds or timeout")
 #         sys.exit(1)
 
-from pyvirtualdisplay import Display
-from pathlib import Path
 
 def process_sigma_pyvd(s, lt, ut, image_path, save_path, root, memory_alloc, macro_path, verbose):
     s_str = str(s)

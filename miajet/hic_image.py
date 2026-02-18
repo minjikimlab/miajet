@@ -6,7 +6,7 @@ import os
 import scipy
 from scipy.ndimage import rotate
 
-from utils.processing import read_hic_rectangle, read_hic_corr_rectangle, read_hic_network_enhancement, \
+from utils.processing import read_hic_rectangle, read_hic_corr_rectangle, \
     read_hic_file, remove_zero_sum, whiten_matrix, scalar_products
 from utils.plotting import save_histogram
 import copy
@@ -176,7 +176,7 @@ def compute_edge_strength(im):
         The edge strength of the image as a 2D numpy array
     """
     Ix = scipy.ndimage.sobel(im, axis=1, mode='reflect') # dx
-    Iy = scipy.ndimage.sobel(im, axis=0, mode='reflect') # dy    
+    Iy = scipy.ndimage.sobel(im, axis=0, mode='reflect') # dy
     return Ix**2 + Iy**2
 
 
@@ -477,25 +477,25 @@ def generate_hic_corr_image(hic_file, chromosome, resolution, window_size, data_
                                                 handle_zero_sum="remove", 
                                                 root=root,
                                                 verbose=verbose)
-    elif data_type == "ne":
-        # New: network enhancement
-        current_loc = os.path.dirname(__file__) 
-        # In parent directory of current file
-        ne_path = os.path.abspath(os.path.join(current_loc, "..", "Network_Enhancement"))
-        im, _, _ = read_hic_network_enhancement(filename=hic_file,
-                                                chrom=chromosome, 
-                                                resolution=resolution, 
-                                                window_size_bin=window_size_bin, 
-                                                vmin_q=vmin_perc, 
-                                                vmax_q=vmax_perc,
-                                                normalization=normalization, 
-                                                save_path=save_path,
-                                                ne_path=ne_path, 
-                                                rotate_mode=rotation_padding, 
-                                                cval=0, 
-                                                handle_zero_sum="remove", 
-                                                root=root,
-                                                verbose=verbose)
+    # elif data_type == "ne":
+    #     # New: network enhancement
+    #     current_loc = os.path.dirname(__file__) 
+    #     # In parent directory of current file
+    #     ne_path = os.path.abspath(os.path.join(current_loc, "..", "Network_Enhancement"))
+    #     im, _, _ = read_hic_network_enhancement(filename=hic_file,
+    #                                             chrom=chromosome, 
+    #                                             resolution=resolution, 
+    #                                             window_size_bin=window_size_bin, 
+    #                                             vmin_q=vmin_perc, 
+    #                                             vmax_q=vmax_perc,
+    #                                             normalization=normalization, 
+    #                                             save_path=save_path,
+    #                                             ne_path=ne_path, 
+    #                                             rotate_mode=rotation_padding, 
+    #                                             cval=0, 
+    #                                             handle_zero_sum="remove", 
+    #                                             root=root,
+    #                                             verbose=verbose)
 
     else:
         raise ValueError(f"data_type {data_type} not supported for correlation image generation"

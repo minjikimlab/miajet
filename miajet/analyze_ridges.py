@@ -7,7 +7,6 @@ from utils.plotting import convert_imagej_coord_to_numpy, genomic_labels, set_ge
 from utils.scale_space import extract_line_scale_space, create_maxima_set, round_line_scale_space, extract_angle_scale_space
 from scipy.signal import argrelmax
 from utils.processing import read_hic_rectangle
-import os
 from scipy.ndimage import gaussian_filter
 from matplotlib.colors import LogNorm
 import matplotlib.patches as patches

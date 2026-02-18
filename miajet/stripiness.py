@@ -1,6 +1,6 @@
 import numpy as np
 from tqdm import tqdm
-import hicstraw
+# import hicstraw
 from utils.plotting import convert_imagej_coord_to_numpy
 from .compute_p_value import compute_test_statistic_quantities
 

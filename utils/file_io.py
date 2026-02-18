@@ -1,6 +1,9 @@
 import pandas as pd
 import json
 import numpy as np
+# import tifffile
+import cv2 as cv
+import os 
 
 def round_and_json(x, dp):
     """
@@ -62,30 +65,27 @@ def save_csv(df_in, save_name, root, parameter_str, dp=3, exclude_rounding=["s_i
         f.write(parameter_str_comment + "\n")
         df.to_csv(f, index=False)
 
-import tifffile
-import cv2 as cv
-import os 
 
-def save_tensor_as_tiff(tensor, save_path, file_name, perc_vmax):
-    """
-    Save a numpy tensor as a tiff file
-    """
-    if perc_vmax is not None:
+# def save_tensor_as_tiff(tensor, save_path, file_name, perc_vmax):
+#     """
+#     Save a numpy tensor as a tiff file
+#     """
+#     if perc_vmax is not None:
 
-        tensor_norm = np.clip(tensor, None, np.percentile(tensor, perc_vmax))
+#         tensor_norm = np.clip(tensor, None, np.percentile(tensor, perc_vmax))
 
-        print("Before normalization: min =", tensor_norm.min(), "max =", tensor_norm.max())
+#         print("Before normalization: min =", tensor_norm.min(), "max =", tensor_norm.max())
 
-    else:
+#     else:
 
-        tensor_norm = np.copy(tensor)
+#         tensor_norm = np.copy(tensor)
 
-    if np.issubdtype(tensor_norm.dtype, bool):
-        tensor_norm = tensor_norm.astype(int)
+#     if np.issubdtype(tensor_norm.dtype, bool):
+#         tensor_norm = tensor_norm.astype(int)
 
-    # normalize first
-    tensor_norm = cv.normalize(tensor_norm, None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
+#     # normalize first
+#     tensor_norm = cv.normalize(tensor_norm, None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
 
-    save_name = os.path.join(save_path, file_name)
+#     save_name = os.path.join(save_path, file_name)
 
-    tifffile.imwrite(save_name, tensor_norm, imagej=True, metadata={'axes': 'ZYX'})
+#     tifffile.imwrite(save_name, tensor_norm, imagej=True, metadata={'axes': 'ZYX'})
