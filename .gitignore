@@ -18,3 +18,5 @@
 !scripts/**
 !tests/**
 !utils/**
+
+notebooks/dev_*

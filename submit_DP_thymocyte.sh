@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --account=minjilab0 
+#SBATCH --account=minjilab99
 #SBATCH --partition=standard 
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=4g 
@@ -33,5 +33,7 @@ chromosomes=(
 
 for chrom in "${chromosomes[@]}"; do
   # sbatch --job-name="Guo et al. mm10 ${chrom}" --export=CHROM=${chrom} job_DP_thymocyte_50Kb.sbat
-  sbatch --job-name="Guo et al. mm9 ${chrom}" --export=CHROM=${chrom} job_DP_thymocyte-mm9_50Kb.sbat
+  # sbatch --job-name="Guo et al. mm9 ${chrom}" --export=CHROM=${chrom} job_DP_thymocyte-mm9_50Kb.sbat
+  # sbatch --job-name="Guo et al. mm9 ${chrom}" --export=CHROM=${chrom} job_DP_thymocyte-mm9_25Kb.sbat
+  sbatch --job-name="Guo et al. mm9 ${chrom}" --export=CHROM=${chrom} job_DP_thymocyte-mm9_25Kb_noproc.sbat
 done

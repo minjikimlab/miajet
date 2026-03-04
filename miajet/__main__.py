@@ -143,14 +143,11 @@ def main():
     total_time += time.time() - t0
     if config.verbose: print(f"Ranking ridges... {time.time() - t0:.0f}s Done")
 
-    # PLOT ENTROPY DISRIBUTION BEFORE FILTERING
-    # plot_entropy_distribution(df_agg, num_bins=config.num_bins, bin_size=config.bin_size, 
-    #                           points_min=config.points_min, points_max=config.points_max, save_path=config.save_sub_dir)
-
 
     # DIAGNOSE RIDGES
     # if config.verbose: print("\tWARNING: Diagnosing ridges...")
     # t0 = time.time()
+    # edge_strength = compute_edge_strength(im)
     # save_scale_space(df_agg, df_features,
     #                 K="all", im=im, edge_strength=edge_strength,
     #                 I=I, D=D, A=A, W1=W1, W2=W2, R=R, C=C,
@@ -174,6 +171,9 @@ def main():
     #                        save_path=config.save_sub_dir,
     #                        config=config, # for the plot top K variables
     #                        )
+    # Plot entropy distribution:
+    # plot_entropy_distribution(df_agg, num_bins=config.num_bins, bin_size=config.bin_size, 
+    #                           points_min=config.points_min, points_max=config.points_max, save_path=config.save_sub_dir)
     # total_time += time.time() - t0
     # if config.verbose: print(f"Diagnosing ridges... {time.time() - t0:.0f}s Done")
 
@@ -251,15 +251,6 @@ def main():
     #                     )
     # total_time += time.time() - t0
     # if config.verbose: print(f"Diagnosing ridges after removing overlaps... {time.time() - t0:.0f}s Done")
-
-    # COMPUTE STRIPINESS 
-    # if config.verbose: print("Computing stripiness...")
-    # t0 = time.time()
-    # max_width_bin = None # hard-code 
-    # p_norm = 1 # hard-code 
-    # df_agg = compute_stripiness(df_agg, df_features, im_oe=im_oe, stripiness_factor_lr=1, p_norm=p_norm, max_width_bin=max_width_bin)
-    # total_time += time.time() - t0
-    # if config.verbose: print(f"Computing stripiness... {time.time() - t0:.0f}s Done")
 
     # CORRECT AND THRESHOLD JETS
     if config.verbose: print("Correcting and thresholding jets...")

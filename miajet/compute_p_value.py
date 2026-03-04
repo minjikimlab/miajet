@@ -434,8 +434,8 @@ def process_significance(df_ridge):
     if agg == "mean":
         c_obs = c_mean_obs
         # b_obs = np.maximum(l_mean_obs, r_mean_obs) # Maximums
-        b_obs = (l_mean_obs + r_mean_obs) / 2 # Average
-        b_obs = np.sqrt(l_mean_obs * r_mean_obs) # Geometric mean
+        b_obs = (l_mean_obs + r_mean_obs) / 2 # Average 
+        # b_obs = np.sqrt(l_mean_obs * r_mean_obs) # Geometric mean (v1.0.27)
         # b_obs = np.minimum(l_mean_obs, r_mean_obs) # Minimum
     else:
         c_obs = c_med_obs

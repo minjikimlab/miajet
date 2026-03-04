@@ -579,7 +579,8 @@ def process_trim_corner(df_ridge):
     ridge_coords = convert_imagej_coord_to_numpy(df_ridge[[x_label, y_label]].values,
                                                   im_shape_0, flip_y=False, start_bin=0)
     C_curves = extract_line_scale_space(ridge_coords, [C])
-    C_curves = (C_curves > 0.25).astype(bool)
+    # C_curves = (C_curves > 0.25).astype(bool)
+    C_curves = np.sum(C_curves > 0.25, axis=0) >= 2 # New
     cols_true = np.where(np.all(C_curves, axis=0))[0]    
 
     # `first_col_idx` is the index of the first column that is all True
@@ -673,7 +674,9 @@ def trim_imagej_results_corner(df, df_pos, C, im_shape_0, min_trim_size_in, remo
 
             # hard-code to 0.25 for corner condition 
             # floating point is due to interpolation [0, 1]
-            C_curves = (C_curves > 0.25).astype(bool) 
+            # C_curves = (C_curves > 0.25).astype(bool) 
+            # New corner condition: True for at least 2 scales
+            C_curves = np.sum(C_curves > 0.25, axis=0) >= 2
             
             # extract the columns that is all true
             cols_true = np.where(np.all(C_curves, axis=0))[0]

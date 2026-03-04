@@ -30,8 +30,8 @@ def parse_args():
                         help="Absolute path to directory where results will be saved")
 
     # Extended Parameters
-    parser.add_argument("--alpha", nargs="+", type=float, required=False, default=[0.2, 0.1, 0.05],
-                        help="Alpha or a list of alpha values for p-value cutoffs (default: 0.2 0.1 0.05)") # 
+    parser.add_argument("--alpha", nargs="+", type=float, required=False, default=[0.5, 0.25, 0.1],
+                        help="Alpha or a list of alpha values for p-value cutoffs (default: 0.5 0.25 0.1)") # 
     parser.add_argument("--window_size", type=int, required=False, default=6_000_000,
                         help="Distance from main diagonal (default: 6_000_000 for 6 Mbp)") # 
     parser.add_argument("--normalization", type=str, required=False, default=_MISSING,

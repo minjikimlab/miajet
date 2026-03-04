@@ -458,22 +458,22 @@ def construct_scale_space_helper(s, im, gamma, ridge_strength_method,
 
 
 
-def construct_corner_space_helper(s, im, gamma, filter_mode, zc_method, zc_ks, eps_c1, eps_c2):
-    """
-    Corner only helper at scale s (minimal derivatives).
-    Computes C_s using Lv, Lpp, Lqq only.
-    """
-    im_Lv = pyscsp.discscsp.computeNjetfcn(im, 'Lv', s, gamma=gamma,
-                                           normdermethod="discgaussvar", filter_mode=filter_mode)
-    im_pp = pyscsp.discscsp.computeNjetfcn(im, 'Lpp', s, gamma=gamma,
-                                           normdermethod="discgaussvar", filter_mode=filter_mode)
-    im_qq = pyscsp.discscsp.computeNjetfcn(im, 'Lqq', s, gamma=gamma,
-                                           normdermethod="discgaussvar", filter_mode=filter_mode)
+# def construct_corner_space_helper(s, im, gamma, filter_mode, zc_method, zc_ks, eps_c1, eps_c2):
+#     """
+#     Corner only helper at scale s (minimal derivatives).
+#     Computes C_s using Lv, Lpp, Lqq only.
+#     """
+#     im_Lv = pyscsp.discscsp.computeNjetfcn(im, 'Lv', s, gamma=gamma,
+#                                            normdermethod="discgaussvar", filter_mode=filter_mode)
+#     im_pp = pyscsp.discscsp.computeNjetfcn(im, 'Lpp', s, gamma=gamma,
+#                                            normdermethod="discgaussvar", filter_mode=filter_mode)
+#     im_qq = pyscsp.discscsp.computeNjetfcn(im, 'Lqq', s, gamma=gamma,
+#                                            normdermethod="discgaussvar", filter_mode=filter_mode)
 
-    grad_zero = (im_Lv < eps_c1)
-    det_neg = (im_pp * im_qq < -eps_c2)
-    C_s = np.logical_and(grad_zero, det_neg)
-    return C_s
+#     grad_zero = (im_Lv < eps_c1)
+#     det_neg = (im_pp * im_qq < -eps_c2)
+#     C_s = np.logical_and(grad_zero, det_neg)
+#     return C_s
 
 
 def construct_scale_space_helper_fast(s, im, gamma, ridge_strength_method,
@@ -517,9 +517,10 @@ def construct_scale_space_helper_fast(s, im, gamma, ridge_strength_method,
     )
 
     # Corner condition 
-    C_s = (im_Lv < eps_c1) & (im_pp * im_qq < -eps_c2)
+    # C_s = (im_Lv < eps_c1) & (im_pp * im_qq < -eps_c2) # OLD
+    detH = im_xx * im_yy - im_xy**2
+    C_s = (detH < -np.max(detH) * 0.05)
 
-    detH = im_xx * im_yy - im_xy * im_xy
     traceH = im_xx + im_yy
     disc = traceH * traceH - 4 * detH
     disc = np.maximum(disc, 0)
@@ -546,9 +547,9 @@ def construct_scale_space_helper_fast(s, im, gamma, ridge_strength_method,
 
 
 def process_scale_pair(s, im, im_corner, gamma, ridge_strength_method, filter_mode, zc_method, zc_ks, eps_r, eps_c1, eps_c2):
-    I_s, D_s, W1_s, W2_s, A_s, R_s, _ = construct_scale_space_helper_fast(
+    I_s, D_s, W1_s, W2_s, A_s, R_s, Cc_s = construct_scale_space_helper_fast(
         s, im, gamma, ridge_strength_method, filter_mode, zc_method, zc_ks, eps_r, eps_c1, eps_c2)
-    Cc_s = construct_corner_space_helper(s, im_corner, gamma, filter_mode, zc_method, zc_ks, eps_c1, eps_c2)
+    # Cc_s = construct_corner_space_helper(s, im_corner, gamma, filter_mode, zc_method, zc_ks, eps_c1, eps_c2)
     return I_s, D_s, W1_s, W2_s, A_s, R_s, Cc_s
 
 
