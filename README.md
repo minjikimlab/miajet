@@ -1,11 +1,6 @@
 # MIA-Jet: Multiscale Identification Algorithm for Chromatin Jets
 ![Latest tag](https://img.shields.io/github/v/tag/sion23/miajet?sort=semver)
 
-# TODO
-
-1. Recommended window sizes across resolution
-2. Make a figure that showcases all the parameters 
-3. Is it even possibel to specify some of these parameters? Like filter
 
 ## Release notes
 * Major changes to the program with v1.1.x. 
@@ -18,7 +13,7 @@ At its most basic input, MIA-Jet requires a Hi-C data file and a small set of [r
 
 ### Example output
 
-
+TODO: Make a figure that showcases all the parameters 
 
 ## Input
 
