@@ -9,8 +9,9 @@ import numpy as np
 def print_scale_width_conversion(scale_range):
     w0 = scale_to_width(np.min(scale_range))
     w1 = scale_to_width(np.max(scale_range))
-    print(f"The current scale_range of ({np.min(scale_range)}, {np.max(scale_range)}) corresponds to width range of ({w0}, {w1}) (pixels)")
-    print("We advise that you inspect the contact map generated to confirm at least the viability of these scales.")
+    print(f"The current scale_range of {np.min(scale_range):.3g}-{np.max(scale_range):.3g} corresponds to width range of {w0:.3g}-{w1:.3g} (pixels)")
+    print(f"For best results, we advise that you inspect the contact map generated to confirm "
+          f"that the width range {w0:.3g}-{w1:.3g} is appropriate for the jets you want to capture.")
 
 def clip_scale_range(scale_range, im_shape, verbose, k=2):
     """
@@ -31,16 +32,17 @@ def clip_scale_range(scale_range, im_shape, verbose, k=2):
     if len(im_shape) < 2:
         raise ValueError("im_shape must have at least two dimensions (height, width)")
     
-    # Use the smallest dimension (width or height)
+    # Use the smallest dimension (width or height) but it should always be height 
     min_dim = min(im_shape)
     
     # Compute maximum sigma
     sigma_max = (min_dim) / (2 * k)
 
     if verbose:
-        print(f"\tRemoving scales {scale_range[scale_range >= sigma_max]} due to image dimension {min_dim} being too small for convolution operation")
+        print(f"\tRemoving scales {scale_range[scale_range >= sigma_max]} due to image height (window size) {min_dim} "
+              "being too small for convolution operation.")
         print(f"\tIf you want to include this scale, you can increase the size of the image by some of the following options:")
-        print("\t(1) increasing resolution (2) increasing window size (3) choosing a larger chromosome")
+        print("\t(1) increasing window size (2) increasing resolution (3) decreasing the maximum scale range")
 
     return scale_range[scale_range < sigma_max]
 
@@ -363,121 +365,41 @@ def construct_scale_space_helper(s, im, gamma, ridge_strength_method,
 
 
 
-
-# def construct_scale_space(im, s_range, gamma, ridge_strength_method, filter_mode, eps_r, eps_c1, eps_c2,
-#                           zc_method=1, zc_ks=3, num_pools=None):
-#     """
-#     Constructs scale space tensors for the input image `im` over the specified scale range `s_range`
-
-#     Each scale space feature is a tensor of dimension (len(s_range), im.shape)
+def compute_corner_threshold(im_xx, im_yy, im_xy, k=4.0, n_trials=5, seed=23):
+    """
+    Null model: shuffle the relationship between derivatives
+    to destroy real structure while preserving marginal statistics.
     
-#     The following scale space features are generated:
-#     1. I: Image where I[s] is the image `im` convolved with a Gaussian kernel of scale `s`
-#     2. D: Ridge strength tensor where D[s] is the ridge strength at scale `s`
-#         * The ridge strength method is specified by `ridge_strength_method`
-#     3. W1: Largest eigenvalue tensor where W1[s] is the first eigenvalue of the 2x2 Hessian matrix at scale `s`
-#     4. W2: Smallest eigenvalue tensor where W2[s] is the second eigenvalue of the 2x2 Hessian matrix at scale `s`
-#     5. A: Angle tensor where A[s] is the angle (in degrees) of the eigenvector corresponding to W1 at scale `s`
-#     6. R: Ridge condition tensor where R[s] is a boolean tensor indicating whether the ridge condition is satisfied at scale `s`
-#     7. C: Corner condition tensor where C[s] is a boolean tensor indicating whether the corner condition is satisfied at scale `s`
+    Real corners produce correlated structure in im_xx, im_yy, im_xy.
+    Under the null (no corners), these fields are independent.
+    Threshold = k * std(detH) under independence assumption.
+    """
+    rng = np.random.default_rng(seed)
 
-#     Parameters:
-#     im : np.ndarray
-#         Input image of shape (height, width) 
-#     s_range : np.ndarray
-#         Array of scales at which to compute the scale space features
-#     gamma : float
-#         The gamma parameter is used to normalize the Gaussian derivative kernel over scales
-#         A value of 0.75 is suggested to detect ridges [1]
-#     ridge_strength_method : int
-#         Method to compute the ridge strength (1-7) as defined in `local_contrast_enhancement`
-#     scale_space_filter : str
-#         Type of filter to use for scale space construction, either 'gaussian' or '2d-mean'
-#     filter_mode : str
-#         Convolution padding mode for scipy.ndimage.correlate1d
-#         {'reflect', 'constant', 'nearest', 'mirror', 'wrap'}
-#     eps_r : float
-#         Epsilon tolerances for the corner condition
-#     eps_c1 : float
-#         Epsilon tolerance for the corner condition
-#     eps_c2 : float
-#         Epsilon tolerance for the corner condition
-#     zc_method : int, optional
-#         Method to use for zero-crossing detection (1 or 2)
-#         Default is 1. See description in `zerocross` function
-#     zc_ks : int, optional
-#         Kernel size for zero-crossing detection
-#         Default is 3. See description in `zerocross` function
-#     num_pools : int, optional
-#         Number of parallel processes to use for scale space construction
-
-#     Returns:
-#     tuple
-#         Tuple containing the scale space tensors:
-#         (I, D, W1, W2, A, R, C) where:
-#         - I: Image tensor
-#         - D: Ridge strength tensor
-#         - W1: Largest eigenvalue tensor
-#         - W2: Smallest eigenvalue tensor
-#         - A: Angle tensor
-#         - R: Ridge condition tensor
-#         - C: Corner condition tensor
-
-#     References:
-#     [1] Lindeberg, T. Edge Detection and Ridge Detection with Automatic Scale Selection. 
-#     International Journal of Computer Vision 30, 117-156 (1998). https://doi.org/10.1023/A:1008097225773
-#     """
-#     # Prepare the partial function with fixed arguments
-#     process_s_partial = partial(
-#         construct_scale_space_helper, im=im, gamma=gamma, ridge_strength_method=ridge_strength_method,
-#         eps_r=eps_r, eps_c1=eps_c1, eps_c2=eps_c2,
-#         filter_mode=filter_mode, zc_method=zc_method, zc_ks=zc_ks)
-
-#     if num_pools is not None and num_pools > 1:
-#         with multiprocessing.Pool(processes=num_pools) as pool:
-#             results = pool.map(process_s_partial, s_range)
-#     else:
-#         results = [process_s_partial(s) for s in s_range]
-
-#     # Unpack the results
-#     I_list, D_list, W1_list, W2_list, A_list, R_list, C_list = zip(*results)
-
-#     # Convert lists to numpy arrays
-#     I = np.array(I_list)
-#     D = np.clip(np.array(D_list), 0, None) # v1.0.22 clip for ridge strength
-#     W1 = np.array(W1_list)
-#     W2 = np.array(W2_list)
-#     # V = np.array(V_list)
-#     # A = eigenvector_space_to_angle(V)
-#     A = np.array(A_list) # v1.0.22
-
-#     R = np.array(R_list)
-#     C = np.array(C_list)
-
-#     return I, D, W1, W2, A, R, C
-
-
-
-# def construct_corner_space_helper(s, im, gamma, filter_mode, zc_method, zc_ks, eps_c1, eps_c2):
-#     """
-#     Corner only helper at scale s (minimal derivatives).
-#     Computes C_s using Lv, Lpp, Lqq only.
-#     """
-#     im_Lv = pyscsp.discscsp.computeNjetfcn(im, 'Lv', s, gamma=gamma,
-#                                            normdermethod="discgaussvar", filter_mode=filter_mode)
-#     im_pp = pyscsp.discscsp.computeNjetfcn(im, 'Lpp', s, gamma=gamma,
-#                                            normdermethod="discgaussvar", filter_mode=filter_mode)
-#     im_qq = pyscsp.discscsp.computeNjetfcn(im, 'Lqq', s, gamma=gamma,
-#                                            normdermethod="discgaussvar", filter_mode=filter_mode)
-
-#     grad_zero = (im_Lv < eps_c1)
-#     det_neg = (im_pp * im_qq < -eps_c2)
-#     C_s = np.logical_and(grad_zero, det_neg)
-#     return C_s
+    stds = []
+    flat_xx = im_xx.ravel()
+    flat_yy = im_yy.ravel()
+    flat_xy = im_xy.ravel()
+    
+    for _ in range(n_trials):
+        # Shuffle each derivative field independently
+        # This preserves each field's marginal distribution exactly
+        # but destroys spatial correlations that define corners
+        sxx = flat_xx.copy()
+        syy = flat_yy.copy()
+        sxy = flat_xy.copy()
+        rng.shuffle(sxx)
+        rng.shuffle(syy)
+        rng.shuffle(sxy)
+        
+        null_det = sxx * syy - sxy ** 2
+        stds.append(np.std(null_det))
+    
+    return k * np.mean(stds)
 
 
 def construct_scale_space_helper_fast(s, im, gamma, ridge_strength_method,
-                                      filter_mode, zc_method, zc_ks, eps_r, eps_c1, eps_c2):
+                                      filter_mode, zc_method, zc_ks, eps_r, k, n_trials):
     """
     Speed-focused variant `construct_scale_space`
     """
@@ -519,7 +441,15 @@ def construct_scale_space_helper_fast(s, im, gamma, ridge_strength_method,
     # Corner condition 
     # C_s = (im_Lv < eps_c1) & (im_pp * im_qq < -eps_c2) # OLD
     detH = im_xx * im_yy - im_xy**2
-    C_s = (detH < -np.max(detH) * 0.05)
+
+    thresh = compute_corner_threshold(im_xx, im_yy, im_xy, k=k, n_trials=n_trials, seed=23)
+    C_s = (detH < -thresh)
+    # C_s = (detH < -np.max(detH) * 0.05)
+    # ISSUE: THIS IS CAUSING AN ISSUE
+    # The within image statistics assumes there is always a corner, but for certain situations (e.g. simulations)
+    # there may be no corners, and thus max(detH) is close to 0 causing it to find spurious corners that do not exist
+    # We should compute the np.max(detH) for Hi-C-like data and set a global constant for eps_c2 based on that, 
+    # rather than relying on the within image statistics
 
     traceH = im_xx + im_yy
     disc = traceH * traceH - 4 * detH
@@ -546,16 +476,118 @@ def construct_scale_space_helper_fast(s, im, gamma, ridge_strength_method,
     return I_s, D_s, W1_s, W2_s, A_s, R_s, C_s
 
 
-def process_scale_pair(s, im, im_corner, gamma, ridge_strength_method, filter_mode, zc_method, zc_ks, eps_r, eps_c1, eps_c2):
+def process_scale_pair(s, im, im_corner, gamma, ridge_strength_method, filter_mode, zc_method, zc_ks, eps_r, k, n_trials):
     I_s, D_s, W1_s, W2_s, A_s, R_s, Cc_s = construct_scale_space_helper_fast(
-        s, im, gamma, ridge_strength_method, filter_mode, zc_method, zc_ks, eps_r, eps_c1, eps_c2)
+        s, im, gamma, ridge_strength_method, filter_mode, zc_method, zc_ks, eps_r, k, n_trials)
     # Cc_s = construct_corner_space_helper(s, im_corner, gamma, filter_mode, zc_method, zc_ks, eps_c1, eps_c2)
     return I_s, D_s, W1_s, W2_s, A_s, R_s, Cc_s
 
 
-def construct_scale_space_pair(im, im_corner, s_range, gamma, ridge_strength_method, filter_mode, eps_r, eps_c1, eps_c2,
+
+def construct_scale_space(im, s_range, gamma, ridge_strength_method, filter_mode, num_pools=None):
+    """
+    Constructs scale space tensors 
+    * D, A from the input image `im` 
+    over the specified scale range `s_range`
+
+    Each scale space feature is a tensor of dimension (len(s_range), im.shape)
+    
+    The following scale space features are generated:
+    1. D: Ridge strength tensor where D[s] is the ridge strength at scale `s`
+        * The ridge strength method is specified by `ridge_strength_method`
+    2. A: Angle tensor where A[s] is the angle (in degrees) of the eigenvector corresponding to W1 at scale `s`
+
+    Parameters:
+    im : np.ndarray
+        Input image of shape (height, width) 
+    s_range : np.ndarray
+        Array of scales at which to compute the scale space features
+    gamma : float
+        The gamma parameter is used to normalize the Gaussian derivative kernel over scales
+        A value of 0.75 is suggested to detect ridges [1]
+    ridge_strength_method : int
+        Method to compute the ridge strength (1-7) as defined in `local_contrast_enhancement`
+    filter_mode : str
+        Convolution padding mode for scipy.ndimage.correlate1d
+        {'reflect', 'constant', 'nearest', 'mirror', 'wrap'}
+    num_pools : int, optional
+        Number of parallel processes to use for scale space construction
+
+    Returns:
+    tuple
+        Tuple containing the scale space tensors:
+        (D, A) where:
+        - D: Ridge strength tensor
+        - A: Angle tensor
+
+    References:
+    [1] Lindeberg, T. Edge Detection and Ridge Detection with Automatic Scale Selection. 
+    International Journal of Computer Vision 30, 117-156 (1998). https://doi.org/10.1023/A:1008097225773
+    """
+    process_s_partial = partial(
+        process_scale,
+        im=im, gamma=gamma, ridge_strength_method=ridge_strength_method, filter_mode=filter_mode)
+
+    if num_pools is not None and num_pools > 1:
+        with multiprocessing.Pool(processes=num_pools) as pool:
+            results = pool.map(process_s_partial, s_range)
+    else:
+        results = [process_s_partial(s) for s in s_range]
+
+    D_list, A_list,= zip(*results)
+
+    D = np.clip(np.array(D_list), 0, None).astype(np.float32)
+    A = np.array(A_list).astype(np.float32)
+    return D, A
+
+
+def process_scale(s, im, gamma, ridge_strength_method, filter_mode):
+    D, A = construct_scale_space_helper_fast2(
+        s, im, gamma, ridge_strength_method, filter_mode)
+    return D, A
+
+
+def construct_scale_space_helper_fast2(s, im, gamma, ridge_strength_method, filter_mode):
+    """
+    Minimal version of `construct_scale_space_helper_fast` that only computes the ridge strength and angle
+    """
+    im_xx = -pyscsp.discscsp.computeNjetfcn(im, 'Lxx', s, gamma=gamma, normdermethod="discgaussvar", filter_mode=filter_mode)
+    im_yy = -pyscsp.discscsp.computeNjetfcn(im, 'Lyy', s, gamma=gamma, normdermethod="discgaussvar", filter_mode=filter_mode)
+    im_xy = -pyscsp.discscsp.computeNjetfcn(im, 'Lxy', s, gamma=gamma, normdermethod="discgaussvar", filter_mode=filter_mode)
+    
+    detH = im_xx * im_yy - im_xy**2
+    traceH = im_xx + im_yy
+    disc = traceH * traceH - 4 * detH
+    disc = np.maximum(disc, 0)
+    sqrt_disc = np.sqrt(disc)
+    W1_s = 0.5 * (traceH + sqrt_disc)
+    W2_s = 0.5 * (traceH - sqrt_disc)
+    im_eigvals = np.stack([W2_s, W1_s], axis=0)
+
+    d = local_contrast_enhancement(im_eigvals, ridge_strength_method)
+
+    # Normalization into same units
+    if ridge_strength_method in [1, 5, 6, 7]:
+        D_s = d
+    elif ridge_strength_method == 2:
+        D_s = d ** 0.25
+    elif ridge_strength_method in [3, 4]:
+        D_s = d ** 0.5
+    else:
+        D_s = d
+
+    A_s = 0.5 * np.arctan2(2 * im_xy, im_xx - im_yy)
+    A_s = np.degrees(A_s)
+    A_s = ((A_s + 90) % 360) % 180
+
+    return D_s, A_s
+
+
+def construct_scale_space_pair(im, im_corner, s_range, gamma, ridge_strength_method, filter_mode, eps_r, 
+                               k=4.0, n_trials=5,
                                zc_method=1, zc_ks=3, num_pools=None):
     """
+    DEPRECATED
     Constructs scale space tensors 
     * I, D, W1, W2, A, R from the input image `im` 
     * C from the corner image `im_corner`
@@ -590,10 +622,10 @@ def construct_scale_space_pair(im, im_corner, s_range, gamma, ridge_strength_met
         {'reflect', 'constant', 'nearest', 'mirror', 'wrap'}
     eps_r : float
         Epsilon tolerances for the corner condition
-    eps_c1 : float
-        Epsilon tolerance for the corner condition
-    eps_c2 : float
-        Epsilon tolerance for the corner condition
+    k : float
+        Multiplier for the null model standard deviation for corner thresholding
+    n_trials : int
+        Number of permutations for null model of corner threshold
     zc_method : int, optional
         Method to use for zero-crossing detection (1 or 2)
         Default is 1. See description in `zerocross` function
@@ -623,7 +655,7 @@ def construct_scale_space_pair(im, im_corner, s_range, gamma, ridge_strength_met
     process_s_partial = partial(
         process_scale_pair,
         im=im, im_corner=im_corner, gamma=gamma, ridge_strength_method=ridge_strength_method,
-        filter_mode=filter_mode, zc_method=zc_method, zc_ks=zc_ks, eps_r=eps_r, eps_c1=eps_c1, eps_c2=eps_c2)
+        filter_mode=filter_mode, zc_method=zc_method, zc_ks=zc_ks, eps_r=eps_r, k=k, n_trials=n_trials)
 
     if num_pools is not None and num_pools > 1:
         with multiprocessing.Pool(processes=num_pools) as pool:

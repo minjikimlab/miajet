@@ -1,19 +1,17 @@
 #!/bin/bash
 
-#SBATCH --account=rjhryan0 
+#SBATCH --account=minjilab99 
 #SBATCH --partition=standard 
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=60g 
 #SBATCH --gpus=0 
 #SBATCH --profile=all
-#SBATCH --time=2:00:00  
+#SBATCH --time=4:00:00  
 #SBATCH --mail-type=FAIL 
 
 my_job_header
 
-echo "Using rjhyrna0 account"
-
-conda activate jet-env
+conda activate jet-env-rev
 
 python -m miajet "${HIC_FILE}" \
   --chrom "${CHROM}" \
@@ -21,40 +19,7 @@ python -m miajet "${HIC_FILE}" \
   --resolution "${RES}" \
   --normalization "${NORM}" \
   --window_size "${WIN}" \
-  --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_output_v1.0.27" \
+  --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v1.1.0" \
   --num_cores 4 \
   --verbose \
-  # --alpha 0.1 0.05 0.01 \
-  # --folder_name "NEW_SUMMARY" \
-  # --data_type "oe" \
-  # --rem_k_strata 1 \
-  # --thresholds 0.01 0.05 \
-  # --gamma 0.75 \
-  # --ridge_method 1 \
-  # --rotation_padding "nearest" \
-  # --convolution_padding "nearest" \
-  # --angle_range 80 100 \
-  # --noise_consec "" \
-  # --noise_alt "" \
-  # --sum_cond "a-r" \
-  # --agg "sum" \
-  # --num_bins 10 \
-  # --points_min 0 \
-  # --points_max 0.04 \
-  # --eps_r 0.0005 \
-  # --eps_c1 0.1 \
-  # --eps_c2 1e-5 \
-  # --root_within 10 \
-  # --im_vmax 99 \
-  # --im_vmin 0 \
-  # --im_corner_vmax 98 \
-  # --im_corner_vmin 0 \
-  # --corner_trim 0 \
-  # --entropy_thresh 0.5 \
-  # --angle_trim 0.5 \
-  # --saliency_thresh 90 \
-  # --ang_frac \
-  # --rmse 0.01 \
-  # --eig2_trim 0 \
-  # --whiten 0.01 \
 

@@ -6,7 +6,6 @@ from tqdm import tqdm
 
 
 def find_and_remove_overlaps(df_agg, df_features, iou_threshold=0.6, verbose=False, resolve_conflict="p-val",
-                             contour_label="Contour Number",
                              x_label="X_(px)_unmap",
                              y_label="Y_(px)_unmap",):
     """
@@ -33,14 +32,16 @@ def find_and_remove_overlaps(df_agg, df_features, iou_threshold=0.6, verbose=Fal
     df_agg_filtered : pd.DataFrame
         Filtered summary dataframe with reduced overlapping ridges
     """
-    df_agg_merge = df_agg.copy()
+    # df_agg_merge = df_agg.copy()
 
-    df_agg_merge = df_agg_merge.merge(df_features[[contour_label, "s_imagej", x_label, y_label, "width"]],
-                                       how="inner", on=[contour_label, "s_imagej"])    
+    # df_agg_merge = df_agg_merge.merge(df_features[[contour_label, "s_imagej", x_label, y_label, "width"]],
+    #                                    how="inner", on=[contour_label, "s_imagej"])    
 
-    kd_tree = KDTree(df_agg_merge[[x_label, y_label]].values)
+    df_feature_minimal = df_features[["unique_id", x_label, y_label, "width", resolve_conflict]]
+
+    kd_tree = KDTree(df_feature_minimal[[x_label, y_label]].values)
     
-    gb = df_agg_merge.groupby([contour_label, "s_imagej"], sort=False)
+    gb = df_feature_minimal.groupby("unique_id", sort=False)
 
     final_indexers = set()
     removed_indexers = set()
@@ -61,7 +62,7 @@ def find_and_remove_overlaps(df_agg, df_features, iou_threshold=0.6, verbose=Fal
 
         # build geometry objects of each ridge 
         # width_radius = max(df_ridge["width"].mean() / 2, 3.5)
-        width_radius = 7
+        width_radius = 5
         if len(df_ridge) < 2:
             ridge_obj = Point(df_ridge[x_label].values[0], df_ridge[y_label].values[0]).buffer(width_radius)
         else:
@@ -70,8 +71,8 @@ def find_and_remove_overlaps(df_agg, df_features, iou_threshold=0.6, verbose=Fal
         indices = kd_tree.query_radius(df_ridge[[x_label, y_label]].values, r=width_radius)
         indices = np.unique(np.concatenate(indices))
 
-        overlapping_points = df_agg_merge.iloc[indices].reset_index(drop=True)
-        overlapping_groups = overlapping_points.groupby([contour_label, "s_imagej"], sort=False)
+        overlapping_points = df_feature_minimal.iloc[indices].reset_index(drop=True)
+        overlapping_groups = overlapping_points.groupby("unique_id", sort=False)
 
         for neigh_indexer, df_neigh in overlapping_groups: 
 
@@ -81,7 +82,7 @@ def find_and_remove_overlaps(df_agg, df_features, iou_threshold=0.6, verbose=Fal
 
             # build geometry objects of each ridge 
             # width_radius_neigh = max(df_neigh["width"].mean() / 2, 3.5)
-            width_radius_neigh = 7
+            width_radius_neigh = 5
             if len(df_neigh) < 2:
                 neigh_obj = Point(df_neigh[x_label].values[0], df_neigh[y_label].values[0]).buffer(width_radius_neigh)
             else:
@@ -100,7 +101,8 @@ def find_and_remove_overlaps(df_agg, df_features, iou_threshold=0.6, verbose=Fal
 
         # now select the ridge with the minimum p-value
         group_p_vals = np.array(group_p_vals)
-        if resolve_conflict == "p-val":
+        # if resolve_conflict == "p-val" or resolve_conflict == "p-val_white" or resolve_conflict == "avg_width":
+        if resolve_conflict in ["p-val", "p-val_white", "avg_width", "blobness"]:
             # Then we minimize
             min_p_val_index = np.argmin(group_p_vals)
         else:
@@ -115,13 +117,17 @@ def find_and_remove_overlaps(df_agg, df_features, iou_threshold=0.6, verbose=Fal
             if each_indexer != min_p_val_indexer:
                 removed_indexers.add(each_indexer)
 
-    keep_df = pd.DataFrame(list(final_indexers), columns=[contour_label, "s_imagej"])
-    df_agg_filtered = df_agg.merge(keep_df, how="inner", on=[contour_label, "s_imagej"]).reset_index(drop=True)
+    # keep_df = pd.DataFrame(list(final_indexers), columns=["unique_id"])
+    # df_agg_filtered = df_agg.merge(keep_df, how="inner", on="unique_id").reset_index(drop=True)
+
+    df_agg_filtered = df_agg[df_agg["unique_id"].isin(final_indexers)].reset_index(drop=True)
 
     if verbose:
         print(f"\tNumber of unique (iou: {iou_threshold}) ridges: {len(df_agg_filtered)} out of {len(df_agg)}...")
 
-    return df_agg_filtered
+    df_features_filtered = df_features.loc[df_features["unique_id"].isin(df_agg_filtered["unique_id"])].reset_index(drop=True)
+
+    return df_agg_filtered, df_features_filtered
 
     
         

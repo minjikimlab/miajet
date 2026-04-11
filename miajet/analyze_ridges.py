@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
-
+from utils.file_io import save_csv
 import numpy as np
 import os 
 from utils.plotting import convert_imagej_coord_to_numpy, genomic_labels, set_genomic_ticks
@@ -1855,7 +1855,7 @@ def plot_saliency_distribution(df_agg, ranking, q, save_path, bins=30):
 
 
 def save_scale_space(df_agg, df_features,
-                     K="all", im=None, edge_strength=None,
+                     K="all", im=None, edge_strength=None, window_size=None,
                      I=None, D=None, A=None, W1=None, W2=None, R=None, C=None,
                      ranking="ridge_strength_mean",
                      resolution=None, chromosome=None,
@@ -1868,6 +1868,12 @@ def save_scale_space(df_agg, df_features,
 
 
     os.makedirs(save_path, exist_ok=True)
+
+    # SORT
+    root_within_fixed = 3
+    window_size_bin = np.ceil(window_size / resolution).astype(int)
+    num_rows_image = np.ceil(window_size_bin / np.sqrt(2)).astype(int)
+    thresh_val = (num_rows_image - 1 - root_within_fixed) if root_within_fixed is not None else 0
 
     # ensure df_agg is ranked the same way the plotting code does
     df_agg = df_agg.sort_values(ranking, ascending=False, ignore_index=True)
@@ -1891,11 +1897,43 @@ def save_scale_space(df_agg, df_features,
         if K != "all" and written >= K:
             break
 
-        if not df_ridge[y_label].is_monotonic_decreasing:
-            df_ridge = df_ridge.sort_values(by=y_label, ascending=False)
+        # OLD SORT
+        # if not df_ridge[y_label].is_monotonic_decreasing:
+        #     df_ridge = df_ridge.sort_values(by=y_label, ascending=False)
+        
+        # ("chr13", 734, 21)
+        if df_ridge[contour_label].iloc[0] == 734 and np.round(df_ridge["s_imagej"].iloc[0], 2) == 13.83:
+            pass
+
+        df_ridge_copy = df_ridge.copy()
+
+        # NEW SORT 
+        point_a = df_ridge_copy[y_label].values[0]
+        point_b = df_ridge_copy[y_label].values[-1]
+        point_c = df_ridge_copy[y_label].min()
+
+        if point_c < point_a and point_c < point_b:
+            # C-shaped ridges 
+            # Its ambiguous how to sort.. so do not do an actual sort of values for these
+            # ridges
+            if point_a == point_b or (point_a > thresh_val and point_b > thresh_val and point_c < thresh_val):
+                # Set the root as the larger value
+                if df_ridge_copy["ridge_strength"].values[0] < df_ridge_copy["ridge_strength"].values[-1]:
+                    # Flip order
+                    df_ridge_copy = df_ridge_copy[::-1].reset_index(drop=True)
+                    
+            elif df_ridge_copy[y_label].values[0] < df_ridge_copy[y_label].values[-1]:
+                # Flip order
+                df_ridge_copy = df_ridge_copy[::-1].reset_index(drop=True)
+                
+        else:
+            # But if its not C-shaped, we should sort rigorously i.e. monotonic decreasing
+            if not df_ridge_copy[y_label].is_monotonic_decreasing:
+                df_ridge_copy = df_ridge_copy.sort_values(by=y_label, ascending=False)
+        
 
         ridge_coords_curve = convert_imagej_coord_to_numpy(
-            df_ridge[[x_label, y_label]].values,
+            df_ridge_copy[[x_label, y_label]].values,
             im.shape[0],
             flip_y=False,
             start_bin=0
@@ -1940,7 +1978,7 @@ def save_scale_space(df_agg, df_features,
             contour=np.array(contour),
             s_idx = int(np.argmin(np.abs(np.asarray(scale_range) - float(s_img)))),  # convert to bin index
             rank=np.array(rank + 1),
-            score=np.array(df_ridge.iloc[0][ranking]),
+            score=np.array(df_ridge_copy.iloc[0][ranking]),
             chromosome=np.array(chromosome if chromosome is not None else ""),
             resolution=np.array(resolution if resolution is not None else -1)
         )
@@ -2102,7 +2140,86 @@ def make_bed(df_pos_all, N, chromosome, window_size, resolution, x_label, y_labe
         
     df_pos_all[["chr1", "x1", "x2", "chr2", "y1", "y2"]].to_csv(save_name, sep="\t", header=None, index=False)
 
-from utils.file_io import save_csv
+
+
+def assign_extrusion(row):
+    """
+    Assigns the extrusion point of a jet to be 
+    mp x = max(x (bp))
+    mp y = min(y (bp))
+    """
+    return pd.Series({"extrusion x": row["x (bp)"].max(), "extrusion y": row["y (bp)"].min()})
+
+
+def assign_midpoint(row):
+    """ 
+    Assigns the midpoint to be the point which is closest to the main diagonal
+    Computationally, this turns out to be the minimizer of the projection distance
+
+    arg min_i |x_i - y_i|
+    """
+    x = row["x (bp)"].values
+    y = row["y (bp)"].values
+
+    i = np.argmin(np.abs(x - y))
+
+    return pd.Series({"mp x": x[i], "mp y": y[i]})
+
+def assign_midpoint_main_diagonal(row):
+    """
+    Assigns midpoint to be the point on the main diagonal that is the closest
+    """
+    x = row["x (bp)"].values
+    y = row["y (bp)"].values
+
+    i = np.argmin(np.abs(x - y))
+
+    common_point = (x[i] + y[i]) / 2
+
+    return pd.Series({"mp x": common_point, "mp y": common_point})
+
+
+def generate_bed_2(df_summary, df_expanded, eps, fraction, project_midpoint_to_diag=False):
+    """
+    TODO: RME
+
+    Assumes 'x (bp)' and 'y (bp)' are in columns of df_expanded, and 'unique_id' is in both df_summary and df_expanded
+    """
+
+    if df_summary.empty or df_expanded.empty:
+        return pd.DataFrame()
+    
+    df_plot_extrusion = df_expanded.groupby('unique_id').apply(assign_extrusion, include_groups=False).reset_index()
+
+    if project_midpoint_to_diag:
+        # New: project the midpoint (i.e. the point closest of jet to the main diagonal) TO THE MAIN DIAGONAL
+        # I.e. assign it as the midpoint
+        df_plot_midpoint = df_expanded.groupby('unique_id').apply(assign_midpoint_main_diagonal, include_groups=False).reset_index()
+    else:
+        # This is the assignment we've been using for individual plots so far
+        df_plot_midpoint = df_expanded.groupby('unique_id').apply(assign_midpoint, include_groups=False).reset_index()
+
+    # simply concatenate
+    df_plot_summary = pd.merge(left=df_plot_extrusion, right=df_plot_midpoint, on="unique_id", how="inner")
+
+    # compute virtual jet length
+    df_plot_summary["delta x"] = np.abs(df_plot_summary["extrusion x"] - df_plot_summary["mp x"])
+    df_plot_summary["delta y"] = np.abs(df_plot_summary["extrusion y"] - df_plot_summary["mp y"])
+
+    df_plot_summary["virtual jet length"] = df_plot_summary.apply(lambda x : max(x["delta x"], x["delta y"]), axis=1)
+
+    df_plot_summary["start"] = df_plot_summary["mp y"] - df_plot_summary["virtual jet length"] * fraction - eps
+    df_plot_summary["end"] = df_plot_summary["mp x"] + df_plot_summary["virtual jet length"] * fraction + eps
+
+    # just keep the essentials for merging
+    df_plot_summary = df_plot_summary[['unique_id', 'start', 'end']]
+    df_summary_copy = df_summary.copy()
+    # Join on "unique_id" with df_plot_summary
+    df_summary_copy = df_summary_copy.merge(df_plot_summary, on='unique_id', how='inner')
+
+    return df_summary_copy
+
+
 
 def format_summary_table(df_agg_in, df_features_in, chromosome, resolution, ranking, scale_range,
                          window_size, N, 
@@ -2113,45 +2230,38 @@ def format_summary_table(df_agg_in, df_features_in, chromosome, resolution, rank
     * Adds new columns: chrom, start, end, length
     * Keeps: angle_mean, input_mean, `ranking`, ks, p-val
     """
-    keep = ["unique_id", "chrom", "start", "end", "length", "input_mean", "angle_mean", "width_mean", ranking, 
-            "ks", "p-val_raw", "p-val_corr"]  
-    
+    keep = ["unique_id", "Label", "chrom", "start", "end", "s_imagej", "length", 
+            "saliency", "ridge_strength_turbulence",
+            "angle_turbulence", "angle_satisfied",  
+            "consistency", "sum_consistency", "sum_consistency_im", "blobness", 
+            "p-val", "q-val_white", "q-val", 
+            ]  
+
     if df_agg_in.empty:
         return pd.DataFrame(columns=keep)
 
     df_agg = df_agg_in.copy()
-    df_features = df_features_in.copy()
-
-    # convert s_imagej to index accoridng to scale_range for memory constraints
-    scale_index_agg = np.digitize(df_agg["s_imagej"].values, scale_range) - 1
-    scale_index_features = np.digitize(df_features["s_imagej"].values, scale_range) - 1
-
-    # new unique identifier
-    df_agg["unique_id"] = chromosome + "_" + df_agg[contour_label].astype(str) + "_" + scale_index_agg.astype(str)
-    df_features["unique_id"] = chromosome + "_" + df_features[contour_label].astype(str) + "_" + scale_index_features.astype(str)
 
     # convert the coordinates from rectangle to square 
-    window_size_bin = np.ceil(window_size / resolution).astype(int)
-    coords = rect_to_square(N, window_size_bin, df_features[[y_label, x_label]].values)
-    rows, cols = coords[:, 0], coords[:, 1]
-    df_features["x (bp)"] = cols * resolution
+    # window_size_bin = np.ceil(window_size / resolution).astype(int)
+    # coords = rect_to_square(N, window_size_bin, df_features[[y_label, x_label]].values)
+    # rows, cols = coords[:, 0], coords[:, 1]
+    # df_features["x (bp)"] = cols * resolution
+    # df_features["y (bp)"] = rows * resolution
+    # df_agg = generate_bed_2(df_agg, df_features, eps=0, fraction=1)
 
+    # Instead, use the minimal point of jet to the main diagonal as start and end coordinates
+    key = df_features_in.groupby('unique_id')["dist_diag"].idxmin()
+    df_agg[["start", "end"]] = df_features_in.iloc[df_agg["unique_id"].map(key)][["x (bp)", "y (bp)"]].reset_index(drop=True)
     df_agg["chrom"] = chromosome
-    df_agg["p-val_raw"] = df_agg["p-val"]
-
-    agg = df_features.groupby("unique_id", sort=False).agg(start=("x (bp)", lambda x : np.min(x)),
-                                               end=("x (bp)", lambda x : np.max(x)),
-                                               length=(x_label, lambda x : x.count() * resolution)).reset_index()
-
-    # ensure that other columns are kept in the summary table (e.g. ks)
-    df_agg = df_agg.merge(agg, on="unique_id", how="left")
 
     # sort by ranking
     df_agg.sort_values(ranking, inplace=True, ascending=False, ignore_index=True)
 
+    # select only columns we need 
     return df_agg[keep].copy()
 
-def format_expanded_table(df_features, chromosome, resolution, scale_range, window_size, N, 
+def format_expanded_table(df_features, ridge_datum, chromosome, resolution, scale_range, window_size, N, 
                           x_label="X_(px)_orig", y_label="Y_(px)_orig", contour_label="Contour Number"):
     """
     Format expanded table for results
@@ -2159,17 +2269,14 @@ def format_expanded_table(df_features, chromosome, resolution, scale_range, wind
     * Adds new columns: chrom, x (bp), y (bp)
     * Keeps: width, angle_imagej, ridge_strength
     """
-    keep = ["unique_id", "chrom", "x (bp)", "y (bp)", "x (pixels)", "y (pixels)", "width", "angle_imagej", "ridge_strength"]
+    keep = ["unique_id", "chrom", "x (bp)", "y (bp)", "x (pixels)", "y (pixels)", 
+            "scale", "angle", "ridge_strength", "width",
+            "input", "Asymmetry", "Contrast"]
 
     if df_features.empty:
         return pd.DataFrame(columns=keep)
 
     df = df_features.copy()
-
-    scale_index = np.digitize(df["s_imagej"].values, scale_range) - 1
-
-    # new unique identifier
-    df["unique_id"] = chromosome + "_" + df[contour_label].astype(str) + "_" + scale_index.astype(str)
 
     # rotate coordinates from rectangle to square then to genomic coordinates
     window_size_bin = np.ceil(window_size / resolution).astype(int)
@@ -2183,13 +2290,28 @@ def format_expanded_table(df_features, chromosome, resolution, scale_range, wind
     df["y (pixels)"] = df[y_label]
     df["chrom"] = chromosome
 
+    frames = []
+    gb = df.groupby('unique_id', sort=False)
+    for uid, df_ridge in gb:
+        rec = ridge_datum[uid]
+        dbscan_s_idx = rec["dbscan_s_idx"].astype(int)
+        df_ridge["scale"] = scale_range[dbscan_s_idx]
+
+        A_curves = rec["A_curves"]
+        D_curves = rec["D_curves"]
+        df_ridge["angle"] = A_curves[dbscan_s_idx, np.arange(len(df_ridge))]
+        df_ridge["ridge_strength"] = D_curves[dbscan_s_idx, np.arange(len(df_ridge))]
+
+        frames.append(df_ridge)
+    
+    df = pd.concat(frames, ignore_index=True)
 
     return df[keep].copy()
 
 
-def save_results(df_agg, df_features, K, ranking, save_path, chromosome, N_removed, 
+def save_results(df_agg, df_features, ridge_datum, K, ranking, save_path, chromosome, N_removed, 
                  rm_idx, window_size, resolution, root, parameter_str, scale_range,
-                 hic_file, normalization, rotation_padding, im_vmax, im_vmin, plot,
+                 im, im_vmax, plot,
                  contour_label="Contour Number",
                  x_label="X_(px)_orig", 
                  y_label="Y_(px)_orig"
@@ -2238,9 +2360,9 @@ def save_results(df_agg, df_features, K, ranking, save_path, chromosome, N_remov
     rotation_padding : int, optional
         Padding (in pixels) used by `plot_top_k` when rotating
     im_vmax : float, optional      
-        Upper‐bound intensity for image color‐scaling
+        Upper-bound intensity for image color-scaling
     im_vmin : float, optional      
-        Lower‐bound intensity for image color‐scaling
+        Lower-bound intensity for image color-scaling
     plot : bool, default=False      
         If True, calls `plot_top_k` after saving tables
     
@@ -2253,11 +2375,11 @@ def save_results(df_agg, df_features, K, ranking, save_path, chromosome, N_remov
     4. `{root}_plot_{K}.png` - Plot of the top K ridges
     """
     # Columns to keep for expanded table
-    keep = [contour_label, "s_imagej", x_label, y_label, "width", "angle_imagej", "ridge_strength"]
+    # keep = [contour_label, "s_imagej", x_label, y_label, "width", "angle_imagej", "ridge_strength"]
 
     if df_agg.empty:
         # If df_agg is empty, save empty results with the appropriate columns but just no rows
-        df_features_topK = pd.DataFrame(columns=keep)
+        df_features_topK = pd.DataFrame(columns=df_agg.columns)
         df_agg_topK = df_agg
 
     else:
@@ -2271,7 +2393,7 @@ def save_results(df_agg, df_features, K, ranking, save_path, chromosome, N_remov
             df_agg_topK = df_agg.iloc[:K]
 
         # Get X and Y positions
-        df_features_topK = df_agg_topK.merge(df_features[keep], how="inner", on=[contour_label, "s_imagej"])
+        df_features_topK = df_features.loc[df_features["unique_id"].isin(df_agg_topK["unique_id"])].reset_index(drop=True)
 
     # Save bedpe visualization
     save_name = os.path.join(save_path, f"{root}_juicer-visualize.bedpe") 
@@ -2280,7 +2402,7 @@ def save_results(df_agg, df_features, K, ranking, save_path, chromosome, N_remov
     
     # Save expanded table
     save_name = os.path.join(save_path, f"{root}_expanded_table.csv") 
-    df_features_topK = format_expanded_table(df_features_topK, chromosome, resolution, scale_range, window_size, N,
+    df_features_topK = format_expanded_table(df_features_topK, ridge_datum, chromosome, resolution, scale_range, window_size, N,
                                              x_label=x_label, y_label=y_label, contour_label=contour_label)
     save_csv(df_features_topK, save_name, root, parameter_str, dp=3, exclude_rounding=[]) # round everything 
 
@@ -2293,10 +2415,95 @@ def save_results(df_agg, df_features, K, ranking, save_path, chromosome, N_remov
 
     # Plot top K
     if plot:
-        if len(df_agg) > 100:
-            print(f"\tWARNING: More than 100 jets ({len(df_agg)}) being overlaid in plot. This may take a while. Consider disabling plot option...")
-        plot_top_k(df_agg, df_features, K, ranking, hic_file, chromosome, resolution, window_size, normalization, rotation_padding,
-                   save_path, im_vmax=im_vmax, im_vmin=im_vmin, root=root, parameter_str=parameter_str)
+        lines = []
+        line_widths = []
+        gb = df_features_topK.groupby("unique_id", sort=False)
+        for rank, (indexer, df_ridge) in enumerate(gb):
+
+            ridge_coords = convert_imagej_coord_to_numpy(df_ridge[["x (pixels)", "y (pixels)"]].values, im.shape[0], flip_y=True, start_bin=0)
+
+            lines.append(ridge_coords)
+            line_widths.append(df_ridge["width"].values)
+
+        save_name = os.path.join(save_path, f"{root}_plot_{K}.png")
+
+        plot_n_rect([im, im], titles=[None, None], suptitle=root, lines=[None, lines], 
+                    resolution=resolution, savepath=save_name, show=False, cmap=["Reds", "Reds"], 
+                    vmax=[np.percentile(im, im_vmax), np.percentile(im, im_vmax)], num_ticks=[5, 25], dpi=300)
+
+
+def diagnostic_filter_plot(df_agg, df_features, individual_masks, plot_or_not, im, save_path, root,
+                           resolution, x_label="X_(px)_orig", y_label="Y_(px)_orig",
+                           cmap="Reds", im_vmax=None):
+    """Plot the effect of each filter applied independently (not cumulative)."""
+    if not plot_or_not or im is None:
+        return
+
+    n = len(individual_masks) + 1  # +1 for unfiltered
+    titles = ["unfiltered"] + list(individual_masks.keys())
+    all_lines = [None]  # first panel: no lines (just image)
+
+    # Unfiltered lines (all ridges)
+    def _get_lines(uid_set):
+        lines = []
+        for uid, df_ridge in df_features.groupby("unique_id", sort=False):
+            if uid not in uid_set:
+                continue
+            coords = convert_imagej_coord_to_numpy(
+                df_ridge[[x_label, y_label]].values, im.shape[0], flip_y=True, start_bin=0)
+            lines.append(coords)
+        return lines
+
+    # For each filter: show only ridges that PASS that single filter
+    for name, m in individual_masks.items():
+        passing_uids = set(df_agg.loc[m, "unique_id"])
+        all_lines.append(_get_lines(passing_uids))
+
+    # After the per-filter loop, add combined panel
+    combined_mask = pd.Series(True, index=df_agg.index)
+    for m in individual_masks.values():
+        combined_mask &= m
+    all_lines.append(_get_lines(set(df_agg.loc[combined_mask, "unique_id"])))
+    titles.append("all filters")
+    n += 1
+
+    vmax = [None] * n
+    if im_vmax is not None:
+        v = np.percentile(im, im_vmax)
+        vmax = [v] * n
+
+    save_name = os.path.join(save_path, f"{root}_filter_diagnostics.png")
+    plot_n_rect([im] * n, titles=titles, suptitle=root, lines=all_lines,
+                resolution=resolution, savepath=save_name, show=False,
+                cmap=[cmap] * n, vmax=vmax, num_ticks=[5] * n, dpi=300)
+    
+
+
+
+def temp_plot(df_features, plot_or_not, x_label, y_label, im, save_path, root, resolution, 
+              cmap="Reds", im_vmax=None):
+
+    if not plot_or_not or im is None: # Control for diagnostic
+        return
+    lines = []
+    line_widths = []
+    gb = df_features.groupby("unique_id", sort=False)
+    for rank, (indexer, df_ridge) in enumerate(gb):
+
+        ridge_coords = convert_imagej_coord_to_numpy(df_ridge[[x_label, y_label]].values, im.shape[0], flip_y=True, start_bin=0)
+
+        lines.append(ridge_coords)
+        line_widths.append(df_ridge["width"].values)
+
+    save_name = os.path.join(save_path, f"{root}_plot_diagnostics.png")
+
+    vmax = [None, None]
+    if im_vmax is not None:
+        vmax = [np.percentile(im, im_vmax), np.percentile(im, im_vmax)]
+
+    plot_n_rect([im, im], titles=[None, None], suptitle=root, lines=[None, lines], 
+                resolution=resolution, savepath=save_name, show=False, cmap=[cmap, cmap], 
+                vmax=vmax, num_ticks=[5, 25], dpi=300)
 
 
     # def plot_curves_transpose(overlay_ridge_condition=False):

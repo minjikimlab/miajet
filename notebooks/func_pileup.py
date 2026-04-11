@@ -9,8 +9,6 @@ import pandas as pd
 
 
 
-
-
 def get_pileups(hic_file, bed_df_in, resolution, chrom_sizes,
                 chromosomes='all', window_range=(None, None),
                 data_type="observed", normalization="KR", sort=False):

@@ -4,11 +4,16 @@ import matplotlib.pyplot as plt
 import cv2 as cv
 import os
 import scipy
-from scipy.ndimage import rotate
+from scipy.ndimage import rotate, binary_dilation
+from scipy.linalg import eigh
+from skimage.filters import threshold_otsu
+
+
 
 from utils.processing import read_hic_rectangle, read_hic_corr_rectangle, \
     read_hic_file, remove_zero_sum, whiten_matrix, scalar_products
 from utils.plotting import save_histogram
+from utils.spectral import laplacian, find_non_trivial_eigenvectors, compute_derivative_eigvectors
 import copy
 
 
@@ -37,6 +42,8 @@ def clip_and_normalize(image, vmin_perc, vmax_perc):
     return image
 
 
+
+
 def rotate_stack_extract_rectangle(mats, rotate_mode, cval, center, window_size_bin_rect):
     """
     Rotate a stack of 2D arrays (C, H, W) once using scipy.ndimage.rotate across (H, W).
@@ -47,10 +54,173 @@ def rotate_stack_extract_rectangle(mats, rotate_mode, cval, center, window_size_
     stack_rot = stack_rot[:, center-window_size_bin_rect:center, :]
     return [stack_rot[i] for i in range(stack_rot.shape[0])]
 
+def construct_binary_compartments(eigdiff):
+    combined = np.zeros_like(eigdiff[0], dtype=bool)
+    for vec in eigdiff:
+        combined |= vec > threshold_otsu(vec)
+    return np.outer(combined, combined)
+
+def eigendecomp(L, k):
+    w, v = eigh(L, subset_by_index=[0, k - 1], driver='evr', overwrite_a=True, check_finite=False)
+    return w, v
+
+
+def generate_contact_maps(hic_file, chromosome, resolution, window_size, data_type, normalization, 
+                          rotation_padding, null_model_whiten, root_within_comp, save_path, verbose, root):
+    """
+    
+    Developer notes:
+    * Replacement for `generate_hic_bundle` based on `dev_diagnose_scale_space.ipynb`
+    """
+    save_name = None
+    if save_path is not None:
+        save_name = os.path.join(save_path, f"{root}_contact_map.jpg")
+
+    window_size_bin = np.ceil(window_size / resolution).astype(int)
+
+    # Single access via hic-straw
+    mat_obs = read_hic_file(filename=hic_file, chrom=chromosome, resolution=resolution,
+                            positions="all", data_type="observed", normalization=normalization, verbose=verbose)
+    mat_oe = read_hic_file(filename=hic_file, chrom=chromosome, resolution=resolution,
+                           positions="all", data_type="oe", normalization=normalization, verbose=verbose)
+    
+    if mat_obs.shape == (1, 1) or mat_oe.shape == (1, 1):
+        raise ValueError(f".hic file read in error. This is most likely due to the normalization vectors not being present in the .hic file. "
+                         f"Suggestion: retry with a different normalization method than '{normalization}'")
+
+    mat_obs = mat_obs.astype(np.float32)
+    mat_oe = mat_oe.astype(np.float32)
+
+    # Fill nans with 0
+    mat_obs[np.isnan(mat_obs)] = 0
+    mat_oe[np.isnan(mat_oe)] = 0
+
+    # Determine the common removed indices 
+    rm_idx = compute_rm_idx(mat_obs, window_size_bin, verbose=verbose)
+    mat_obs_sub = np.delete(np.delete(mat_obs, rm_idx, axis=0), rm_idx, axis=1)
+    mat_oe_sub = np.delete(np.delete(mat_oe, rm_idx, axis=0), rm_idx, axis=1)
+
+    if mat_obs_sub.shape[0] == 0 or mat_obs_sub.shape[1] == 0:
+        raise ValueError(f"Empty contact map generated for chromosome {chromosome} with resolution {resolution} and window size {window_size}. "
+                         f"Please check the Hi-C file {hic_file} for coverage and/or parameters")
+
+    if data_type == "observed":
+        im_sq = np.log10(mat_obs_sub + 1)
+    elif data_type == "oe":
+        im_sq = mat_oe_sub.copy()
+    else:
+        raise ValueError(f"data_type {data_type} not supported. Use 'oe' or 'observed'.")
+    
+    # IMAGE
+    im_sq = cv.normalize(im_sq, None, alpha=0, beta=1, norm_type=cv.NORM_MINMAX, dtype=cv.CV_32F)
+
+    # P-VALUE OBSERVED
+    im_pval_sq = np.log10(mat_obs_sub + 1)
+    im_pval_sq = cv.normalize(im_pval_sq, None, alpha=0, beta=1, norm_type=cv.NORM_MINMAX, dtype=cv.CV_32F)
+
+    if null_model_whiten:
+
+        # P-VALUE NULL for COMPARTMENT MODE
+        # v1.1.0: simple whiten the oe image to use the enrichment p-value
+        coe_sq = mat_oe_sub.copy()
+        coe_sq = np.log10(coe_sq + 1)
+        coe_sq = cv.normalize(coe_sq, None, alpha=0, beta=1, norm_type=cv.NORM_MINMAX, dtype=cv.CV_32F)
+        coe_sq_white, _ = whiten_matrix(A_for_corr=coe_sq, A_for_whiten=coe_sq, epsilon=1e-5)
+
+        # COMPARTMENT
+        # if verbose:
+        #     print("WARNING: Discrepency with iteration 7 is a new log-transform on compartment image")
+            # I.e., we are just using the `coe_sq` computed above
+        coe_sq = mat_oe_sub.copy()
+        coe_sq = cv.normalize(coe_sq, None, alpha=0, beta=1, norm_type=cv.NORM_MINMAX, dtype=cv.CV_32F)
+        coe_sq = scalar_products(coe_sq, out="correlation")
+        # Normalize the correlation output [-1, 1] to [0, 1]
+        coe_sq = cv.normalize(coe_sq, None, alpha=0, beta=1, norm_type=cv.NORM_MINMAX, dtype=cv.CV_32F)
+        L_sym = laplacian(coe_sq, laplacian_type="symmetric_normalized")
+
+        # w_corr, v_corr = np.linalg.eigh(L_sym)
+        w_corr, v_corr = eigendecomp(L_sym, k=3) # compute smalest 3 eigenvectors for time
+
+        # Select the fiedler vector and the next one
+        eigvecs = find_non_trivial_eigenvectors(w_corr, v_corr)
+
+        # Take derivative to find changepoints
+        eigdiff = compute_derivative_eigvectors(eigvecs)
+
+        # Construct union binary image
+        comp_binary = construct_binary_compartments(eigdiff)
+
+        rotation_array = [im_sq, im_pval_sq, coe_sq_white]
+    else:
+        rotation_array = [im_sq, im_pval_sq]
+
+    # ROTATION CODE
+    # Some basic statistics for the rotation code
+    N = im_sq.shape[0]
+    window_size_bin_rect = np.ceil(window_size_bin / np.sqrt(2)).astype(int)
+    center = np.ceil(N * np.sqrt(2) / 2).astype(int)
+
+    # Single rotation with all images stacked as channel dim
+    rotated_images = rotate_stack_extract_rectangle(rotation_array, 
+                                                    rotate_mode=rotation_padding, cval=0, 
+                                                    center=center, window_size_bin_rect=window_size_bin_rect)
+
+    if null_model_whiten:
+        im_sq, im_pval_sq, coe_sq_white = rotated_images
+
+        # Need to separately do comp_binary because it is bool dtype
+        comp_binary = rotate_stack_extract_rectangle([comp_binary], rotate_mode=rotation_padding, cval=0,
+                                                    center=center, window_size_bin_rect=window_size_bin_rect)[0].astype(bool)
+
+        # Process the compartment binary image
+        # Dilate each True to neighbors horizontally
+        dil_mask = np.ones((1, 5), dtype=bool) if resolution <= 25e3 else np.ones((1, 3), dtype=bool)
+        comp_binary = binary_dilation(comp_binary, structure=dil_mask)
+
+        # Mask out first few bins  from the main diagonal to avoid artifacts
+        comp_binary[-root_within_comp:, :] = False
+
+        # Make non-negative
+        coe_sq_white += np.abs(np.min(coe_sq_white))
+
+    else:
+        im_sq, im_pval_sq = rotated_images
+        comp_binary = None
+        coe_sq_white = None
+
+
+    # Save statistics histogram for the IMAGE only
+    if save_path is not None:
+        plt.imsave(save_name, im_sq, cmap="gray", vmin=np.percentile(im_sq, 0.0), vmax=np.percentile(im_sq, 100.0))
+        save_histogram(im_sq, save_path, file_name=f"{root}_contact_map_intensity_value_histogram.jpg", vmin_perc=0, vmax_perc=100)
+
+    # Finally, return the image that has no 0 sum rows/columns removed (i.e. fully intact matrix)
+    if data_type == "oe":
+        mat_orig = mat_oe 
+    else:
+        mat_orig = np.log10(mat_obs + 1)
+
+    # Rotation statistics 
+    N_orig = mat_orig.shape[0]
+    center_orig = np.ceil(N_orig * np.sqrt(2) / 2).astype(int)
+    window_size_bin_rect_orig = np.ceil(window_size_bin / np.sqrt(2)).astype(int)
+    # Normalize before rotation to keep it consistent
+    # mat_orig = cv.normalize(mat_orig, None, alpha=0, beta=1, norm_type=cv.NORM_MINMAX, dtype=cv.CV_32F)
+    # Rotation and extract
+    mat_orig_rot = rotate(mat_orig, 45, reshape=True, order=1, mode=rotation_padding, cval=0)
+    im_orig = mat_orig_rot[center_orig-window_size_bin_rect_orig:center_orig, :]
+    im_orig = cv.normalize(im_orig, None, alpha=0, beta=1, norm_type=cv.NORM_MINMAX, dtype=cv.CV_32F)
+
+    return im_sq, im_orig, im_pval_sq, coe_sq_white, comp_binary, rm_idx, save_name, N
+
+
+
+
 def generate_hic_bundle(hic_file, chromosome, resolution, window_size, data_type, normalization, whiten,
                         rotation_padding, save_path, verbose, root,
                         im_vmax_perc, im_vmin_perc, corner_vmax_perc, corner_vmin_perc):
     """
+    DEPRECATED
     Generate all downstream images with a single rotation pass for shared shapes:
     - im: primary contact map (oe or observed)
     - im_oe: always OE (used for stripiness and plotting, currently deprecated)
@@ -120,11 +290,17 @@ def generate_hic_bundle(hic_file, chromosome, resolution, window_size, data_type
     coe_sq = cv.normalize(coe_sq, None, alpha=0, beta=1, norm_type=cv.NORM_MINMAX, dtype=cv.CV_32F)
 
     # P-VALUE NULL
-    cob_sq = np.log10(mat_obs_sub + 1)
-    cob_sq = clip_and_normalize(cob_sq, im_vmin_perc, im_vmax_perc)
-    # cob_sq = zero_outside_window(cob_sq, window_size_bin) # new addition
-    cob_sq = scalar_products(cob_sq, out="correlation")
+    # cob_sq = np.log10(mat_obs_sub + 1)
+    # cob_sq = clip_and_normalize(cob_sq, im_vmin_perc, im_vmax_perc)
+    # # cob_sq = zero_outside_window(cob_sq, window_size_bin) # new addition
+    # cob_sq = scalar_products(cob_sq, out="correlation")
+    # cob_sq = cv.normalize(cob_sq, None, alpha=0, beta=1, norm_type=cv.NORM_MINMAX, dtype=cv.CV_32F)
+
+    # v1.1.0: simple whiten the oe image to use the enrichment p-value
+    cob_sq = mat_oe_sub.copy()
+    cob_sq = np.log10(cob_sq + 1)
     cob_sq = cv.normalize(cob_sq, None, alpha=0, beta=1, norm_type=cv.NORM_MINMAX, dtype=cv.CV_32F)
+    cob_sq, _ = whiten_matrix(A_for_corr=cob_sq, A_for_whiten=cob_sq, epsilon=1e-5)
 
     # ROTATION CODE
     # Some basic statistics for the rotation code

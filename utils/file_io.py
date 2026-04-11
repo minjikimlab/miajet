@@ -14,7 +14,7 @@ def round_and_json(x, dp):
     x_dp = np.array([float(f"{val:.{dp}g}") if pd.notnull(val) else val for val in x])
     return json.dumps(x_dp.tolist())
 
-def save_csv(df_in, save_name, root, parameter_str, dp=3, exclude_rounding=["s_imagej"], convert_json=None):
+def save_csv(df_in, save_name, root, parameter_str, dp=3, exclude_rounding=["s_imagej", "x (bp)", "y (bp)"], convert_json=None):
     """
     Save a dataframe to a csv file 
 

@@ -429,23 +429,15 @@ def process_significance(df_ridge):
     # test_statistic, p_val = kstest(obs_arr - null_arr, lambda x : np.where(x < 0, 0.0, 1.0), alternative='less', nan_policy='omit')
     # test_statistic, p_val = ttest_rel(obs_arr, null_arr, alternative='greater', nan_policy='omit') # best for NE
 
-    # For v1.1.0 we do not use the null values
-    # Lets first combine the background values i.e. L and R 
-    if agg == "mean":
-        c_obs = c_mean_obs
-        # b_obs = np.maximum(l_mean_obs, r_mean_obs) # Maximums
-        b_obs = (l_mean_obs + r_mean_obs) / 2 # Average 
-        # b_obs = np.sqrt(l_mean_obs * r_mean_obs) # Geometric mean (v1.0.27)
-        # b_obs = np.minimum(l_mean_obs, r_mean_obs) # Minimum
-    else:
-        c_obs = c_med_obs
-        # b_obs = np.maximum(l_med_obs, r_med_obs) # Maximum
-        # b_obs = (l_med_obs + r_med_obs) / 2 # Average
-        b_obs = np.sqrt(l_med_obs * r_med_obs) # Geometric mean
-        # b_obs = np.minimum(l_med_obs, r_med_obs) # Minimum
+    # v1.1.0: enrichment p-value based on the whitened image
+    c_null = c_mean_null
+    b_null = (l_mean_null + r_mean_null) / 2 # Average 
+    # b_null = np.maximum(l_mean_null, r_mean_null) # Maximums
+    # b_null = np.sqrt(l_mean_null * r_mean_null) # Geometric mean 
+    # b_null = np.minimum(l_mean_null, r_mean_null) # Minimum
 
     # and then compute the KS test statistic
-    enrich_test_statistic, enrich_p_val = ks_2samp(c_obs, b_obs, nan_policy="omit", alternative="less")
+    enrich_test_statistic, enrich_p_val = ks_2samp(c_null, b_null, nan_policy="omit", alternative="less")
 
     return orig_idx, test_statistic, p_val, enrich_p_val
 
@@ -584,16 +576,15 @@ def correct_significance(df_agg, method="fdr_bh"):
     """
     
     _, p_values_corrected, _, _ = multipletests(df_agg["p-val"].values, method=method)
-    df_agg["p-val_corr"] = p_values_corrected
+    df_agg["q-val"] = p_values_corrected
 
-    _, p_values_corrected_enrich, _, _ = multipletests(df_agg["enrichment_p-val"].values, method=method)
-    df_agg["enrichment_p-val_corr"] = p_values_corrected_enrich
+    _, p_values_corrected_enrich, _, _ = multipletests(df_agg["p-val_white"].values, method=method)
+    df_agg["q-val_white"] = p_values_corrected_enrich
 
     return df_agg
 
 
-
-def threshold_significance(df_agg_in, alpha_range, enrich_thresh, verbose=False):
+def threshold_significance(df_agg_in, df_features_in, q_val, q_val_white, compartment, verbose=False):
     """
     Filter rows of a DataFrame by a p-value cutoff provided in `alpha_range`
 
@@ -606,9 +597,11 @@ def threshold_significance(df_agg_in, alpha_range, enrich_thresh, verbose=False)
     Parameters
     ----------
     df_agg_in : pd.DataFrame
-        Summary dataframe. Must contain "p-val_corr" column 
+        Summary dataframe. Must contain the column specified by `p_val_type`
     alpha_range : float or list of float
         Significance threshold(s). Rows with p-val_corr ≤ threshold are kept
+    p_val_type: str
+        Header of df_agg_in to use for thresholding, either "p-val_corr" or "enrichment_p-val_corr"
 
     Returns
     -------
@@ -620,36 +613,22 @@ def threshold_significance(df_agg_in, alpha_range, enrich_thresh, verbose=False)
     if df_agg_in.empty:
         return df_agg_in
 
-    if not isinstance(alpha_range, list):
+    # make a copy
+    df_agg = df_agg_in.loc[df_agg_in["q-val"] <= q_val].reset_index(drop=True)  
 
-        # make a copy
-        df_agg = df_agg_in.loc[df_agg_in["p-val_corr"] <= alpha_range].reset_index(drop=True)  
+    if verbose:
+        print(f"\t{len(df_agg)} / {n} ridges remaining after q-val {q_val} thresholding significance")
 
-        if verbose:
-            print(f"\t{len(df_agg)} / {n} ridges remaining after thresholding at alpha = {alpha_range}...")
-
-        # df_agg = df_agg.loc[df_agg["enrichment_p-val_corr"] <= enrich_thresh].reset_index(drop=True)
-
-        # if verbose:
-        #     print(f"\t{len(df_agg)} / {n} ridges remaining after enrichment thresholding at {enrich_thresh}...")
-
-        return [df_agg]
-
-    df_agg_alpha = []
-    for alpha in alpha_range:
-        df_agg = df_agg_in.loc[df_agg_in["p-val_corr"] <= alpha].reset_index(drop=True)  
+    if compartment:
+        df_agg = df_agg_in.loc[df_agg_in["q-val_white"] <= q_val_white].reset_index(drop=True)  
 
         if verbose:
-            print(f"\t * alpha = {alpha} : {len(df_agg)} / {n} ridges remaining...")
+            print(f"\t{len(df_agg)} / {n} ridges remaining after q-val {q_val_white} thresholding significance")
 
-        # df_agg = df_agg.loc[df_agg["enrichment_p-val_corr"] <= enrich_thresh].reset_index(drop=True)
+    df_features = df_features_in.loc[df_features_in["unique_id"].isin(df_agg["unique_id"])].reset_index(drop=True)
 
-        # if verbose:
-        #     print(f"\t * alpha = {alpha} : {len(df_agg)} / {n} ridges remaining after enrichment thresholding at {enrich_thresh}...")
+    return df_agg, df_features
 
-        df_agg_alpha.append(df_agg)
-
-    return df_agg_alpha
 
 
                 

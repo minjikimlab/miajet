@@ -1,13 +1,25 @@
 import numpy as np
 from utils.processing import group_adjacent_numbers
+from utils.plotting import convert_imagej_coord_to_numpy
+from utils.scale_space import scale_to_width
+from miajet.expanded_table import rect_to_square
+from miajet.compute_p_value import compute_test_statistic_quantities
+
+from skimage.filters import threshold_yen, threshold_triangle
+
 import pandas as pd
 import os
-from scipy.stats import entropy
+import sys
+from scipy.stats import entropy, ks_2samp
 # from utils.file_io import save_csv
 # import json
 # from scipy.optimize import curve_fit
 from .analyze_ridges import plot_top_k
 from scipy.signal import find_peaks
+from tqdm import tqdm
+
+from multiprocessing import Pool, shared_memory
+from functools import partial
 
 
 def count_alternating_01(boolean_array):
@@ -255,8 +267,11 @@ def simulate_filter_ridges(df_agg, df_features, rmse, entropy_thresh, c0_filter,
 
 
 
-def filter_ridges(df_agg, rmse, entropy_thresh, c0_filter, exp_scale_deriv, exp_scale_deriv2, ridge_cond_type, ridge_cond_val,
-                  angle_mean_type, angle_range, angle_deriv_thresh, col_mean_diff_std, verbose):
+def filter_ridges(df_agg, df_features, resolution,
+                  root_within=None, length=None, angle_turbulence=None, blobness=None, consistency=None, 
+                  sum_consistency=None, sum_consistency_im=None,
+                  ridge_strength_turbulence=None, angle_satisfied=None,
+                  verbose=False):
     """
     Filter ridges based on various conditions (if None then no filtering is applied)
 
@@ -264,126 +279,110 @@ def filter_ridges(df_agg, rmse, entropy_thresh, c0_filter, exp_scale_deriv, exp_
     ----------
     df_agg : pd.DataFrame
         Summary dataframe containing aggregated ridge features
-    rmse : float, optional
-        Root Mean Square Error of the 3rd order polynomial fit to expected scale values
-    entropy_thresh : float, optional
-        Normalized entropy threshold of the PMF of ridge strength values
-    ridge_cond_type : str, optional
-        Method of ridge condition filtering. Can be either "num_zeros" or "frac_zeros"
-    ridge_cond_val : float, optional
-        Value for the ridge condition filtering. 
-        If `ridge_cond_type` is "num_zeros", this is the minimum number of zeros
-        If `ridge_cond_type` is "frac_zeros", this is the minimum fraction of zeros
-    angle_mean_type : str, optional
-        Column name for the angle mean to be used in filtering (e.g. "angle_mean", "angle_imagej_mean")
-    angle_range : tuple, optional
-        A tuple of (lower_bound, upper_bound) for the angle mean filtering
-    angle_deriv_thresh : float, optional
-        Threshold for the maximum angle derivative value
-    col_mean_diff_std : float, optional (deprecated)
 
     Returns
     -------
     df_agg : pd.DataFrame
         Filtered summary dataframe with ridges that satisfy the specified conditions
     """
-    sum_rem = 0
+    mask = pd.Series(True, index=df_agg.index)
+    filtered_counts = {}
+    individual_masks = {}
 
-    if c0_filter is not None:
-        # filter based on the rmse
-        c0_satisfies = df_agg["coeffs"].apply(lambda x : x[0] > c0_filter)
-        df_agg["coeffs_bool"] = c0_satisfies
-        len_df_agg = len(df_agg)
-        df_agg = df_agg.loc[df_agg["coeffs_bool"]].reset_index(drop=True)
-        if verbose: print(f"\tFiltering based on c0 filter > {c0_filter}: {len_df_agg} -> {len(df_agg)} (removed {len_df_agg - len(df_agg)})")
-        sum_rem += len_df_agg - len(df_agg)
+    if root_within is not None:
+        _before = int(mask.sum())
+        m = df_agg["dist_diag"] < root_within * resolution
+        individual_masks[f"root_within < {root_within * resolution:.3g}"] = m
+        mask &= m
+        filtered_counts["root_within"] = _before - int(mask.sum())
+        if verbose: print(f"\troot_within filtered < {root_within * resolution}: {filtered_counts['root_within']}")
 
-    if exp_scale_deriv is not None:
-        # filter based on the exp_scale_deriv
-        exp_scale_deriv_satisfies = df_agg["exp_scale_deriv"] <= exp_scale_deriv
-        df_agg["exp_scale_deriv_bool"] = exp_scale_deriv_satisfies
-        len_df_agg = len(df_agg)
-        df_agg = df_agg.loc[df_agg["exp_scale_deriv_bool"]].reset_index(drop=True)
-        if verbose: print(f"\tFiltering based on exp_scale_deriv <= {exp_scale_deriv}: {len_df_agg} -> {len(df_agg)} (removed {len_df_agg - len(df_agg)})")
-        sum_rem += len_df_agg - len(df_agg)
-    
-    if exp_scale_deriv2 is not None:
-        # filter based on the exp_scale_deriv2
-        exp_scale_deriv2_satisfies = df_agg["exp_scale_deriv2"] <= exp_scale_deriv2
-        df_agg["exp_scale_deriv2_bool"] = exp_scale_deriv2_satisfies
-        len_df_agg = len(df_agg)
-        df_agg = df_agg.loc[df_agg["exp_scale_deriv2_bool"]].reset_index(drop=True)
-        if verbose: print(f"\tFiltering based on exp_scale_deriv2 <= {exp_scale_deriv2}: {len_df_agg} -> {len(df_agg)} (removed {len_df_agg - len(df_agg)})")
-        sum_rem += len_df_agg - len(df_agg)
+    if angle_turbulence is not None:
+        _before = int(mask.sum())
+        m = df_agg["angle_turbulence"] < angle_turbulence
+        individual_masks[f"angle_turbulence < {angle_turbulence}"] = m
+        mask &= m
+        filtered_counts["angle_turbulence"] = _before - int(mask.sum())
+        if verbose: print(f"\tangle_turbulence filtered < {angle_turbulence}: {filtered_counts['angle_turbulence']}")
 
-    if rmse is not None:
-        # filter based on the rmse
-        rmse_satisfies = df_agg["rmse"] <= rmse
-        df_agg["rmse_bool"] = rmse_satisfies
-        len_df_agg = len(df_agg)
-        df_agg = df_agg.loc[df_agg["rmse_bool"]].reset_index(drop=True)
-        if verbose: print(f"\tFiltering based on rmse <= {rmse}: {len_df_agg} -> {len(df_agg)} (removed {len_df_agg - len(df_agg)})")
-        sum_rem += len_df_agg - len(df_agg)
+    if blobness is not None:
+        _before = int(mask.sum())
+        m = df_agg["blobness"] < blobness
+        individual_masks[f"blobness < {blobness}"] = m
+        mask &= m
+        filtered_counts["blobness"] = _before - int(mask.sum())
+        if verbose: print(f"\tblobness filtered < {blobness}: {filtered_counts['blobness']}")
 
+    if consistency is not None:
+        _before = int(mask.sum())
+        m = df_agg["consistency"] >= consistency
+        individual_masks[f"consistency >= {consistency}"] = m
+        mask &= m
+        filtered_counts["consistency"] = _before - int(mask.sum())
+        if verbose: print(f"\tconsistency filtered >= {consistency}: {filtered_counts['consistency']}")
 
-    if col_mean_diff_std is not None:
-        # filter based on the std of the col mean diff
-        col_mean_diff_satisfies = df_agg["col_mean_diff_std"] <= col_mean_diff_std
-        df_agg["col_mean_diff_bool"] = col_mean_diff_satisfies
-        len_df_agg = len(df_agg)
-        df_agg = df_agg.loc[df_agg["col_mean_diff_bool"]].reset_index(drop=True)
-        if verbose: print(f"\tFiltering based on col_mean_diff <= {col_mean_diff_std}: {len_df_agg} -> {len(df_agg)} (removed {len_df_agg - len(df_agg)})")
-        sum_rem += len_df_agg - len(df_agg)
+    if length is not None:
+        _before = int(mask.sum())
+        m = df_agg["length"] >= length
+        individual_masks[f"length >= {length}"] = m
+        mask &= m
+        filtered_counts["length"] = _before - int(mask.sum())
+        if verbose: print(f"\tlength filtered >= {length}: {filtered_counts['length']}")
 
-    if entropy_thresh is not None:
-        entropy_satisfies = df_agg["entropy"] <= entropy_thresh
-        df_agg["entropy_bool"] = entropy_satisfies
-        len_df_agg = len(df_agg)
-        df_agg = df_agg.loc[df_agg["entropy_bool"]].reset_index(drop=True)
-        if verbose: print(f"\tEntropy threshold keeping 'normalized entropy' <= {entropy_thresh}: {len_df_agg} -> {len(df_agg)} (removed {len_df_agg - len(df_agg)})")
-        sum_rem += len_df_agg - len(df_agg)
+    if ridge_strength_turbulence is not None:
+        _before = int(mask.sum())
+        m = df_agg["ridge_strength_turbulence"] < ridge_strength_turbulence
+        individual_masks[f"ridge_strength_turbulence < {ridge_strength_turbulence}"] = m
+        mask &= m
+        filtered_counts["ridge_strength_turbulence"] = _before - int(mask.sum())
+        if verbose: print(f"\tridge_strength_turbulence filtered < {ridge_strength_turbulence}: {filtered_counts['ridge_strength_turbulence']}")
 
-    if ridge_cond_type is not None:
-        if ridge_cond_type == "frac_zeros":
-            ridge_cond_satisfies = df_agg["ridge_cond_fraction"] >= ridge_cond_val
-        elif ridge_cond_type == "num_zeros":
-            ridge_cond_satisfies = df_agg["ridge_cond_num"] >= ridge_cond_val
-        else:
-            print("`ridge_cond_type` must be either 'num_zeros' or 'frac_zeros'")
-            raise ValueError
-        
-        df_agg["ridge_cond_bool"] = ridge_cond_satisfies
-        len_df_agg = len(df_agg)
-        df_agg = df_agg.loc[df_agg["ridge_cond_bool"]].reset_index(drop=True)
-        if verbose: print(f"\tRidge condition filtering '{ridge_cond_type}' >= {ridge_cond_val}: {len_df_agg} -> {len(df_agg)} (removed {len_df_agg - len(df_agg)})")
-        sum_rem += len_df_agg - len(df_agg)
+    if angle_satisfied is not None:
+        _before = int(mask.sum())
+        m = df_agg["angle_satisfied"] > angle_satisfied
+        individual_masks[f"angle_satisfied > {angle_satisfied}"] = m
+        mask &= m
+        filtered_counts["angle_satisfied"] = _before - int(mask.sum())
+        if verbose: print(f"\tangle_satisfied filtered > {angle_satisfied}: {filtered_counts['angle_satisfied']}")
 
-    if angle_mean_type is not None:
-        if angle_mean_type in df_agg.columns:
-            angle_mean_satisfies = (angle_range[0] <= df_agg[angle_mean_type]) &  (df_agg[angle_mean_type] <= angle_range[1])
-            df_agg["angle_mean_bool"] = angle_mean_satisfies
-            len_df_agg = len(df_agg)
-            df_agg = df_agg.loc[df_agg["angle_mean_bool"]].reset_index(drop=True)
-            if verbose: print(f"\tAngle condition filtering {angle_range[0]} <= '{angle_mean_type}' <= {angle_range[1]}: {len_df_agg} -> {len(df_agg)}  (removed {len_df_agg - len(df_agg)})")
-            sum_rem += len_df_agg - len(df_agg)
-        else:
-            print("`angle_mean_type` must be either 'angle_mean' or None")
-            raise ValueError
+    if sum_consistency is not None:
+        _before = int(mask.sum())
+        m = df_agg["sum_consistency"] > sum_consistency
+        individual_masks[f"sum_consistency > {sum_consistency}"] = m
+        mask &= m
+        filtered_counts["sum_consistency"] = _before - int(mask.sum())
+        if verbose: print(f"\tsum_consistency filtered > {sum_consistency}: {filtered_counts['sum_consistency']}")
 
-    if angle_deriv_thresh is not None:
-        angle_deriv_satisfies = df_agg["angle_deriv_max"] <= angle_deriv_thresh
-        df_agg["angle_deriv_bool"] = angle_deriv_satisfies
-        len_df_agg = len(df_agg)
-        df_agg = df_agg.loc[df_agg["angle_deriv_bool"]].reset_index(drop=True)
-        if verbose: print(f"\tAngle derivative filtering 'angle_deriv_max' <= {angle_deriv_thresh}: {len_df_agg} -> {len(df_agg)}  (removed {len_df_agg - len(df_agg)})")
-        sum_rem += len_df_agg - len(df_agg)
-    
-    if verbose: 
-        print(f"\tTotal ridges removed: {sum_rem}")
-        print(f"\tTotal ridges remaining: {len(df_agg)}")
+    if sum_consistency_im:
+        _before = int(mask.sum())
+        thresh = threshold_yen(df_agg["sum_consistency_im"].values)
+        m = df_agg["sum_consistency_im"] > thresh
+        individual_masks[f"sum_consistency_im > {thresh:.3g} (yen)"] = m
+        mask &= m
+        filtered_counts["sum_consistency_im"] = _before - int(mask.sum())
+        if verbose: print(f"\tsum_consistency_im filtered (yen threshold {thresh:.3g}): {filtered_counts['sum_consistency_im']}")
 
+    _before = int(mask.sum())
+    thresh = threshold_triangle(df_agg["saliency"].values)
+    m = df_agg["saliency"] > thresh
+    individual_masks[f"saliency > {thresh:.3g} (triangle)"] = m
+    mask &= m
+    filtered_counts["saliency"] = _before - int(mask.sum())
+    if verbose: print(f"\tsaliency filtered (triangle threshold {thresh:.3g}): {filtered_counts['saliency']}")
 
-    return df_agg
+    df_agg_thresholded = df_agg.loc[mask].reset_index(drop=True)
+
+    if len(df_agg_thresholded) == 0:
+        if verbose: print("All ridges filtered. Consider changing parameters.")
+        sys.exit(0)
+
+    if verbose:
+        print(f"\tTotal ridges removed: {len(df_agg) - len(df_agg_thresholded)}")
+        print(f"\tTotal ridges remaining: {len(df_agg_thresholded)}")
+
+    df_features_thresholded = df_features.loc[df_features["unique_id"].isin(df_agg_thresholded["unique_id"])].reset_index(drop=True)
+
+    return df_agg_thresholded, df_features_thresholded, individual_masks 
 
 
 def parse_noise(noise_str):
@@ -1015,3 +1014,390 @@ def generate_summary_table(df_features, ranking, angle_label, angle_range, noise
     # save_csv(df_agg, save_name, root, parameter_str, convert_json=["pmf", "edges", "coeffs"])
 
     return df_agg
+
+
+
+def detect_adjacent_nondecreasing_local_maxima_memory(dbscan_s_idx, protection=False, N=None, use_memory=True):
+    # Find adjacent non-decreasing local maxima with memory
+    adjacent_nondecreasing = []
+    memory = 1  # Initialize memory to 1 (optimistic)
+    curr_max = -np.inf
+    # 15% of ridge length is the max memory span before we simply append 1
+    # The reasoning behind this is that because this is a discrete signal
+    # A true "flat line" should be considered as optimistic non-decreasing
+    # whereas a gradual decrease with some fake "flat lines" should be considered as decreasing
+    mem_limit = np.ceil(len(dbscan_s_idx) * 0.1) # Changed from 0.15 to 0.1
+    mem_counter = 0
+
+    for i in range(1, len(dbscan_s_idx)):
+        if dbscan_s_idx[i] > dbscan_s_idx[i - 1]:
+            # Strict increase -> output 1, set memory to 1
+            adjacent_nondecreasing.append(1)
+            memory = 1
+            mem_counter = 0 # Reset memory counter
+
+        elif curr_max != -np.inf and np.abs(dbscan_s_idx[i] - curr_max) <= 3:
+            # If its in the protected zone, treat it as non-decreasing
+            adjacent_nondecreasing.append(1)
+            memory = 1
+            mem_counter = 0 # Reset memory counter
+
+        elif dbscan_s_idx[i] < dbscan_s_idx[i - 1]:
+            # Strict decrease -> output 0, set memory to 0
+            adjacent_nondecreasing.append(0)
+            memory = 0
+            mem_counter = 0 # Reset memory counter
+
+        else:
+            if use_memory and mem_counter <= mem_limit:
+                # Equal -> use memory
+                adjacent_nondecreasing.append(memory)
+                mem_counter += 1
+            else:
+                adjacent_nondecreasing.append(1)  # treat as increasing
+
+    # Ensure same size as closest_s by prepending a 0
+    adjacent_nondecreasing = [1] + adjacent_nondecreasing
+
+    return np.array(adjacent_nondecreasing)
+
+
+
+def compute_saliency(df_pos, ridge_datum, im_p_val=None, im_p_val2=None,
+                     agg_pval="mean", scale_range=None, adj_nondec=True, ang_frac=True,
+                     x_label="X_(px)_unmap", y_label="Y_(px)_unmap"):
+
+    gb = df_pos.groupby('unique_id', sort=False)
+
+    frames = []
+
+    for uid, df_ridge in tqdm(gb, desc="Computing saliency", total=gb.ngroups):
+        if uid not in ridge_datum:
+            continue
+
+        rec = ridge_datum[uid]
+        s_idx = int(rec["s_idx"])
+        D_curves = rec["D_curves"]
+        A_bool = rec["A_bool_curves"]
+        dbscan_s_idx = rec["dbscan_s_idx"]
+        n_pos = D_curves.shape[1]
+
+        # --- ridge_strength at selected scale ---
+        ridge_strength = D_curves[s_idx, np.arange(n_pos)]
+
+        # --- angle mask (sum_cond="a" only) ---
+        angle_mask = A_bool[s_idx, np.arange(n_pos)]
+
+        # --- angle_fraction (ang_frac) ---
+        angle_fraction = A_bool.mean(axis=0).astype(float) if ang_frac else 1.0
+
+        # --- adj (adjacent non-decreasing) ---
+        if adj_nondec:
+            adj = detect_adjacent_nondecreasing_local_maxima_memory(dbscan_s_idx, protection=False, N=3, use_memory=True)
+        else:
+            adj = np.ones(n_pos, dtype=float)
+
+        # --- saliency ---
+        saliency_values = ridge_strength * adj * angle_fraction
+        jet_saliency = float(np.sum(saliency_values[angle_mask]))
+
+        # --- consistency ---
+        perc_satisfied = np.mean(adj)
+        sum_consistency = np.sum(adj)
+        sum_consistency_im = np.sum(adj * df_ridge["input"].values)
+
+        # --- angle_satisfied (jetness) ---
+        jetness = np.mean(angle_mask)
+
+        # --- length ---
+        length = len(df_ridge)
+
+        # --- blobness ---
+        dbscan_widths = scale_to_width(scale_range[dbscan_s_idx])
+        blobness = np.max(dbscan_widths) / length
+
+        # --- angle turbulence (A_curves_cv) ---
+        A_curves = rec["A_curves"]
+        A_curves_cv = np.std(A_curves) / (np.mean(A_curves) + 1e-6)
+
+        # --- cv_ddbscan ---
+        dbscan_D_values = np.array([D_curves[dbscan_s_idx[i], i] for i in range(len(dbscan_s_idx))])
+        cv_ddbscan = np.std(dbscan_D_values) / (np.mean(dbscan_D_values) + 1e-8)
+
+        # --- enrichment p-values ---
+        enrich_p_val = np.nan
+        enrich_p_val2 = np.nan
+
+        if im_p_val is not None:
+            ridge_pts = convert_imagej_coord_to_numpy(
+                df_ridge[[x_label, y_label]].values,
+                im_p_val.shape[0], flip_y=False, start_bin=0)
+            A_curves = rec["A_curves"]
+            dbscan_angle_values = np.array([A_curves[dbscan_s_idx[i], i] for i in range(len(dbscan_s_idx))])
+            ridge_angles = -dbscan_angle_values + 90
+            ridge_widths = scale_to_width(scale_range[dbscan_s_idx])
+
+            l_mean, r_mean, c_mean, \
+                _, _, _, _, _, _, _, _, _, \
+                l_med, r_med, c_med = compute_test_statistic_quantities(
+                    im=im_p_val, ridge_points=ridge_pts, ridge_angles=ridge_angles,
+                    width_in=ridge_widths, height=1, im_shape=im_p_val.shape, factor_lr=1)
+
+            if agg_pval == "mean":
+                c_vals, b_vals = c_mean, np.sqrt(l_mean * r_mean)
+            else:
+                c_vals, b_vals = c_med, np.sqrt(l_med * r_med)
+
+            if len(c_vals) > 0 and len(b_vals) > 0:
+                _, enrich_p_val = ks_2samp(c_vals, b_vals, nan_policy="omit", alternative="less")
+
+            if im_p_val2 is not None:
+                l_mean2, r_mean2, c_mean2, \
+                    _, _, _, _, _, _, _, _, _, \
+                    l_med2, r_med2, c_med2 = compute_test_statistic_quantities(
+                        im=im_p_val2, ridge_points=ridge_pts, ridge_angles=ridge_angles,
+                        width_in=ridge_widths, height=1, im_shape=im_p_val2.shape, factor_lr=1)
+
+                if agg_pval == "mean":
+                    c_vals2, b_vals2 = c_mean2, np.sqrt(l_mean2 * r_mean2)
+                else:
+                    c_vals2, b_vals2 = c_med2, np.sqrt(l_med2 * r_med2)
+
+                if len(c_vals2) > 0 and len(b_vals2) > 0:
+                    _, enrich_p_val2 = ks_2samp(c_vals2, b_vals2, nan_policy="omit", alternative="less")
+
+        
+        df_ridge = df_ridge.copy()
+        df_ridge["length"] = length
+        df_ridge["saliency"] = jet_saliency
+        df_ridge["angle_turbulence"] = A_curves_cv
+        df_ridge["consistency"] = perc_satisfied
+        df_ridge["sum_consistency"] = sum_consistency
+        df_ridge["sum_consistency_im"] = sum_consistency_im
+        df_ridge["blobness"] = blobness
+        df_ridge["p-val"] = enrich_p_val
+        df_ridge["p-val_white"] = enrich_p_val2
+        df_ridge["ridge_strength_turbulence"] = cv_ddbscan
+        df_ridge["angle_satisfied"] = jetness
+
+        frames.append(df_ridge)
+
+    df_features = pd.concat(frames).reset_index(drop=True)
+
+    # Build df_agg as one row per ridge
+    # df_agg = df_features.groupby("unique_id", sort=False).first().reset_index()
+    # Instead of selecting the first row of each ridge as df_agg
+    # Use the row with minimum distance to the diagonal such that it can be used to filter later on
+    idx = df_features.groupby("unique_id", sort=False)["dist_diag"].idxmin()
+    df_agg = df_features.loc[idx].reset_index(drop=True)
+
+    return df_agg, df_features
+
+
+def filter_dist_diag(df, df_pos, root_within, window_size, resolution,
+                      square_size_original, verbose=False):
+
+    if len(df_pos) == 0:
+        if verbose: 
+            print("All ridges filtered. Consider changing parameters.")
+        sys.exit(0)
+
+    # Need to recompute dist_diag since ridges are split not trimmed
+    # Compute the distance diag vectorized
+    window_size_bin = np.ceil(window_size / resolution).astype(int)
+    # Make sure the coordinates are w.r.t the correct, original coordinates
+    coords = rect_to_square(square_size_original, window_size_bin, df_pos[["Y_(px)_orig", "X_(px)_orig"]].values) 
+    rows, cols = coords[:, 0], coords[:, 1]
+    df_pos["x (bp)"] = cols * resolution
+    df_pos["y (bp)"] = rows * resolution 
+    df_pos['dist_diag'] = np.abs(df_pos['x (bp)'] - df_pos['y (bp)'])
+
+    df_dd = df_pos.loc[df_pos.groupby('unique_id')['dist_diag'].idxmin(), ["unique_id", "dist_diag"]].reset_index(drop=True)
+    dist_by_id = df_dd.set_index("unique_id")["dist_diag"]
+    df["dist_diag"] = df["unique_id"].map(dist_by_id)
+    df = df.reset_index(drop=True)
+
+    if root_within is None:
+        return df_pos
+
+    n_before = len(df)
+    df = df.loc[df["dist_diag"] < root_within * resolution].reset_index(drop=True)
+    if verbose:
+        print(f"\tRe-filtering by {root_within} bins to diagonal after splitting: {n_before} -> {len(df)}...")
+
+    df_pos = df_pos.loc[df_pos["unique_id"].isin(df["unique_id"])].reset_index(drop=True)
+
+    if len(df_pos) == 0:
+        if verbose: 
+            print("All ridges filtered. Consider changing parameters.")
+        sys.exit(0)
+
+    return df_pos
+
+
+
+def _init_worker(shm_name1, shm_shape1, shm_dtype1,
+                 shm_name2, shm_shape2, shm_dtype2):
+    """Attach shared memory in each worker."""
+    global _im_p_val, _im_p_val2, _shm1, _shm2
+    _im_p_val = _im_p_val2 = None
+    _shm1 = _shm2 = None
+    if shm_name1 is not None:
+        _shm1 = shared_memory.SharedMemory(name=shm_name1)
+        _im_p_val = np.ndarray(shm_shape1, dtype=shm_dtype1, buffer=_shm1.buf)
+    if shm_name2 is not None:
+        _shm2 = shared_memory.SharedMemory(name=shm_name2)
+        _im_p_val2 = np.ndarray(shm_shape2, dtype=shm_dtype2, buffer=_shm2.buf)
+
+
+def _process_ridge(args, agg_pval, scale_range, adj_nondec, ang_frac,
+                   x_label, y_label):
+    """Process a single ridge — runs in worker."""
+    uid, df_ridge, rec = args
+    im_p_val = globals().get('_im_p_val')
+    im_p_val2 = globals().get('_im_p_val2')
+
+    s_idx = int(rec["s_idx"])
+    D_curves = rec["D_curves"]
+    A_bool = rec["A_bool_curves"]
+    dbscan_s_idx = rec["dbscan_s_idx"]
+    n_pos = D_curves.shape[1]
+
+    ridge_strength = D_curves[s_idx, np.arange(n_pos)]
+    angle_mask = A_bool[s_idx, np.arange(n_pos)]
+    angle_fraction = A_bool.mean(axis=0).astype(float) if ang_frac else 1.0
+
+    if adj_nondec:
+        adj = detect_adjacent_nondecreasing_local_maxima_memory(
+            dbscan_s_idx, protection=False, N=3, use_memory=True)
+    else:
+        adj = np.ones(n_pos, dtype=float)
+
+    saliency_values = ridge_strength * adj * angle_fraction
+    jet_saliency = float(np.sum(saliency_values[angle_mask]))
+
+    perc_satisfied = np.mean(adj)
+    sum_consistency = np.sum(adj)
+    sum_consistency_im = np.sum(adj * df_ridge["input"].values)
+    jetness = np.mean(angle_mask)
+    length = len(df_ridge)
+
+    dbscan_widths = scale_to_width(scale_range[dbscan_s_idx])
+    blobness = np.max(dbscan_widths) / length
+
+    A_curves = rec["A_curves"]
+    A_curves_cv = np.std(A_curves) / (np.mean(A_curves) + 1e-6)
+
+    # dbscan_D_values = np.array([D_curves[dbscan_s_idx[i], i] for i in range(len(dbscan_s_idx))])
+    dbscan_D_values = D_curves[dbscan_s_idx, np.arange(n_pos)]
+    cv_ddbscan = np.std(dbscan_D_values) / (np.mean(dbscan_D_values) + 1e-8)
+
+    enrich_p_val = np.nan
+    enrich_p_val2 = np.nan
+
+    if im_p_val is not None:
+        ridge_pts = convert_imagej_coord_to_numpy(
+            df_ridge[[x_label, y_label]].values,
+            im_p_val.shape[0], flip_y=False, start_bin=0)
+        # dbscan_angle_values = np.array([A_curves[dbscan_s_idx[i], i] for i in range(len(dbscan_s_idx))])
+        dbscan_angle_values = A_curves[dbscan_s_idx, np.arange(n_pos)]
+        ridge_angles = -dbscan_angle_values + 90
+        # ridge_widths = scale_to_width(scale_range[dbscan_s_idx])
+
+        l_mean, r_mean, c_mean, \
+            _, _, _, _, _, _, _, _, _, \
+            l_med, r_med, c_med = compute_test_statistic_quantities(
+                im=im_p_val, ridge_points=ridge_pts, ridge_angles=ridge_angles,
+                width_in=dbscan_widths, height=1, im_shape=im_p_val.shape, factor_lr=1)
+
+        if agg_pval == "mean":
+            c_vals, b_vals = c_mean, np.sqrt(l_mean * r_mean)
+        else:
+            c_vals, b_vals = c_med, np.sqrt(l_med * r_med)
+
+        if len(c_vals) > 0 and len(b_vals) > 0:
+            _, enrich_p_val = ks_2samp(c_vals, b_vals, nan_policy="omit", alternative="less")
+
+        if im_p_val2 is not None:
+            l_mean2, r_mean2, c_mean2, \
+                _, _, _, _, _, _, _, _, _, \
+                l_med2, r_med2, c_med2 = compute_test_statistic_quantities(
+                    im=im_p_val2, ridge_points=ridge_pts, ridge_angles=ridge_angles,
+                    width_in=dbscan_widths, height=1, im_shape=im_p_val2.shape, factor_lr=1)
+
+            if agg_pval == "mean":
+                c_vals2, b_vals2 = c_mean2, np.sqrt(l_mean2 * r_mean2)
+            else:
+                c_vals2, b_vals2 = c_med2, np.sqrt(l_med2 * r_med2)
+
+            if len(c_vals2) > 0 and len(b_vals2) > 0:
+                _, enrich_p_val2 = ks_2samp(c_vals2, b_vals2, nan_policy="omit", alternative="less")
+
+    df_ridge = df_ridge.copy()
+    df_ridge["length"] = length
+    df_ridge["width"] = dbscan_widths
+    df_ridge["avg_width"] = np.mean(dbscan_widths)
+    df_ridge["saliency"] = jet_saliency
+    df_ridge["angle_turbulence"] = A_curves_cv
+    df_ridge["consistency"] = perc_satisfied
+    df_ridge["sum_consistency"] = sum_consistency
+    df_ridge["sum_consistency_im"] = sum_consistency_im
+    df_ridge["blobness"] = blobness
+    df_ridge["p-val"] = enrich_p_val
+    df_ridge["p-val_white"] = enrich_p_val2
+    df_ridge["ridge_strength_turbulence"] = cv_ddbscan
+    df_ridge["angle_satisfied"] = jetness
+
+    return df_ridge
+
+
+def compute_saliency_parallel(df_pos, ridge_datum, im_p_val=None, im_p_val2=None,
+                     agg_pval="mean", scale_range=None, adj_nondec=True, ang_frac=True,
+                     x_label="X_(px)_unmap", y_label="Y_(px)_unmap", num_cores=4):
+
+    # --- create shared memory for images ---
+    shm1 = shm2 = None
+    shm_name1 = shm_shape1 = shm_dtype1 = None
+    shm_name2 = shm_shape2 = shm_dtype2 = None
+
+    try:
+        if im_p_val is not None:
+            shm1 = shared_memory.SharedMemory(create=True, size=im_p_val.nbytes)
+            buf1 = np.ndarray(im_p_val.shape, dtype=im_p_val.dtype, buffer=shm1.buf)
+            buf1[:] = im_p_val
+            shm_name1, shm_shape1, shm_dtype1 = shm1.name, im_p_val.shape, im_p_val.dtype
+
+        if im_p_val2 is not None:
+            shm2 = shared_memory.SharedMemory(create=True, size=im_p_val2.nbytes)
+            buf2 = np.ndarray(im_p_val2.shape, dtype=im_p_val2.dtype, buffer=shm2.buf)
+            buf2[:] = im_p_val2
+            shm_name2, shm_shape2, shm_dtype2 = shm2.name, im_p_val2.shape, im_p_val2.dtype
+
+        # --- build task list ---
+        gb = df_pos.groupby('unique_id', sort=False)
+        tasks = [(uid, df_ridge, ridge_datum[uid])
+                 for uid, df_ridge in gb if uid in ridge_datum]
+
+        worker_fn = partial(_process_ridge,
+                            agg_pval=agg_pval, scale_range=scale_range,
+                            adj_nondec=adj_nondec, ang_frac=ang_frac,
+                            x_label=x_label, y_label=y_label)
+
+        with Pool(num_cores,
+                  initializer=_init_worker,
+                  initargs=(shm_name1, shm_shape1, shm_dtype1,
+                            shm_name2, shm_shape2, shm_dtype2)) as pool:
+            frames = list(tqdm(pool.imap(worker_fn, tasks),
+                               desc="Computing saliency", total=len(tasks)))
+
+    finally:
+        for shm in (shm1, shm2):
+            if shm is not None:
+                shm.close()
+                shm.unlink()
+
+    df_features = pd.concat(frames).reset_index(drop=True)
+    idx = df_features.groupby("unique_id", sort=False)["dist_diag"].idxmin()
+    df_agg = df_features.loc[idx].reset_index(drop=True)
+
+    return df_agg, df_features

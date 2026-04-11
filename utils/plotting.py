@@ -680,37 +680,50 @@ def plot_n_rect_chunks(H, titles, suptitle, resolution, savepath=None, show=Fals
 
 
 from matplotlib.collections import LineCollection
-
+from cycler import cycler
 
 def plot_n_rect(H, titles, suptitle, resolution, savepath=None, show=False, supxlabel=None, supylabel=None, figsize=None, cmap_label="Intensity", dpi=100, num_ticks=[5, 50], 
                 show_cbar=True, vcenter=None, cmap="viridis", vmax=None, genomic_shift=0, lines=None, line_colors=["blue", "cyan", "lime"], line_labels=None, line_widths=None, 
-                show_legend=False, ppr=1, dp=1, **kwargs):
+                show_legend=False, dp=1, track_1d=None, track_1d_name=None, **kwargs):
     """
     Plots n rectagnle Hi-C plots with 1 plot per row
     """
     
     if isinstance(H, np.ndarray):
-        if H.ndim == 3:  
+        if H.ndim == 3:
             H = list(H)  
         else:
             raise ValueError("Numpy array H must be 3-dimensional with shape (num_matrices, dim1, dim2)")
             
     if isinstance(H, list):
+
+        if track_1d is not None:
+            # Support single track or list of tracks
+            if isinstance(track_1d, np.ndarray) and track_1d.ndim == 1:
+                track_1d = [track_1d]
+                if isinstance(track_1d_name, str) or track_1d_name is None:
+                    track_1d_name = [track_1d_name]
+            n_panels = len(H) + len(track_1d)
+            sharey = False
+        else:
+            n_panels = len(H)
+            sharey = 'all'
+            
             
         if figsize is not None:
             if genomic_shift != 0 and not isinstance(genomic_shift[0], (int, float)):
-                fig, axs = plt.subplots(np.ceil(len(H) / ppr).astype(int), ppr, figsize=figsize, layout='constrained',
-                                        sharey='all', dpi=dpi)
+                fig, axs = plt.subplots(n_panels, 1, figsize=figsize, layout='constrained',
+                                        sharey=sharey, dpi=dpi)
             else:
-                fig, axs = plt.subplots(np.ceil(len(H) / ppr).astype(int), ppr, figsize=figsize, layout='constrained',
-                                        sharex='all', sharey='all', dpi=dpi)
+                fig, axs = plt.subplots(n_panels, 1, figsize=figsize, layout='constrained',
+                                        sharex='all', sharey=sharey, dpi=dpi)
         else:
             if genomic_shift != 0 and not isinstance(genomic_shift[0], (int, float)):
-                fig, axs = plt.subplots(np.ceil(len(H) / ppr).astype(int), ppr, figsize=(36, 2 * len(H)), layout='constrained',
-                                        sharey='all', dpi=dpi)
+                fig, axs = plt.subplots(n_panels, 1, figsize=(H[0].shape[1] / 200, 1.5 * n_panels), layout='constrained',
+                                        sharey=sharey, dpi=dpi)
             else:
-                fig, axs = plt.subplots(np.ceil(len(H) / ppr).astype(int), ppr, figsize=(36, 2 * len(H)), layout='constrained',
-                                        sharex='all', sharey='all', dpi=dpi)
+                fig, axs = plt.subplots(n_panels, 1, figsize=(H[0].shape[1] / 200, 1.5 * n_panels), layout='constrained',
+                                        sharex='all', sharey=sharey, dpi=dpi)
                 
         # Ensure axs is iterable by wrapping a single Axes into an array
         if not hasattr(axs, "flat"):
@@ -777,7 +790,7 @@ def plot_n_rect(H, titles, suptitle, resolution, savepath=None, show=False, supx
                     
                 
                 if show_cbar:
-                    cbar = fig.colorbar(im, ax=ax)  # Add a colorbar to each subplot
+                    cbar = fig.colorbar(im, ax=ax, fraction=0.03, pad=0.04)  # Add a colorbar to each subplot
                     cbar.set_label(cmap_label, rotation=270)
                     # cbar.ax.tick_params(rotation=45)
                     
@@ -790,7 +803,7 @@ def plot_n_rect(H, titles, suptitle, resolution, savepath=None, show=False, supx
                             for j, line in enumerate(lines[i]):
                                 label = line_labels[i][j] if line_labels is not None and line_labels[i] is not None else None
                                 # Plot the primary line with a fixed, thin linewidth and default color cycle
-                                ax.plot(line[:, 0], line[:, 1], linewidth=1, label=label, alpha=0.7)
+                                ax.plot(line[:, 0], line[:, 1], linewidth=1, label=label, alpha=0.5)
                                 # If variable widths are provided, overlay a LineCollection with the variable widths
                                 if line_widths is not None:
                                     if isinstance(line_widths, list) and line_widths[i] is not None:
@@ -800,19 +813,19 @@ def plot_n_rect(H, titles, suptitle, resolution, savepath=None, show=False, supx
                                         # if not provided for a segment, default to 1 for that segment.
                                         if line_widths[i][j] is not None:
                                             lw_1_min = np.clip(line_widths[i][j], a_min=1, a_max=None) # minimum is 1
-                                            lc = LineCollection(segments, linewidths=lw_1_min, color='gray', alpha=0.5)
+                                            lc = LineCollection(segments, linewidths=lw_1_min, color='gray', alpha=0.3)
                                             ax.add_collection(lc)
                                 
                     else:
                         for j, line in enumerate(lines):
                             label = line_labels[j] if line_labels is not None else None
-                            ax.plot(line[:, 0], line[:, 1], linewidth=1, label=label, alpha=0.7)
+                            ax.plot(line[:, 0], line[:, 1], linewidth=1, label=label, alpha=0.5)
                             if line_widths is not None:
                                 points = line[::2].reshape(-1, 1, 2)
                                 segments = np.concatenate([points[:-1], points[1:]], axis=1)
                                 if line_widths[j] is not None:
                                     lw_1_min = np.clip(line_widths[j], a_min=1, a_max=None)
-                                    lc = LineCollection(segments, linewidths=lw_1_min, color='gray', alpha=0.5)
+                                    lc = LineCollection(segments, linewidths=lw_1_min, color='gray', alpha=0.3)
                                     ax.add_collection(lc)
                         
                     if line_labels is not None:
@@ -823,12 +836,19 @@ def plot_n_rect(H, titles, suptitle, resolution, savepath=None, show=False, supx
                 ax.set_title(titles[i], fontsize=10)
                                 
                 if genomic_shift != 0 and not isinstance(genomic_shift[0], (int, float)):
-                    
-                    set_genomic_ticks(ax, num_ticks, resolution / np.sqrt(2), H[0].shape, genomic_shift[i], dp)
+                    set_genomic_ticks(ax, num_ticks, [resolution * np.sqrt(2), resolution / np.sqrt(2)], H[0].shape, genomic_shift[i], dp)
                 else:
-                    set_genomic_ticks(ax, num_ticks, resolution / np.sqrt(2), H[0].shape, genomic_shift, dp)
+                    set_genomic_ticks(ax, num_ticks, [resolution * np.sqrt(2), resolution / np.sqrt(2)], H[0].shape, genomic_shift, dp)
                 
-                ax.autoscale(False)                
+                ax.autoscale(False) 
+
+            elif track_1d is not None and i < len(H) + len(track_1d):
+                t_idx = i - len(H)
+                x = np.arange(len(track_1d[t_idx]))
+                ax.plot(x, track_1d[t_idx], color="black", linewidth=1.5, alpha=1.0)
+                ax.set_title(track_1d_name[t_idx] if track_1d_name is not None else None, fontsize=10)
+                ax.tick_params(axis="y", labelsize=7)
+                ax.set_xlim(0, len(track_1d[t_idx]) - 1)
                 
             else:  # Hide any unused subplots
                 ax.axis('off')

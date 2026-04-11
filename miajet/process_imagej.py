@@ -1,6 +1,7 @@
 import pandas as pd
 import os
 import numpy as np
+import sys
 
 
 def read_curve_tracing_results(f, verbose=True):
@@ -28,14 +29,15 @@ def read_curve_tracing_results(f, verbose=True):
     return df_results
 
 
-
-def load_imagej_results(save_path, scale_range, verbose, root,
+def load_imagej_results(config, save_path, scale_range, verbose, root,
                         contour_label="Contour Number", 
                         pos_label="Point Number", 
                         frame_label="Frame Number"):
     """
     Loads the tables from ImageJ curve tracing and combines them
     * Recall that each table corresponds to the imageJ results of the image blurred at a single scale
+
+    Also updates config.scale_range, removing failed scales (i.e. those with no ridges detected by ImageJ)
 
     Two tables are returned:
     1. A summary dataframe is generated that collapses each ridge to a single row 
@@ -74,8 +76,9 @@ def load_imagej_results(save_path, scale_range, verbose, root,
 
     # collect results files
     results_s_imagej = []
+    failed_scales = []
 
-    for s in scale_range:
+    for s_idx, s in enumerate(scale_range):
         s_str = f"{s:.3f}"
 
         # equivalent to the "expected_csv" variable in `call_imagej.process_sigma`
@@ -84,7 +87,8 @@ def load_imagej_results(save_path, scale_range, verbose, root,
         # read curve tracing results
         df_results = read_curve_tracing_results(f, verbose)
 
-        if df_results is None:
+        if df_results is None or contour_label not in df_results.columns:
+            failed_scales.append(s)
             continue
 
         # remove duplicate rows in summary and results (most likely due to junctions, but the data is exactly the same)
@@ -92,8 +96,20 @@ def load_imagej_results(save_path, scale_range, verbose, root,
 
         # assign the scale as "s_imagej"
         df_results["s_imagej"] = s 
+        df_results["s_idx"] = s_idx
 
         results_s_imagej.append(df_results)
+
+    if len(results_s_imagej) == 0:
+        if verbose: 
+            print("No ridges found from imagej. Consider changing thresholding parameters.")
+        sys.exit(0)
+
+    # Update config.scale_range to remove failed scales
+    if len(failed_scales) > 0:
+        if verbose:
+            print(f"\tWarning: No ridges found for scales {failed_scales}. Removing these scales from config.scale_range...")
+        config.scale_range = [s for s in scale_range if s not in failed_scales]
 
     # combine
     df_results = pd.concat(results_s_imagej).reset_index(drop=True)
@@ -106,7 +122,12 @@ def load_imagej_results(save_path, scale_range, verbose, root,
 
     df = df[["Label", frame_label, contour_label, "s_imagej", "Response"]]
         
-    return df, df_results
+    return df, df_results, config
+
+
+
+
+
 
 from .expanded_table import rect_to_square
 
@@ -539,6 +560,14 @@ def process_imagej_results(df, df_pos, window_size, N, resolution, remove_kth_st
     df_pos = reorient_ridges(df_pos, df_pos.groupby([contour_label, "s_imagej"], sort=False), y_label, True, window_size_bin)
 
     # assert check_ridge_order(df_pos)
+    # New in v1.1.0: "unique_id"
+    df_pos["unique_id"] = df_pos[contour_label].astype(str) + "_" + df_pos["s_imagej"].round(3).astype(str)
+    df["unique_id"] = df[contour_label].astype(str) + "_" + df["s_imagej"].round(3).astype(str)
+
+    if len(df) == 0:
+        if verbose: 
+            print("All ridges filtered. Consider changing filtering parameters.")
+        sys.exit(0)
 
     return df, df_pos
 
@@ -1186,7 +1215,8 @@ def process_trim_all(df_ridge):
     corner_line = None
     if corner_trim is not None:
         C_curves = extract_line_scale_space(ridge_coords, [C]) 
-        corner_line = (C_curves > 0.25).all(axis=0) # Enforce all
+        # corner_line = (C_curves > 0.25).all(axis=0) # Enforce all
+        corner_line = np.sum(C_curves > 0.25, axis=0) >= 2 # New: at least 2 scales
 
     angle_line = None
     if angle_trim is not None:
@@ -1409,3 +1439,256 @@ def trim_imagej_results_all(df, df_pos, im_shape_0,
     df_pos_out, df_new = remove_small_ridges(df_pos_out, df_new, remove_min_size, contour_label, verbose)
 
     return df_new, df_pos_out
+
+
+
+def rolling_measure(x, w):
+    # Compute the rolling standard deviation with window size w 
+    return pd.Series(x).rolling(w, min_periods=1).std().to_numpy()
+
+
+
+def max_decrease_indices(x, tol):
+    """
+    Return indices where the running decrease (drop from the segment's
+    running maximum) meets or exceeds *tol*.  At each such breakpoint
+    the running maximum resets to the value at that index.
+
+    Parameters
+    ----------
+    x : array-like of non-negative values
+        1-D signal.
+    tol : float
+        Maximum decrease tolerance.
+
+    Returns
+    -------
+    list of int
+        Indices at which the decrease threshold was reached.
+    """
+    x = np.asarray(x, dtype=float)
+    indices = []
+    if len(x) == 0:
+        return indices
+    hi = x[0]
+    for i in range(1, len(x)):
+        hi = max(hi, x[i])
+        if hi - x[i] >= tol:
+            indices.append(i)
+            hi = x[i]
+    return indices
+
+
+def split_ridges(df, df_pos, gb, ridge_datum, scale_range, remove_min_size, 
+                 angle_trim=None, 
+                 scale_trim=None, scale_trim_thresh=3, scale_trim_window=5,
+                 scale_dec_trim=None, scale_dec_thresh_trim=10,
+                 comp_trim=None,
+                 verbose=False):
+    """
+    Split ridges at condition points instead of trimming them
+    """
+    if gb is None:
+        if verbose: print("\tSkipping process imagej...")
+        return df, df_pos, ridge_datum
+
+    if angle_trim is None and scale_trim is None and comp_trim is None and scale_dec_trim is None:
+        if verbose: print("\tNo splitting enabled")
+        return df, df_pos, ridge_datum
+
+    df_pos_frames = []
+    df_frames = []
+    stats = {"angle": 0, "scale": 0, "scale_dec": 0, "comp": 0}
+    n_dropped = 0
+    n_total = 0
+    n_split_ridges = 0
+    n_total_segments = 0
+
+    # We'll also rebuild ridge_datum for sub-ridges
+    ridge_datum_new = {}
+
+    def _protect(mask, param, length):
+        """Zero-out the first *m* entries of *mask* based on the protection param"""
+        m = int(length * param) if (isinstance(param, float) and param < 1) else int(param)
+        if m > 0:
+            mask[:m] = False
+        return mask
+
+    for uid, df_ridge in gb:
+        n_total += 1
+        L0 = len(df_ridge)
+
+
+        if L0 <= remove_min_size:
+            n_dropped += 1
+            continue
+
+        if uid not in ridge_datum:
+            if verbose: print(f"\tWarning: {uid} not in ridge_datum, skipping.")
+            n_dropped += 1
+            continue
+
+        rec = ridge_datum[uid]
+        dbscan_s_idx = np.asarray(rec["dbscan_s_idx"], dtype=int)[:L0]
+
+        if len(dbscan_s_idx) == 0:
+            if verbose: print(f"\tWarning: no dbscan scales for {uid}, skipping.")
+            n_dropped += 1
+            continue
+
+        # ============================================================
+        # Build boolean mask of "bad" (split-inducing) points
+        # ============================================================
+        bad = np.zeros(L0, dtype=bool)
+
+        # ---- ANGLE ----
+        if angle_trim is not None and "A_bool_curves" in rec:
+            A_bool_curves = np.asarray(rec["A_bool_curves"])
+            angle_line = ~(A_bool_curves[dbscan_s_idx, np.arange(L0)].astype(bool))
+            mask = _protect(angle_line.copy(), angle_trim, L0)
+            if mask.any():
+                stats["angle"] += 1
+            bad |= mask
+
+        # ---- SCALE (s_dbscan: scale instability via rolling std) ----
+        if scale_trim is not None and "dbscan_s_idx" in rec:
+            dbscan_closest_s_rolling_std = rolling_measure(dbscan_s_idx, w=scale_trim_window)
+            mask = np.zeros(L0, dtype=bool)
+            mask[:len(dbscan_closest_s_rolling_std)] = (
+                dbscan_closest_s_rolling_std[:L0] > scale_trim_thresh
+            )
+            mask = _protect(mask, scale_trim, L0)
+            if mask.any():
+                stats["scale"] += 1
+            bad |= mask
+
+        # ---- SCALE DECREASE ----
+        if scale_dec_trim is not None and len(scale_range) >= scale_dec_thresh_trim:
+            sig = dbscan_s_idx[:L0].astype(float)
+            mad_indices = max_decrease_indices(sig, scale_dec_thresh_trim)
+            mask = np.zeros(L0, dtype=bool)
+            mask[mad_indices] = True
+            mask = _protect(mask, scale_dec_trim, L0)
+            if mask.any():
+                stats["scale_dec"] += 1
+            bad |= mask
+
+        # ---- COMP (compartment binary) ----
+        if comp_trim is not None:
+            c_binary = df_ridge['comp_binary'].values[:L0].astype(bool)
+            mask = _protect(c_binary.copy(), comp_trim, L0)
+            if mask.any():
+                stats["comp"] += 1
+            bad |= mask
+
+
+        # ============================================================
+        # Extract contiguous runs of "good" points
+        # ============================================================
+        good = ~bad
+        segments = []
+        in_seg = False
+        seg_start = 0
+        for i in range(L0):
+            if good[i] and not in_seg:
+                seg_start = i
+                in_seg = True
+            elif not good[i] and in_seg:
+                segments.append((seg_start, i))
+                in_seg = False
+        if in_seg:
+            segments.append((seg_start, L0))
+
+        segments = [(s, e) for s, e in segments if (e - s) > remove_min_size]
+
+        if not segments:
+            n_dropped += 1
+            continue
+
+        was_split = len(segments) > 1
+        if was_split:
+            n_split_ridges += 1
+
+        # Identify which columns belong to df vs df_pos
+        # df_pos_cols = set(df_pos.columns)
+        # df_cols = set(df.columns)
+
+        # for seg_i, (seg_start, seg_end) in enumerate(segments):
+        #     n_total_segments += 1
+        #     seg_df = df_ridge.iloc[seg_start:seg_end].copy()
+
+        #     new_uid = f"{uid}_t-{seg_i + 1}" if was_split else uid
+        #     seg_df["unique_id"] = new_uid
+
+        #     # Split back into df and df_pos portions
+        #     seg_df_main = seg_df[[c for c in seg_df.columns if c in df_cols]].copy()
+        #     seg_df_pos = seg_df[[c for c in seg_df.columns if c in df_pos_cols]].copy()
+        #     df_frames.append(seg_df_main)
+        #     df_pos_frames.append(seg_df_pos)
+
+        df_lookup = df.drop_duplicates("unique_id").set_index("unique_id")
+
+        for seg_i, (seg_start, seg_end) in enumerate(segments):
+            seg_df = df_ridge.iloc[seg_start:seg_end].copy()
+            new_uid = f"{uid}_t-{seg_i + 1}" if was_split else uid
+            seg_df["unique_id"] = new_uid
+
+            # df_pos: keep all point rows in the segment
+            seg_df_pos = seg_df[df_pos.columns].copy()
+            df_pos_frames.append(seg_df_pos)
+
+            # df: exactly one row per segment
+            base_row = df_lookup.loc[[uid]].copy()
+            base_row["unique_id"] = new_uid
+            df_frames.append(base_row)
+
+            # Slice ridge_datum curves for this sub-ridge
+            new_rec = {}
+            for cn in ["D_curves", "A_curves", "A_bool_curves"]:
+                if cn in rec:
+                    arr = np.asarray(rec[cn])
+                    if arr.ndim == 2 and arr.shape[1] >= seg_end:
+                        new_rec[cn] = arr[:, seg_start:seg_end]
+                    else:
+                        new_rec[cn] = arr
+            if "dbscan_s_idx" in rec:
+                arr = np.asarray(rec["dbscan_s_idx"])
+                if len(arr) >= seg_end:
+                    new_rec["dbscan_s_idx"] = arr[seg_start:seg_end]
+                else:
+                    new_rec["dbscan_s_idx"] = arr
+            new_rec["s_idx"] = rec["s_idx"]
+
+            ridge_datum_new[new_uid] = new_rec
+
+    if verbose:
+        print(f"\tSplit summary (total {n_total} ridges):")
+        print(f"\t  angle  bad-points: {stats['angle']}")
+        print(f"\t  scale  bad-points (>{scale_trim_thresh}): {stats['scale']}")
+        print(f"\t  scale_dec bad-points (thresh {scale_dec_thresh_trim}): {stats['scale_dec']}")
+        print(f"\t  comp   bad-points: {stats['comp']}")
+        print(f"\t  Dropped (too short): {n_dropped}")
+        print(f"\t  Ridges split into >1 segment: {n_split_ridges}")
+        print(f"\t  Total sub-ridges produced: {n_total_segments}")
+        print(f"\t  Final ridges after splitting and filtering: {len(df_frames)}")
+
+    if not df_frames:
+        print("\tWarning: all ridges dropped after splitting!")
+        return None, None, None
+
+    # df_out = pd.concat(df_frames, ignore_index=True).drop_duplicates()
+    # df_pos_out = pd.concat(df_pos_frames, ignore_index=True).drop_duplicates()
+
+    df_out = pd.concat(df_frames, ignore_index=True)
+    df_pos_out = pd.concat(df_pos_frames, ignore_index=True)
+
+    # Recompute `length` column in df_out based on df_pos_out
+    length_map = df_pos_out.groupby("unique_id").size().to_dict()
+    df_out["length"] = df_out["unique_id"].map(length_map)
+
+    if len(df_out) == 0:
+        if verbose: 
+            print("All ridges filtered. Consider changing parameters.")
+        sys.exit(0)
+
+    return df_out, df_pos_out, ridge_datum_new

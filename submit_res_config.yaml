@@ -1,0 +1,43 @@
+samples:
+  
+  DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped_25kb:
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped.hic"
+    genome: "mm10"
+    norm: "KR"
+    res: "25000"
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped.ice.mcool"
+    win: "6000000"
+    chroms: "all"
+
+  DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped_50kb:
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped.hic"
+    genome: "mm10"
+    norm: "KR"
+    res: "50000"
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped.ice.mcool"
+    win: "6000000"
+    chroms: "all"
+
+  DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped_100kb:
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped.hic"
+    genome: "mm10"
+    norm: "KR"
+    res: "100000"
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped.ice.mcool"
+    win: "6000000"
+    chroms: "all"
+
+  DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped_10kb:
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped.hic"
+    genome: "mm10"
+    norm: "KR"
+    res: "10000"
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped.ice.mcool"
+    win: "6000000"
+    chroms: "all"
+
+

@@ -1,14 +1,15 @@
 #!/bin/bash
 
-#SBATCH --account=minjilab0 
+#SBATCH --account=minjilab99
 #SBATCH --partition=standard 
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=30g 
 #SBATCH --gpus=0 
 #SBATCH --time=6:00:00  
 #SBATCH --mail-type=FAIL 
+#SBATCH --output=slurm_out/slurm-%j.out
 
-SAVE_DIR="/nfs/turbo/umms-minjilab/downloaded_data/miajet_data_temp"
+SAVE_DIR="/nfs/turbo/umms-minjilab/downloaded_data/miajet_rev_temp"
 mkdir -p "${SAVE_DIR}"
 
 # Dependencies: wget, curl, jq
@@ -29,11 +30,11 @@ files_4dn=(
 )
 
 files_encode=(
-    "ENCFF528XGK.hic" # Guckelberger et al. 2024, HCT116, RAD21 0hr
-    "ENCFF317OIA.hic" # Guckelberger et al. 2024, HCT116, RAD21 6hr
+    # "ENCFF528XGK.hic" # Guckelberger et al. 2024, HCT116, RAD21 0hr
+    # "ENCFF317OIA.hic" # Guckelberger et al. 2024, HCT116, RAD21 6hr
     # "ENCFF318GOM.hic" # ENCODE, GM12878 intact
-    "ENCFF616PUW.hic" # Rao et al. 2014, K562
-    "ENCFF621AIY.hic" # ENCODE, K562, intact Hi-C
+    # "ENCFF616PUW.hic" # Rao et al. 2014, K562
+    # "ENCFF621AIY.hic" # ENCODE, K562, intact Hi-C
     # "ENCFF808MAG.pairs.gz" # K562_intacthic_ENCODE-2023_ENCFF621AIY_hg38.hic Downloading due to failed .hic to .mcool conversion
     # "ENCFF785BPC.pairs.gz" # GM12878_intacthic_ENCFF318GOM.hic Downloading due to failed .hic to .mcool conversion
     # "ENCFF109GNA.pairs.gz" # HCT116_RAD21-auxin-0hr_intacthic_Guckelberger-2024_ENCFF528XGK_hg38.hic Downloading due to failed .hic to .mcool conversion
@@ -53,6 +54,7 @@ files_gse=(
     # "GSE82144_Kieffer-Kwon-2017-resting_B_cells_WT_30.hic" # Kieffer-Kwon et al. 2017, Splenic B cells, In-situ Hi-C, mm9, WT
     # "GSE188849_CA1200_auxin1hr_L2-L3_JK07_JK08_30.hic" # Morao et al. 2022 (TIR1 ctrl in Isiaka et al. 2023), Hi-C, ce10, Control
     # "GSE237663_hic_processed.tar.gz" # Kim et al. 2023, C. elegans, Hi-C, ce11, WAPL-1 depletion AND SMC-3 depletion
+    "GSE225201_GM12878_Micro-C.nodups.mapq_20.hic" # Wu et al. 2025, GM12878, Micro-C, hg38, WT
 )
 
 files_gsm=(
@@ -61,33 +63,33 @@ files_gsm=(
 )
 
 # Credentials (4DN)
-KEYFILE="${KEYFILE:-keypairs.json}"
-if [[ -f "${KEYFILE}" ]]; then
-  echo "Loading credentials from ${KEYFILE}..."
-  F4DN_KEY=$(jq -r '.default.key' "${KEYFILE}")
-  F4DN_SECRET=$(jq -r '.default.secret' "${KEYFILE}")
-else
-    echo "Keyfile ${KEYFILE} not found. Please make a keypairs.json file with your 4DN credentials."
-    echo "Instructions are on 4DN documentation: https://data.4dnucleome.org/help/user-guide/downloading-files"
-    exit 1
-    fi
+# KEYFILE="${KEYFILE:-keypairs.json}"
+# if [[ -f "${KEYFILE}" ]]; then
+#   echo "Loading credentials from ${KEYFILE}..."
+#   F4DN_KEY=$(jq -r '.default.key' "${KEYFILE}")
+#   F4DN_SECRET=$(jq -r '.default.secret' "${KEYFILE}")
+# else
+#     echo "Keyfile ${KEYFILE} not found. Please make a keypairs.json file with your 4DN credentials."
+#     echo "Instructions are on 4DN documentation: https://data.4dnucleome.org/help/user-guide/downloading-files"
+#     exit 1
+#     fi
 
 
 
-# Download 4DN
-echo "Downloading 4DN files"
-for f in "${files_4dn[@]}"; do
-    # id="${f%.hic}"
+# # Download 4DN
+# echo "Downloading 4DN files"
+# for f in "${files_4dn[@]}"; do
+#     # id="${f%.hic}"
 
-    # Accomodate for .mcool / .pairs.gz too
-    id="${f%%.*}"         
+#     # Accomodate for .mcool / .pairs.gz too
+#     id="${f%%.*}"         
 
-    url="https://data.4dnucleome.org/files/${id}/@@download/${f}"
-    echo "* ${f}"
-    cd "${SAVE_DIR}"
-    curl -O -L --user "${F4DN_KEY}:${F4DN_SECRET}" "${url}" 
-    cd - # return to original directory
-done
+#     url="https://data.4dnucleome.org/files/${id}/@@download/${f}"
+#     echo "* ${f}"
+#     cd "${SAVE_DIR}"
+#     curl -O -L --user "${F4DN_KEY}:${F4DN_SECRET}" "${url}" 
+#     cd - # return to original directory
+# done
 
 echo
 

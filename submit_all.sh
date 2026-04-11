@@ -10,7 +10,7 @@
 
 my_job_header
 
-conda activate jet-env
+conda activate jet-env-rev
 
 source chroms.sh
 

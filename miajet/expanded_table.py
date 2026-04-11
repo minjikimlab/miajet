@@ -2,6 +2,7 @@ from multiprocessing import Pool
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
+import sys
 import os
 # import random
 
@@ -391,8 +392,12 @@ def generate_expanded_table(im, df, df_pos, D, A, W1, W2, R, C, scale_range, ang
         for indexer, df_ridge in tqdm(gb):
             # Each ridge
 
-            # if indexer[0] == 39 and np.round(indexer[1], 3) == 3.886:
+            # if indexer[0] == 734 and np.round(indexer[1], 2) == 13.83:
             #     pass
+            # elif indexer[0] == 31 and np.round(indexer[1], 2) == 9.06:
+            #     pass
+            # else:
+            #     continue
             
             # for curve extraction, do NOT flip y axis AND ensure coordinates are GLOBAL (i.e. start_bin=0)
             ridge_coords = convert_imagej_coord_to_numpy(df_ridge[[x_label, y_label]].values, im.shape[0], flip_y=False, start_bin=0)
@@ -623,7 +628,7 @@ def rect_to_square(N, window_size_bin, coords):
     Parameters
     ----------
     N : int
-        The original size of the square matrix (before removing zero sum rows/columns)
+        The size of the square matrix corresponding to the coords 
     window_size_bin : int
         Binned window size
     coords : array-like, shape (n, 2)
@@ -797,8 +802,7 @@ def insert_unmapped_regions(df_features, im_orig, rm_idx, N_removed, window_size
     df_features = trim_whitespace_ridges(df_features, im_orig, verbose=verbose, num_cores=num_cores, 
                                          contour_label=contour_label, x_label=x_label, y_label=y_label)
     
-    # from .process_imagej import reorient_ridges # Should refactor 
-    
+    # from .process_imagej import reorient_ridges 
     # df_features = reorient_ridges(df_features, df_features.groupby([contour_label, "s_imagej"], sort=False), y_label+"_unmap", True)
 
     return df_features
@@ -949,6 +953,11 @@ def trim_whitespace_ridges(df_features, im_orig, verbose, num_cores,
             if df_ridge is not None:
                 frames.append(df_ridge)
             count_trimmed += flag
+
+    if len(frames) == 0:
+        if verbose:
+            print("\tNo ridges remain.")
+        sys.exit(0)
 
     df_features_out = pd.concat(frames, ignore_index=True)
 
