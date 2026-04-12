@@ -126,6 +126,99 @@ def load_imagej_results(config, save_path, scale_range, verbose, root,
 
 
 
+def load_imagej_results_chunked(
+    config,
+    chunks,
+    save_path,
+    scale_range,
+    verbose,
+    contour_label="Contour Number",
+    pos_label="Point Number",
+    frame_label="Frame Number",
+):
+    """
+    Drop-in replacement for ``load_imagej_results`` that iterates over
+    multiple image chunks, offsets X_(px) by each chunk's ``x_start``,
+    and assigns globally-unique contour numbers.
+
+    Returns
+    -------
+    df          : pd.DataFrame   (summary one row per ridge)
+    df_results  : pd.DataFrame   (expande one row per point)
+    config      : updated config with failed scales removed
+    """
+    all_results = []
+    succeeded_scales = set()
+    contour_offset = 0            # running offset to keep contour IDs unique
+
+    for chunk in chunks:
+        chunk_root = chunk["root"]
+        x_start = chunk["x_start"]
+
+        chunk_level_results = []   # collect across scales for this chunk
+
+        for s_idx, s in enumerate(scale_range):
+            s_str = f"{s:.3f}"
+            f = os.path.join(
+                save_path,
+                f"{chunk_root}_imagej_results_s-{s_str}_table.csv",
+            )
+
+            df_results = read_curve_tracing_results(f, verbose)
+
+            if df_results is None:
+                continue
+
+            if contour_label not in df_results.columns:
+                print(f"WARNING: ImageJ result at scale {s:.3f} was corrupted. Please run again or remove this scale from scale_range. "
+                      "If problem persists, please report this issue.")
+
+            succeeded_scales.add(s)
+
+            # Remove exact duplicate rows (junctions, etc.)
+            df_results.drop_duplicates([contour_label, pos_label, frame_label], inplace=True)
+
+            # ── Offset contour numbers so they are globally unique ────
+            df_results[contour_label] = df_results[contour_label] + contour_offset
+
+            # ── Offset X coordinate to full-image space ───────────────
+            df_results["X_(px)"] = df_results["X_(px)"] + x_start
+
+            df_results["s_imagej"] = s
+            df_results["s_idx"] = s_idx
+
+            chunk_level_results.append(df_results)
+
+        # Advance contour_offset past every contour number used in this chunk
+        if chunk_level_results:
+            max_contour_in_chunk = max(df[contour_label].max() for df in chunk_level_results)
+            contour_offset = int(max_contour_in_chunk) + 1
+            all_results.extend(chunk_level_results)
+
+    # ── No ridges found ──────────────────────────────────────────────────
+    if len(all_results) == 0:
+        if verbose:
+            print("No ridges found from ImageJ across any chunk. "
+                  "Consider changing thresholding parameters.")
+        sys.exit(0)
+
+    # ── Remove scales that failed in *every* chunk ────────────────────────
+    failed_scales = [s for s in scale_range if s not in succeeded_scales]
+    if failed_scales and verbose:
+        print(f"\tWarning: No ridges found for scales {failed_scales} in any chunk.")
+    # config.scale_range = [s for s in scale_range if s in succeeded_scales] # Don't do this for now
+ 
+    # ── Combine ───────────────────────────────────────────────────────────
+    df_results = pd.concat(all_results, ignore_index=True)
+
+    df_results["width"] = (df_results["Width_left_(px)"] + df_results["Width_right_(px)"]) / 2
+
+    df = df_results.drop_duplicates([contour_label, "s_imagej"], ignore_index=True)
+    
+    df = df[["Label", frame_label, contour_label, "s_imagej", "Response"]]
+
+    return df, df_results, config
+
 
 
 
@@ -1673,8 +1766,10 @@ def split_ridges(df, df_pos, gb, ridge_datum, scale_range, remove_min_size,
         print(f"\t  Final ridges after splitting and filtering: {len(df_frames)}")
 
     if not df_frames:
-        print("\tWarning: all ridges dropped after splitting!")
-        return None, None, None
+        if verbose: 
+            print("All ridges filtered. Consider changing parameters.")
+        sys.exit(0)
+        
 
     # df_out = pd.concat(df_frames, ignore_index=True).drop_duplicates()
     # df_pos_out = pd.concat(df_pos_frames, ignore_index=True).drop_duplicates()

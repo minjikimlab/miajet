@@ -30,7 +30,7 @@ TODO: Make a figure that showcases all the parameters
     * Experiment type is "replihic": `"False"`
 * `--chrom` (str): Chromosome (e.g. `"chr1"`).
 * `--resolution` (int): Hi-C resolution in base pairs (e.g. `25000` for 25 kbp).
-* `--window_size` (int): Distance from main diagonal (e.g. `6000000` for 6 Mbp).
+* `--window_size` (int): Distance from main diagonal (e.g. `6000000` for 6 Mbp). For computational efficiency, if the resolution is high (≤ 10 kb) it is recommended to set window_size to be < 3 Mb. If resolution is > 10 kb, it is recommended to set window_size ≥ 3 Mb. 
 * `--save_dir_root` (str): Absolute path to directory where results will be saved.
 
 

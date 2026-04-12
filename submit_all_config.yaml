@@ -132,6 +132,7 @@ samples:
     win: "6000000"
     chroms: "all"
     compartment: "False"
+    angle_turbulence: "0.4"
 
   c-elegans-CA1200-L2-L3-JK07-JK08_control-auxin-1hr_hic_Kim-2023_GSE188849_ce10:
     file: "/nfs/turbo/umms-minjilab/downloaded_data/c-elegans-CA1200-L2-L3-JK07-JK08_control-auxin-1hr_hic_Kim-2023_GSE188849_ce10.hic"
@@ -142,7 +143,8 @@ samples:
     mcool: "/nfs/turbo/umms-minjilab/downloaded_data/c-elegans-CA1200-L2-L3-JK07-JK08_control-auxin-1hr_hic_Kim-2023_GSE188849_ce10.ice.mcool"
     win: "800000"
     chroms: "all"
-    compartment: "False"
+    compartment: "True"
+    q_val: "0.2"
 
   c-elegans-JK05-L3_SMC3-auxin-1hr_hic_Kim-2023_GSE237663_ce10:
     file: "/nfs/turbo/umms-minjilab/downloaded_data/c-elegans-JK05-L3_SMC3-auxin-1hr_hic_Kim-2023_GSE237663_ce10.hic"
@@ -153,7 +155,9 @@ samples:
     mcool: "/nfs/turbo/umms-minjilab/downloaded_data/c-elegans-JK05-L3_SMC3-auxin-1hr_hic_Kim-2023_GSE237663_ce10.ice.mcool"
     win: "800000"
     chroms: "all"
-    compartment: "False"
+    compartment: "True"
+    q_val: "0.2"
+
 
   c-elegans-JK06-L3_WAPL-auxin-1hr_hic_Kim-2023_GSE237663_ce10:
     file: "/nfs/turbo/umms-minjilab/downloaded_data/c-elegans-JK06-L3_WAPL-auxin-1hr_hic_Kim-2023_GSE237663_ce10.hic"
@@ -164,9 +168,11 @@ samples:
     mcool: "/nfs/turbo/umms-minjilab/downloaded_data/c-elegans-JK06-L3_WAPL-auxin-1hr_hic_Kim-2023_GSE237663_ce10.ice.mcool"
     win: "800000"
     chroms: "all"
-    compartment: "False"
+    compartment: "True"
+    q_val: "0.2"
 
-  HCT116_RAD21-auxin-6hr_intacthic_Guckelberger-2024_ENCFF317OIA_hg38:
+
+  HCT116_RAD21-auxin-6hr_intacthic_Guckelberger-2024_ENCFF317OIA_hg38_25kb:
     file: "/nfs/turbo/umms-minjilab/downloaded_data/HCT116_RAD21-auxin-6hr_intacthic_Guckelberger-2024_ENCFF317OIA_hg38.hic"
     genome: "hg38"
     norm: "VC_SQRT" # KR failed
@@ -176,8 +182,7 @@ samples:
     win: "1200000"
     chroms: "all"
 
-
-  HCT116_RAD21-auxin-0hr_intacthic_Guckelberger-2024_ENCFF528XGK_hg38:
+  HCT116_RAD21-auxin-0hr_intacthic_Guckelberger-2024_ENCFF528XGK_hg38_25kb:
     file: "/nfs/turbo/umms-minjilab/downloaded_data/HCT116_RAD21-auxin-0hr_intacthic_Guckelberger-2024_ENCFF528XGK_hg38.hic"
     genome: "hg38"
     norm: "VC_SQRT" # KR failed
@@ -188,7 +193,7 @@ samples:
     chroms: "all"
 
 
-  HCT116_RAD21-auxin-0hr_hic_Rao-2017_4DNFIP71EWXC_hg38:
+  HCT116_RAD21-auxin-0hr_hic_Rao-2017_4DNFIP71EWXC_hg38_25kb:
     file: "/nfs/turbo/umms-minjilab/downloaded_data/HCT116_RAD21-auxin-0hr_hic_Rao-2017_4DNFIP71EWXC_hg38.hic"
     genome: "hg38"
     norm: "VC_SQRT"
@@ -198,7 +203,7 @@ samples:
     win: "1200000"
     chroms: "all"
 
-  HCT116_RAD21-auxin-6hr_hic_Rao-2017_4DNFILIM6FDL_hg38:
+  HCT116_RAD21-auxin-6hr_hic_Rao-2017_4DNFILIM6FDL_hg38_25kb:
     file: "/nfs/turbo/umms-minjilab/downloaded_data/HCT116_RAD21-auxin-6hr_hic_Rao-2017_4DNFILIM6FDL_hg38.hic"
     genome: "hg38"
     norm: "VC_SQRT"
@@ -209,55 +214,255 @@ samples:
     chroms: "all"
 
 
-  mESC_CTCF-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10: 
+  HCT116_RAD21-auxin-6hr_intacthic_Guckelberger-2024_ENCFF317OIA_hg38_50kb:
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/HCT116_RAD21-auxin-6hr_intacthic_Guckelberger-2024_ENCFF317OIA_hg38.hic"
+    genome: "hg38"
+    norm: "VC_SQRT" # KR failed
+    res: "50000" # 10 kb problematic
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/HCT116_RAD21-auxin-6hr_intacthic_Guckelberger-2024_ENCFF461RFV_hg38.ice.mcool"
+    win: "1200000"
+    chroms: "all"
+
+  HCT116_RAD21-auxin-0hr_intacthic_Guckelberger-2024_ENCFF528XGK_hg38_50kb:
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/HCT116_RAD21-auxin-0hr_intacthic_Guckelberger-2024_ENCFF528XGK_hg38.hic"
+    genome: "hg38"
+    norm: "VC_SQRT" # KR failed
+    res: "50000" # 10 kb problematic
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/HCT116_RAD21-auxin-0hr_intacthic_Guckelberger-2024_ENCFF109GNA_hg38.ice.mcool"
+    win: "1200000"
+    chroms: "all"
+
+
+  HCT116_RAD21-auxin-0hr_hic_Rao-2017_4DNFIP71EWXC_hg38_50kb:
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/HCT116_RAD21-auxin-0hr_hic_Rao-2017_4DNFIP71EWXC_hg38.hic"
+    genome: "hg38"
+    norm: "VC_SQRT"
+    res: "50000" # 10 kb problematic
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/HCT116_RAD21-auxin-0hr_hic_Rao-2017_4DNFIP71EWXC_hg38.ice.mcool"
+    win: "1200000"
+    chroms: "all"
+
+  HCT116_RAD21-auxin-6hr_hic_Rao-2017_4DNFILIM6FDL_hg38_50kb:
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/HCT116_RAD21-auxin-6hr_hic_Rao-2017_4DNFILIM6FDL_hg38.hic"
+    genome: "hg38"
+    norm: "VC_SQRT"
+    res: "50000" # 10 kb problematic
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/HCT116_RAD21-auxin-6hr_hic_Rao-2017_4DNFILIM6FDL_hg38.ice.mcool"
+    win: "1200000"
+    chroms: "all"
+
+  HCT116_RAD21-auxin-6hr_intacthic_Guckelberger-2024_ENCFF317OIA_hg38_10kb:
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/HCT116_RAD21-auxin-6hr_intacthic_Guckelberger-2024_ENCFF317OIA_hg38.hic"
+    genome: "hg38"
+    norm: "VC_SQRT" # KR failed
+    res: "10000" # 10 kb problematic
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/HCT116_RAD21-auxin-6hr_intacthic_Guckelberger-2024_ENCFF461RFV_hg38.ice.mcool"
+    win: "1200000"
+    chroms: "all"
+
+  HCT116_RAD21-auxin-0hr_intacthic_Guckelberger-2024_ENCFF528XGK_hg38_10kb:
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/HCT116_RAD21-auxin-0hr_intacthic_Guckelberger-2024_ENCFF528XGK_hg38.hic"
+    genome: "hg38"
+    norm: "VC_SQRT" # KR failed
+    res: "10000" # 10 kb problematic
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/HCT116_RAD21-auxin-0hr_intacthic_Guckelberger-2024_ENCFF109GNA_hg38.ice.mcool"
+    win: "1200000"
+    chroms: "all"
+
+
+  HCT116_RAD21-auxin-0hr_hic_Rao-2017_4DNFIP71EWXC_hg38_10kb:
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/HCT116_RAD21-auxin-0hr_hic_Rao-2017_4DNFIP71EWXC_hg38.hic"
+    genome: "hg38"
+    norm: "VC_SQRT"
+    res: "10000" # 10 kb problematic
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/HCT116_RAD21-auxin-0hr_hic_Rao-2017_4DNFIP71EWXC_hg38.ice.mcool"
+    win: "1200000"
+    chroms: "all"
+
+  HCT116_RAD21-auxin-6hr_hic_Rao-2017_4DNFILIM6FDL_hg38_10kb:
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/HCT116_RAD21-auxin-6hr_hic_Rao-2017_4DNFILIM6FDL_hg38.hic"
+    genome: "hg38"
+    norm: "VC_SQRT"
+    res: "10000" # 10 kb problematic
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/HCT116_RAD21-auxin-6hr_hic_Rao-2017_4DNFILIM6FDL_hg38.ice.mcool"
+    win: "1200000"
+    chroms: "all"
+
+
+
+
+  mESC_CTCF-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10_2nkb: 
     file: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_CTCF-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.hic"
     genome: "mm10"
     norm: "VC_SQRT"
     res: "20000" # 10 kb problematic, 25 kb not present
     exp: "hic"
     mcool: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_CTCF-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.mcool"
-    win: "1200000"
+    win: "5000000"
     chroms: "all"
 
-  mESC_RAD21-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10: 
+  mESC_RAD21-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10_2nkb: 
     file: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_RAD21-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.hic"
     genome: "mm10"
     norm: "NONE" # KR failed, VC_SQRT failed, VC failed
     res: "20000" # 10 kb problematic, 25 kb not present
     exp: "hic"
     mcool: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_RAD21-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.mcool"
-    win: "1200000"
+    win: "5000000"
     chroms: "all"
 
-  mESC_YY1-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10: 
+  mESC_YY1-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10_2nkb: 
     file: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_YY1-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.hic"
     genome: "mm10"
     norm: "VC_SQRT"
     res: "20000" # 10 kb problematic, 25 kb not present
     exp: "hic"
     mcool: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_YY1-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.mcool"
-    win: "1200000"
+    win: "5000000"
     chroms: "all"
 
-  mESC_WAPL-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10: 
+  mESC_WAPL-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10_2nkb: 
     file: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_WAPL-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.hic"
     genome: "mm10"
     norm: "VC_SQRT"
     res: "20000" # 10 kb problematic, 25 kb not present
     exp: "hic"
     mcool: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_WAPL-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.mcool"
-    win: "1200000"
+    win: "5000000"
     chroms: "all"
 
-  GSE130275_mESC_WT_combined_2.6B: 
+  GSE130275_mESC_WT_combined_2.6B_2nkb: 
     file: "/nfs/turbo/umms-minjilab/downloaded_data/GSE130275_mESC_WT_combined_2.6B.hic"
     genome: "mm10"
     norm: "KR"
     res: "25000" # 10 kb problematic
     exp: "hic" # technically micro-C
     mcool: "/nfs/turbo/umms-minjilab/downloaded_data/GSE130275_mESC_WT_combined_2.6B.ice.mcool"
-    win: "1200000"
+    win: "5000000"
     chroms: "all"
+
+
+  mESC_CTCF-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10_50kb: 
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_CTCF-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.hic"
+    genome: "mm10"
+    norm: "VC_SQRT"
+    res: "50000" # 10 kb problematic, 25 kb not present
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_CTCF-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.mcool"
+    win: "5000000"
+    chroms: "all"
+
+  mESC_RAD21-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10_50kb: 
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_RAD21-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.hic"
+    genome: "mm10"
+    norm: "NONE" # KR failed, VC_SQRT failed, VC failed
+    res: "50000" # 10 kb problematic, 25 kb not present
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_RAD21-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.mcool"
+    win: "5000000"
+    chroms: "all"
+
+  mESC_YY1-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10_50kb: 
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_YY1-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.hic"
+    genome: "mm10"
+    norm: "VC_SQRT"
+    res: "50000" # 10 kb problematic, 25 kb not present
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_YY1-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.mcool"
+    win: "5000000"
+    chroms: "all"
+
+  mESC_WAPL-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10_50kb: 
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_WAPL-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.hic"
+    genome: "mm10"
+    norm: "VC_SQRT"
+    res: "50000" # 10 kb problematic, 25 kb not present
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_WAPL-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.mcool"
+    win: "5000000"
+    chroms: "all"
+
+  GSE130275_mESC_WT_combined_2.6B_50kb: 
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/GSE130275_mESC_WT_combined_2.6B.hic"
+    genome: "mm10"
+    norm: "KR"
+    res: "50000" # 10 kb problematic
+    exp: "hic" # technically micro-C
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/GSE130275_mESC_WT_combined_2.6B.ice.mcool"
+    win: "5000000"
+    chroms: "all" 
+
+
+
+
+  mESC_CTCF-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10_10kb: 
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_CTCF-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.hic"
+    genome: "mm10"
+    norm: "VC_SQRT"
+    res: "10000" # 10 kb problematic, 25 kb not present
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_CTCF-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.mcool"
+    win: "2000000"
+    chroms: "all"
+
+  mESC_RAD21-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10_10kb: 
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_RAD21-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.hic"
+    genome: "mm10"
+    norm: "NONE" # KR failed, VC_SQRT failed, VC failed
+    res: "10000" # 10 kb problematic, 25 kb not present
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_RAD21-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.mcool"
+    win: "2000000"
+    chroms: "all"
+
+  mESC_YY1-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10_10kb: 
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_YY1-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.hic"
+    genome: "mm10"
+    norm: "VC_SQRT"
+    res: "10000" # 10 kb problematic, 25 kb not present
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_YY1-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.mcool"
+    win: "2000000"
+    chroms: "all"
+
+  mESC_WAPL-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10_10kb: 
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_WAPL-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.hic"
+    genome: "mm10"
+    norm: "VC_SQRT"
+    res: "10000" # 10 kb problematic, 25 kb not present
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_WAPL-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.mcool"
+    win: "2000000"
+    chroms: "all"
+
+  GSE130275_mESC_WT_combined_2.6B_10kb: 
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/GSE130275_mESC_WT_combined_2.6B.hic"
+    genome: "mm10"
+    norm: "KR"
+    res: "10000" # 10 kb problematic
+    exp: "hic" # technically micro-C
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/GSE130275_mESC_WT_combined_2.6B.ice.mcool"
+    win: "2000000"
+    chroms: "all" 
+
+
+
+  
+
+
+
+
+
+
+  
 
 
 

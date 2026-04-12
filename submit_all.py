@@ -18,7 +18,7 @@ CHROMS = {
 }
 
 FIXED_ARGS = [
-    "--save_dir_root", "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v1.1.0",
+    "--save_dir_root", "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v2.0.0",
     "--num_cores", "4",
     "--verbose",
 ]
@@ -61,7 +61,7 @@ for sample, params in config["samples"].items():
             "--partition=standard",
             "--cpus-per-task=4",
             "--mem=60g",
-            "--time=4:00:00",
+            "--time=6:00:00",
             "--mail-type=FAIL",
             "--output=slurm_out/slurm-%j.out",
             "--wrap", " ".join(cmd),

@@ -44,6 +44,8 @@ def clip_scale_range(scale_range, im_shape, verbose, k=2):
         print(f"\tIf you want to include this scale, you can increase the size of the image by some of the following options:")
         print("\t(1) increasing window size (2) increasing resolution (3) decreasing the maximum scale range")
 
+        # raise ValueError(f"Scales larger than {sigma_max:.3g} are not valid for the current image dimensions.")
+
     return scale_range[scale_range < sigma_max]
 
 
@@ -697,7 +699,7 @@ def construct_corner_space(im, s_range, gamma, filter_mode, eps_c1, eps_c2, zc_m
 
 
 
-def clip_scale_range_and_update_thresholds(im, config, b_vmax, b_vmin):
+def clip_scale_range_and_update_thresholds(im, config, b_vmax, b_vmin, niter=10):
 
 
     if config.verbose:
@@ -711,21 +713,38 @@ def clip_scale_range_and_update_thresholds(im, config, b_vmax, b_vmin):
     print("Generating hysteresis thresholding parameters...")
 
     # Simulate what happens in ImageJ with image loading in via `open`
-    I_rec_01 = cv.normalize(im, None, norm_type=cv.NORM_MINMAX, alpha=0, beta=1, dtype=cv.CV_32F)
-    I_rec_8bit = (I_rec_01 * 255).astype(np.uint8)
+    # We already normalized the `im` in the image creation function
+    # I_rec_01 = cv.normalize(im, None, norm_type=cv.NORM_MINMAX, alpha=0, beta=1, dtype=cv.CV_32F) # Keep as 32 bit
+    # I_rec_8bit = (I_rec_01 * 255).astype(np.uint8) # This is error prone 
 
-    contrast_upper = np.percentile(I_rec_8bit[I_rec_8bit > 0], b_vmax)
-    contrast_lower = np.percentile(I_rec_8bit[I_rec_8bit > 0], b_vmin)
+    im_nz = im[~np.isclose(im, 0)]
 
-    while contrast_upper == contrast_lower:
-        b_vmax = np.clip(b_vmax + 5, 0, 100)
-        b_vmin = np.clip(b_vmin - 5, 0, 100)
-        contrast_upper = np.percentile(I_rec_8bit[I_rec_8bit > 0], b_vmax)
-        contrast_lower = np.percentile(I_rec_8bit[I_rec_8bit > 0], b_vmin)
-    
+    # Compute percentiles on non-negative image
+    contrast_upper = np.percentile(im_nz, b_vmax)
+    contrast_lower = np.percentile(im_nz, b_vmin)
+
+    for i in range(niter):
+        if np.isclose(contrast_upper, contrast_lower):
+            # Zeno's paradox function because we don't want to ever hit 100th percentile
+            b_vmax = b_vmax + (100 - b_vmax) / 2 # halve distance to 100
+            b_vmin = b_vmin - (b_vmin - 0) / 2 # halve distance to 0
+            contrast_upper = np.percentile(im_nz, b_vmax)
+            contrast_lower = np.percentile(im_nz, b_vmin)
+
+            if config.verbose:
+                print("WARNING: Contrast upper and lower thresholds are too close. Adjusting percentiles...")
+                print(f"\tniter={i}: b_vmax={b_vmax:.3f}, b_vmin={b_vmin:.3f}, contrast_upper={contrast_upper:.3g}, contrast_lower={contrast_lower:.3g}")
+
+        else:
+            break
+
+    if np.isclose(contrast_upper, contrast_lower):
+        raise ValueError(f"Unable to find distinct upper and lower contrast thresholds "
+                         f"after {niter} iterations. Please report this issue.")
+
     if config.verbose:
-        print(f"\tStructure {b_vmax}-th percentile estimate: {contrast_upper:.3f}")
-        print(f"\tBackground {b_vmin}-th percentile estimate: {contrast_lower:.3f}")
+        print(f"\tStructure {b_vmax}-th percentile estimate: {contrast_upper:.3g}")
+        print(f"\tBackground {b_vmin}-th percentile estimate: {contrast_lower:.3g}")
 
     lts = []
     uts = []

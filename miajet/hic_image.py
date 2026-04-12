@@ -17,6 +17,9 @@ from utils.spectral import laplacian, find_non_trivial_eigenvectors, compute_der
 import copy
 
 
+CHUNK_MAX_WIDTH = 10_000
+
+
 def zero_outside_window(mat_in, window_size_bin):
     mat = np.copy(mat_in)
     window_size_buffer = min(window_size_bin + 5, mat.shape[0])
@@ -65,6 +68,9 @@ def eigendecomp(L, k):
     return w, v
 
 
+
+
+
 def generate_contact_maps(hic_file, chromosome, resolution, window_size, data_type, normalization, 
                           rotation_padding, null_model_whiten, root_within_comp, save_path, verbose, root):
     """
@@ -74,7 +80,8 @@ def generate_contact_maps(hic_file, chromosome, resolution, window_size, data_ty
     """
     save_name = None
     if save_path is not None:
-        save_name = os.path.join(save_path, f"{root}_contact_map.jpg")
+        # save_name = os.path.join(save_path, f"{root}_contact_map.jpg")
+        save_name = os.path.join(save_path, f"{root}_contact_map.tiff")
 
     window_size_bin = np.ceil(window_size / resolution).astype(int)
 
@@ -188,11 +195,19 @@ def generate_contact_maps(hic_file, chromosome, resolution, window_size, data_ty
         comp_binary = None
         coe_sq_white = None
 
+    # Transform to 0-1 range if not already
+    im_sq = cv.normalize(im_sq, None, norm_type=cv.NORM_MINMAX, alpha=0, beta=1, dtype=cv.CV_32F) # 32 bit
 
     # Save statistics histogram for the IMAGE only
     if save_path is not None:
-        plt.imsave(save_name, im_sq, cmap="gray", vmin=np.percentile(im_sq, 0.0), vmax=np.percentile(im_sq, 100.0))
-        save_histogram(im_sq, save_path, file_name=f"{root}_contact_map_intensity_value_histogram.jpg", vmin_perc=0, vmax_perc=100)
+        # Saving as .jpg is problematic: avoid following code
+        # plt.imsave(save_name, im_sq, cmap="gray", vmin=np.percentile(im_sq, 0.0), vmax=np.percentile(im_sq, 100.0)) 
+
+        # Better to save as .tiff
+        # cv.imwrite(save_name, im_sq) # preserve the full range of iamge values
+        # save_histogram(im_sq, save_path, file_name=f"{root}_contact_map_intensity_value_histogram.jpg", vmin_perc=0, vmax_perc=100)
+        pass # Do nothing here
+
 
     # Finally, return the image that has no 0 sum rows/columns removed (i.e. fully intact matrix)
     if data_type == "oe":
@@ -684,3 +699,59 @@ def generate_hic_corr_image(hic_file, chromosome, resolution, window_size, data_
     return im
     
 
+
+
+
+def save_image_chunks(im, save_dir, root, verbose):
+    """
+    Split `im` along axis-1 into chunks of at most CHUNK_MAX_WIDTH pixels
+    and write each chunk as a .tiff.
+
+    Returns
+    -------
+    chunks : list[dict]
+        Each dict has keys:
+          - 'chunk_idx'   : int
+          - 'x_start'     : int, inclusive column index in the full image
+          - 'x_end'       : int, exclusive column index in the full image
+          - 'root'        : str, chunk-specific root name
+          - 'image_path'  : str, path to the saved .tiff
+    """
+    width = im.shape[1]
+
+    if width <= CHUNK_MAX_WIDTH:
+        # Single chunk – reuse the original naming convention
+        image_path = os.path.join(save_dir, f"{root}_contact_map.tiff")
+        cv.imwrite(image_path, im)
+        return [
+            {
+                "chunk_idx": 0,
+                "x_start": 0,
+                "x_end": width,
+                "root": root,
+                "image_path": image_path,
+            }
+        ]
+
+    num_chunks = int(np.ceil(width / CHUNK_MAX_WIDTH))
+    chunks = []
+    for i in range(num_chunks):
+        x_start = i * CHUNK_MAX_WIDTH
+        x_end = min(x_start + CHUNK_MAX_WIDTH, width) # clip to image width
+        chunk_root = f"{root}_chunk{i}"
+        chunk_path = os.path.join(save_dir, f"{chunk_root}_contact_map.tiff")
+        cv.imwrite(chunk_path, im[:, x_start:x_end])
+        chunks.append(
+            {
+                "chunk_idx": i,
+                "x_start": x_start,
+                "x_end": x_end,
+                "root": chunk_root,
+                "image_path": chunk_path,
+            }
+        )
+
+    if verbose and len(chunks) > 1:
+        print(f"Split image ({im.shape}) into {len(chunks)} chunks of {CHUNK_MAX_WIDTH} px")
+    
+    return chunks

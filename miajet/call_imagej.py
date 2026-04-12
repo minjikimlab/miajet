@@ -108,7 +108,7 @@ def process_sigma_pyvd(s, lt, ut, image_path, save_path, root, memory_alloc, mac
             return
 
         if verbose:
-            print(f"\tAttempt {attempt+1}: s={s:.2f}, ut={current_ut:.2f}, lt={current_lt:.2f}")
+            print(f"\tAttempt {attempt+1}: s={s:.2f}, ut={current_ut:.3g}, lt={current_lt:.3g}")
 
         # start an offscreen X server
         with Display(visible=False, backend="xvfb", size=(100, 100), color_depth=24) as disp:
@@ -141,7 +141,7 @@ def process_sigma_pyvd(s, lt, ut, image_path, save_path, root, memory_alloc, mac
                 attempt += 1
                 timeout_seconds += 30
                 if verbose:
-                    print(f"\tRetrying with ut={current_ut:.2f}, lt={current_lt:.2f}, new timeout={timeout_seconds}s")
+                    print(f"\tRetrying with ut={current_ut:.3g}, lt={current_lt:.3g}, new timeout={timeout_seconds}s")
 
             except subprocess.CalledProcessError as e:
                 print(f"\tFiji failed with exit code {e.returncode}")
@@ -428,3 +428,25 @@ def call_imagej_scale_space(scale_range, lt, ut, image_path, save_path, root, nu
     print()
 
 
+def run_imagej_on_chunks(chunks, config):
+    """
+    Run ``call_imagej_scale_space`` on every chunk.
+    """
+    for chunk in chunks:
+
+
+        if config.verbose:
+            print(f"  Running ImageJ on chunk {chunk['chunk_idx']} "
+                  f"(x={chunk['x_start']}..{chunk['x_end']}) ...")
+            
+        # Simply call original function on each chunk independently
+        call_imagej_scale_space(
+            scale_range=config.scale_range,
+            lt=config.thresholds[0],
+            ut=config.thresholds[1],
+            root=chunk["root"],
+            image_path=chunk["image_path"],
+            save_path=config.save_dir,
+            num_cores=config.num_cores,
+            verbose=config.verbose,
+        )

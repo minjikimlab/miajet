@@ -620,10 +620,11 @@ def threshold_significance(df_agg_in, df_features_in, q_val, q_val_white, compar
         print(f"\t{len(df_agg)} / {n} ridges remaining after q-val {q_val} thresholding significance")
 
     if compartment:
-        df_agg = df_agg_in.loc[df_agg_in["q-val_white"] <= q_val_white].reset_index(drop=True)  
+        # Further apply the enrichment filter
+        df_agg = df_agg.loc[df_agg["q-val_white"] <= q_val_white].reset_index(drop=True)  
 
         if verbose:
-            print(f"\t{len(df_agg)} / {n} ridges remaining after q-val {q_val_white} thresholding significance")
+            print(f"\t{len(df_agg)} / {n} ridges remaining after q-val {q_val} and q-val_white {q_val_white} thresholding significance")
 
     df_features = df_features_in.loc[df_features_in["unique_id"].isin(df_agg["unique_id"])].reset_index(drop=True)
 
