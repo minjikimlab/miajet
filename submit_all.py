@@ -18,13 +18,13 @@ CHROMS = {
 }
 
 FIXED_ARGS = [
-    "--save_dir_root", "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v1.1.0",
+    "--save_dir_root", "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet_v2.0.0/output_v2.0.0",
     "--num_cores", "4",
     "--verbose",
 ]
 
 # Keys that aren't CLI flags
-SKIP_KEYS = {"file", "genome", "chroms", "mcool"}
+SKIP_KEYS = {"file", "genome", "chroms", "mcool", "extra_args"}
 
 # Only needed if the CLI flag differs from the YAML key
 FLAG_RENAMES = {
@@ -52,6 +52,7 @@ for sample, params in config["samples"].items():
             cmd += [f"--{flag}", str(val)]
 
         cmd += FIXED_ARGS
+        cmd += params.get("extra_args", [])
 
         job_name = f"{sample}_{chrom}"
         sbatch_cmd = [
@@ -61,7 +62,7 @@ for sample, params in config["samples"].items():
             "--partition=standard",
             "--cpus-per-task=4",
             "--mem=60g",
-            "--time=4:00:00",
+            "--time=6:00:00",
             "--mail-type=FAIL",
             "--output=slurm_out/slurm-%j.out",
             "--wrap", " ".join(cmd),
