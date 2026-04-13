@@ -39,6 +39,9 @@ samples:
     mcool: "/nfs/turbo/umms-minjilab/downloaded_data/DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped.ice.mcool"
     win: "6000000"
     chroms: "all"
+    length: "6"
+    extra_args:
+    - "--diagnostic_plots"
 
   GSE199059_CD69negDPWTR1R2R3R4_merged:
     file: "/nfs/turbo/umms-minjilab/downloaded_data/GSE199059_CD69negDPWTR1R2R3R4_merged.hic"
@@ -49,6 +52,9 @@ samples:
     mcool: "/nfs/turbo/umms-minjilab/downloaded_data/GSE199059_CD69negDPWTR1R2R3R4_merged.ice.mcool"
     win: "6000000"
     chroms: "all"
+    length: "6"
+    extra_args:
+    - "--diagnostic_plots"
 
   splenic-B-cell_WT_insitu-hic_Kieffer-Kwon-2018_GSE82144_mm9:
     file: "/nfs/turbo/umms-minjilab/downloaded_data/splenic-B-cell_WT_insitu-hic_Kieffer-Kwon-2018_GSE82144_mm9.hic"
@@ -133,6 +139,8 @@ samples:
     chroms: "all"
     compartment: "False"
     angle_turbulence: "0.4"
+    extra_args:
+      - "--diagnostic_plots"
 
   c-elegans-CA1200-L2-L3-JK07-JK08_control-auxin-1hr_hic_Kim-2023_GSE188849_ce10:
     file: "/nfs/turbo/umms-minjilab/downloaded_data/c-elegans-CA1200-L2-L3-JK07-JK08_control-auxin-1hr_hic_Kim-2023_GSE188849_ce10.hic"
@@ -144,7 +152,10 @@ samples:
     win: "800000"
     chroms: "all"
     compartment: "True"
-    q_val: "0.2"
+    root_within: "5"
+    q_val: "0.5"
+    extra_args:
+    - "--diagnostic_plots"
 
   c-elegans-JK05-L3_SMC3-auxin-1hr_hic_Kim-2023_GSE237663_ce10:
     file: "/nfs/turbo/umms-minjilab/downloaded_data/c-elegans-JK05-L3_SMC3-auxin-1hr_hic_Kim-2023_GSE237663_ce10.hic"
@@ -156,7 +167,10 @@ samples:
     win: "800000"
     chroms: "all"
     compartment: "True"
-    q_val: "0.2"
+    root_within: "5"
+    q_val: "0.5"
+    extra_args:
+    - "--diagnostic_plots"
 
 
   c-elegans-JK06-L3_WAPL-auxin-1hr_hic_Kim-2023_GSE237663_ce10:
@@ -169,7 +183,10 @@ samples:
     win: "800000"
     chroms: "all"
     compartment: "True"
-    q_val: "0.2"
+    root_within: "5"
+    q_val: "0.5"
+    extra_args:
+    - "--diagnostic_plots"
 
 
   HCT116_RAD21-auxin-6hr_intacthic_Guckelberger-2024_ENCFF317OIA_hg38_25kb:

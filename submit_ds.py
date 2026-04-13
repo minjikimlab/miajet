@@ -18,9 +18,10 @@ CHROMS = {
 }
 
 FIXED_ARGS = [
-    "--save_dir_root", "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v2.0.0",
+    "--save_dir_root", "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v2.0.1",
     "--num_cores", "4",
     "--verbose",
+    "--diagnostic_plots",
 ]
 
 # Keys that aren't CLI flags

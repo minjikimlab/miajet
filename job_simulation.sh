@@ -21,7 +21,7 @@ python -m miajet "${HIC_FILE}" \
   --compartment "False" \
   --normalization "NONE" \
   --window_size "5000000" \
-  --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v1.1.1_testcase" \
+  --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v2.0.2_test_new_comp-ridge_turb" \
   --num_cores 4 \
   --verbose \
   --diagnostic_plots

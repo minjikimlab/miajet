@@ -64,7 +64,6 @@ def main():
     total_time += time.time() - t0
     if config.verbose: print(f"Running ImageJ... {time.time() - t0:.0f}s Done")
 
-
     # PROCESS IMAGEJ
     if config.verbose: print("Processing ImageJ...")
     t0 = time.time()

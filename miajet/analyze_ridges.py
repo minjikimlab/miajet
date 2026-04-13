@@ -2230,7 +2230,7 @@ def format_summary_table(df_agg_in, df_features_in, chromosome, resolution, rank
     * Adds new columns: chrom, start, end, length
     * Keeps: angle_mean, input_mean, `ranking`, ks, p-val
     """
-    keep = ["unique_id", "Label", "chrom", "start", "end", "s_imagej", "length", 
+    keep = ["unique_id", "Label", "chrom", "start", "end", "s_imagej", "length", "dist_diag", 
             "saliency", "ridge_strength_turbulence",
             "angle_turbulence", "angle_satisfied",  
             "consistency", "sum_consistency", "sum_consistency_im", "blobness", 
@@ -2489,6 +2489,9 @@ def temp_plot(df_features, plot_or_not, x_label, y_label, im, save_path, root, r
     line_widths = []
     gb = df_features.groupby("unique_id", sort=False)
     for rank, (indexer, df_ridge) in enumerate(gb):
+
+        if indexer == "2_12.44":
+            pass
 
         ridge_coords = convert_imagej_coord_to_numpy(df_ridge[[x_label, y_label]].values, im.shape[0], flip_y=True, start_bin=0)
 

@@ -18,5 +18,9 @@
 !scripts/**
 !tests/**
 !utils/**
+!utils/
 
 notebooks/dev_*
+
+utils/__pycache__/
+job*_gs*.sbat

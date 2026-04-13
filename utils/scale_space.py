@@ -717,6 +717,10 @@ def clip_scale_range_and_update_thresholds(im, config, b_vmax, b_vmin, niter=10)
     # I_rec_01 = cv.normalize(im, None, norm_type=cv.NORM_MINMAX, alpha=0, beta=1, dtype=cv.CV_32F) # Keep as 32 bit
     # I_rec_8bit = (I_rec_01 * 255).astype(np.uint8) # This is error prone 
 
+    # We save the non-normalized image as a .tiff so we should NOT normalize the image here
+    # to compute the thresholds, since we are simulating what ImageJ reads in 
+    # im_norm = cv.normalize(im, None, norm_type=cv.NORM_MINMAX, alpha=0, beta=1, dtype=cv.CV_32F) # 32 bit
+
     im_nz = im[~np.isclose(im, 0)]
 
     # Compute percentiles on non-negative image

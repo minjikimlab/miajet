@@ -3,6 +3,7 @@ from utils.processing import group_adjacent_numbers
 from utils.plotting import convert_imagej_coord_to_numpy
 from utils.scale_space import scale_to_width
 from miajet.expanded_table import rect_to_square
+from miajet.process_imagej import enforce_root_position
 from miajet.compute_p_value import compute_test_statistic_quantities
 
 from skimage.filters import threshold_yen, threshold_triangle
@@ -1094,6 +1095,7 @@ def compute_saliency(df_pos, ridge_datum, im_p_val=None, im_p_val2=None,
         # --- adj (adjacent non-decreasing) ---
         if adj_nondec:
             adj = detect_adjacent_nondecreasing_local_maxima_memory(dbscan_s_idx, protection=False, N=3, use_memory=True)
+            # adj = detect_adjacent_nondecreasing_local_maxima_memory(dbscan_s_idx, protection=False, N=3, use_memory=False)
         else:
             adj = np.ones(n_pos, dtype=float)
 
@@ -1194,6 +1196,8 @@ def compute_saliency(df_pos, ridge_datum, im_p_val=None, im_p_val2=None,
     return df_agg, df_features
 
 
+
+
 def filter_dist_diag(df, df_pos, root_within, window_size, resolution,
                       square_size_original, verbose=False):
 
@@ -1212,25 +1216,32 @@ def filter_dist_diag(df, df_pos, root_within, window_size, resolution,
     df_pos["y (bp)"] = rows * resolution 
     df_pos['dist_diag'] = np.abs(df_pos['x (bp)'] - df_pos['y (bp)'])
 
-    df_dd = df_pos.loc[df_pos.groupby('unique_id')['dist_diag'].idxmin(), ["unique_id", "dist_diag"]].reset_index(drop=True)
-    dist_by_id = df_dd.set_index("unique_id")["dist_diag"]
-    df["dist_diag"] = df["unique_id"].map(dist_by_id)
-    df = df.reset_index(drop=True)
+    # df_dd = df_pos.loc[df_pos.groupby('unique_id')['dist_diag'].idxmin(), ["unique_id", "dist_diag"]].reset_index(drop=True)
+    # dist_by_id = df_dd.set_index("unique_id")["dist_diag"]
+    # df["dist_diag"] = df["unique_id"].map(dist_by_id)
+    # df = df.reset_index(drop=True)
 
-    if root_within is None:
-        return df_pos
+    # if root_within is None:
+    #     return df_pos
 
-    n_before = len(df)
-    df = df.loc[df["dist_diag"] < root_within * resolution].reset_index(drop=True)
-    if verbose:
-        print(f"\tRe-filtering by {root_within} bins to diagonal after splitting: {n_before} -> {len(df)}...")
+    # n_before = len(df)
+    # df = df.loc[df["dist_diag"] < root_within * resolution * np.sqrt(2)].reset_index(drop=True)
+    # if verbose:
+    #     print(f"\tRe-filtering by {root_within} bins to diagonal after splitting: {n_before} -> {len(df)}...")
 
-    df_pos = df_pos.loc[df_pos["unique_id"].isin(df["unique_id"])].reset_index(drop=True)
+    # df_pos = df_pos.loc[df_pos["unique_id"].isin(df["unique_id"])].reset_index(drop=True)
+
+
+    window_size_bin = np.ceil(window_size / resolution).astype(int)
+
+    df_pos, df = enforce_root_position(df_pos=df_pos, df=df, root_within=root_within, window_size_bin=window_size_bin, 
+                                       verbose=verbose, keys="unique_id", y_label="Y_(px)_orig")
 
     if len(df_pos) == 0:
         if verbose: 
             print("All ridges filtered. Consider changing parameters.")
         sys.exit(0)
+
 
     return df_pos
 
@@ -1269,7 +1280,7 @@ def _process_ridge(args, agg_pval, scale_range, adj_nondec, ang_frac,
 
     if adj_nondec:
         adj = detect_adjacent_nondecreasing_local_maxima_memory(
-            dbscan_s_idx, protection=False, N=3, use_memory=True)
+            dbscan_s_idx, protection=False, N=3, use_memory=True) # CHANGED TO FALSE
     else:
         adj = np.ones(n_pos, dtype=float)
 

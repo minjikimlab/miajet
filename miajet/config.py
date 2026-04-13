@@ -96,7 +96,7 @@ def assign_defaults(args: argparse.Namespace) -> argparse.Namespace:
             "data_type": "oe",
             "compartment": "True",
             "angle_range": [60, 120],
-            "q_val": 0.01,
+            "q_val": 0.1,
             "root_within": 12,
             "angle_trim": 3, # 3 bins
             "adj_nondec": "True", # Consistency measure with Guo et al. style jets
@@ -280,8 +280,8 @@ def process_args(args: argparse.Namespace) -> Config:
             # Then lets default to the "blobness"
             if config.verbose:
                 print("resolve_conflict is set to p-val_white, but p-val_white is not available when compartment='False'." 
-                      "Defaulting resolve_conflict to 'blobness'.")
-            config.resolve_conflict = "blobness" 
+                      "Defaulting resolve_conflict to 'length'.")
+            config.resolve_conflict = "length" 
     else:
         raise ValueError("compartment parameter must be 'True' or 'False'")
     

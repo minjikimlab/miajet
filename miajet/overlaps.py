@@ -106,7 +106,7 @@ def find_and_remove_overlaps(df_agg, df_features, iou_threshold=0.6, verbose=Fal
             # Then we minimize
             min_p_val_index = np.argmin(group_p_vals)
         else:
-            # Then we maximize
+            # Then we maximize (e.g. length, saliency, sum_consistency)
             min_p_val_index = np.argmax(group_p_vals)
         
         min_p_val_indexer = group_indexes[min_p_val_index]

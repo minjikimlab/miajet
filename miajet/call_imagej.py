@@ -442,7 +442,7 @@ def run_imagej_on_chunks(chunks, config):
         # Simply call original function on each chunk independently
         call_imagej_scale_space(
             scale_range=config.scale_range,
-            lt=config.thresholds[0],
+            lt=config.thresholds[0], # The same global thresholds for each chunk (per chromosome)
             ut=config.thresholds[1],
             root=chunk["root"],
             image_path=chunk["image_path"],

@@ -1,36 +1,72 @@
 samples:
 
-  DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped_0.1:
+  DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped_0.1_30:
     file: "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/downsampled_files/merged.multires_0.1_inter_30.hic"
     genome: "mm10"
-    norm: "KR"
+    norm: "VC"
+    res: "25000"
+    exp: "hic"
+    win: "6000000"
+    chroms: "all"
+
+  DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped_0.25_30:
+    file: "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/downsampled_files/merged.multires_0.25_inter_30.hic"
+    genome: "mm10"
+    norm: "VC"
+    res: "25000"
+    exp: "hic"
+    win: "6000000"
+    chroms: "all"
+
+  DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped_0.5_30:
+    file: "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/downsampled_files/merged.multires_0.5_inter_30.hic"
+    genome: "mm10"
+    norm: "VC"
+    res: "25000"
+    exp: "hic"
+    win: "6000000"
+    chroms: "all"
+
+  DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped_0.75_30:
+    file: "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/downsampled_files/merged.multires_0.75_inter_30.hic"
+    genome: "mm10"
+    norm: "VC"
+    res: "25000"
+    exp: "hic"
+    win: "6000000"
+    chroms: "all"
+
+  DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped_0.1:
+    file: "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/downsampled_files/merged.multires_0.1_inter.hic"
+    genome: "mm10"
+    norm: "VC"
     res: "25000"
     exp: "hic"
     win: "6000000"
     chroms: "all"
 
   DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped_0.25:
-    file: "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/downsampled_files/merged.multires_0.25_inter_30.hic"
+    file: "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/downsampled_files/merged.multires_0.25_inter.hic"
     genome: "mm10"
-    norm: "KR"
+    norm: "VC"
     res: "25000"
     exp: "hic"
     win: "6000000"
     chroms: "all"
 
   DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped_0.5:
-    file: "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/downsampled_files/merged.multires_0.5_inter_30.hic"
+    file: "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/downsampled_files/merged.multires_0.5_inter.hic"
     genome: "mm10"
-    norm: "KR"
+    norm: "VC"
     res: "25000"
     exp: "hic"
     win: "6000000"
     chroms: "all"
 
   DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped_0.75:
-    file: "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/downsampled_files/merged.multires_0.75_inter_30.hic"
+    file: "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/downsampled_files/merged.multires_0.75_inter.hic"
     genome: "mm10"
-    norm: "KR"
+    norm: "VC"
     res: "25000"
     exp: "hic"
     win: "6000000"

@@ -48,7 +48,7 @@ def parse_args():
     
     parser.add_argument("--q_val", type=float, required=False, default=_MISSING,
                         help="Threshold for corrected p-value cutoffs on Hi-C data. "
-                        "(default: 0.01 if exp_type='hic', 0.2 if exp_type='replihic'). ") 
+                        "(default: 0.1 if exp_type='hic', 0.2 if exp_type='replihic'). ") 
     parser.add_argument("--q_val_white", type=float, required=False, default=0.95,
                     help="Threshold for corrected q-value cutoffs on Hi-C data after removing A/B compartments. "
                         "(default: 0.95 if compartment='True', feature disabled if compartment='False'). ") 
@@ -102,9 +102,9 @@ def parse_args():
                         default="nearest", help="Padding method for scipy.ndimage.rotate. (default: 'nearest')")
     parser.add_argument("--convolution_padding", type=str, required=False, choices=["reflect", "constant", "nearest", "mirror", "wrap"],
                         default="nearest", help="Padding method for scipy.ndimage.correlate convolution. (default: 'nearest')")
-    parser.add_argument("--resolve_conflict", type=str, required=False, default="blobness", 
-                        choices=["length", "p-val", "p-val_white", "saliency", "avg_width", "sum_consistency", "sum_consistency_im", "blobness"],
-                    help="The jet statistic to maximize among overlapping jets. Needs to be a column in the summary dataframe. "
+    parser.add_argument("--resolve_conflict", type=str, required=False, default="saliency", 
+                        choices=["length", "p-val", "p-val_white", "saliency", "avg_width", "sum_consistency", "sum_consistency_im", "blobness", "angle_turbulence"],
+                    help="The jet statistic to minimize or maximize among overlapping jets. Needs to be a column in the summary dataframe. "
                         "(default: 'blobness')")     
     parser.add_argument("--rem_k_strata", type=int, required=False, default=1,
                         help="Removes positions of jets within k-th off diagonal strata. (default: 1)")
@@ -138,7 +138,7 @@ def parse_args():
     parser.add_argument("--scale_trim_window", type=int, required=False, default=5,
                         help="The window size for scale trim. "
                         "(default: 5 if exp_type='hic', feature disabled if exp_type='replihic).")    
-    parser.add_argument("--comp_trim", type=none_or_float, required=False, default=3,
+    parser.add_argument("--comp_trim", type=none_or_float, required=False, default=0.25,
                         help="Splits ridges to prevent ridges from going *through* A/B compartments\n"
                             "If None, then no splitting is performed\n"
                             "If a float (0.0-1.0), then the minimum possible length of ridge is the fraction specified of the original length\n"
@@ -168,9 +168,9 @@ def parse_args():
                         help="Filters according to sum_consistency_im. "
                         "This is to filter out false positive jets that are in sparse, noisy regions."
                         "(default: 'False' if exp_type='hic', 'True' if exp_type='replihic). ")
-    parser.add_argument("--ridge_strength_turbulence", type=none_or_float, required=False, default=1.0, 
+    parser.add_argument("--ridge_strength_turbulence", type=none_or_float, required=False, default=0.9, 
                         help="Filters according to the coefficient of variation of the jet 'ridge_strength' values."
-                        "(default: 1.0)")
+                        "(default: 0.9)")
     parser.add_argument("--angle_satisfied", type=none_or_float, required=False, default=0.3, 
                         help="Filters according to the fraction of points in jet that lie in the angle_range specified. "
                         "(default: 0.3)")

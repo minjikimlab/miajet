@@ -362,7 +362,7 @@ def remove_small_ridges(df_pos, df, min_points, contour_label, verbose=False):
 #         return df_ridge, 0
 
 def enforce_root_position(df_pos, df, root_within, window_size_bin, verbose,
-                          contour_label="Contour Number", 
+                          contour_label="Contour Number", keys = ["Contour Number", "s_imagej"],
                           y_label="Y_(px)"):
     """
     Enforces that the root (maximum y value or the closest point to the main diagonal) of each ridge
@@ -399,7 +399,7 @@ def enforce_root_position(df_pos, df, root_within, window_size_bin, verbose,
     num_rows_image = np.ceil(window_size_bin / np.sqrt(2)).astype(int)
     thresh_val = (num_rows_image - 1 - root_within) if root_within is not None else 0
 
-    keys = [contour_label, "s_imagej"]
+    # keys = [contour_label, "s_imagej"]
 
     # per-row max of y within each ridge
     max_per_row = df_pos.groupby(keys, sort=False)[y_label].transform('max')
@@ -1608,6 +1608,10 @@ def split_ridges(df, df_pos, gb, ridge_datum, scale_range, remove_min_size,
         return mask
 
     for uid, df_ridge in gb:
+
+        # if uid == "2_12.44":
+        #     pass
+
         n_total += 1
         L0 = len(df_ridge)
 

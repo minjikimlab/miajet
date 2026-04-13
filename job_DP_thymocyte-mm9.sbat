@@ -20,7 +20,9 @@ python -m miajet /nfs/turbo/umms-minjilab/downloaded_data/GSE199059_CD69negDPWTR
   --exp_type "hic" \
   --resolution 25000 \
   --window_size 6000000 \
-  --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v1.1.1" \
+  --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v2.0.2_split" \
+  --resolve_conflict "saliency" \
+  --q_val 0.1 \
   --num_cores 4 \
   --verbose \
   --diagnostic_plots
