@@ -10,7 +10,8 @@ from .expanded_table import generate_expanded_table, save_expanded_table, insert
 from .rank_ridges import filter_dist_diag, generate_summary_table, filter_ridges, simulate_filter_ridges, compute_saliency, \
     compute_saliency_parallel, filter_dist_diag
 from .analyze_ridges import plot_distribution_diagnostic, plot_top_k_diagnostic, temp_plot, diagnostic_filter_plot, plot_top_k, \
-    save_results, plot_entropy_distribution, plot_corner_diagnostic, rank_true_ridges, plot_saliency_distribution, save_scale_space
+    save_results, plot_entropy_distribution, plot_corner_diagnostic, rank_true_ridges, plot_saliency_distribution, save_scale_space, \
+    diagnostic_split_plot
 from .compute_p_value import compute_significance, correct_significance, threshold_significance
 from .overlaps import find_and_remove_overlaps
 # from .stripiness import compute_stripiness
@@ -112,7 +113,8 @@ def main():
     # SPLITTING
     if config.verbose: print("Splitting ridges based on scale space features...")
     t0 = time.time()
-    df, df_pos, ridge_datum = split_ridges(df, df_pos, gb, ridge_datum, scale_range=config.scale_range, remove_min_size=1,
+    df_pos_before_split = df_pos
+    df, df_pos, ridge_datum, individual_split_masks = split_ridges(df, df_pos, gb, ridge_datum, scale_range=config.scale_range, remove_min_size=1,
                                 angle_trim=config.angle_trim,
                                 scale_trim=config.scale_trim,
                                 scale_trim_thresh=config.scale_trim_thresh,
@@ -121,9 +123,12 @@ def main():
                                 scale_dec_trim=config.scale_dec_trim,
                                 scale_dec_thresh_trim=config.scale_dec_thresh_trim,
                                 verbose=config.verbose)
-    temp_plot(df_pos, config.diagnostic_plots, x_label="X_(px)_orig", y_label="Y_(px)_orig", im=im_orig, 
-              save_path=f"{config.save_sub_dir}/", im_vmax=99.5, resolution=config.resolution, 
-              root=f"diagnostic_3_splitting")
+    # temp_plot(df_pos, config.diagnostic_plots, x_label="X_(px)_orig", y_label="Y_(px)_orig", im=im_orig, 
+    #           save_path=f"{config.save_sub_dir}/", im_vmax=99.5, resolution=config.resolution, 
+    #           root=f"diagnostic_3_splitting")
+    diagnostic_split_plot(df_pos_before_split, individual_split_masks, config.diagnostic_plots,
+                          im_orig, save_path=f"{config.save_sub_dir}/", im_vmax=99.5,
+                          root="diagnostic_3_split_ridges", resolution=config.resolution, remove_min_size=1)
     temp_plot(df_pos, config.diagnostic_plots, x_label="X_(px)_unmap", y_label="Y_(px)_unmap", im=comp_binary, 
       save_path=f"{config.save_sub_dir}/", im_vmax=None, resolution=config.resolution, cmap="binary_r",
         root=f"diagnostic_3_splitting_compartments")

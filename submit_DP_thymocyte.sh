@@ -29,9 +29,9 @@ chromosomes=(
 
 
 for chrom in "${chromosomes[@]}"; do
-  # sbatch --job-name="Guo et al. mm9 ${chrom}" --export=CHROM=${chrom} job_DP_thymocyte-mm9.sbat
-  sbatch --job-name="Guo et al. mm9 ${chrom}" --export=CHROM=${chrom} job_DP_thymocyte-mm9_gs1.sbat
-  sbatch --job-name="Guo et al. mm9 ${chrom}" --export=CHROM=${chrom} job_DP_thymocyte-mm9_gs2.sbat
-  sbatch --job-name="Guo et al. mm9 ${chrom}" --export=CHROM=${chrom} job_DP_thymocyte-mm9_gs3.sbat
-  sbatch --job-name="Guo et al. mm9 ${chrom}" --export=CHROM=${chrom} job_DP_thymocyte-mm9_gs4.sbat
+  sbatch --job-name="Guo et al. mm9 ${chrom}" --export=CHROM=${chrom} job_DP_thymocyte-mm9.sbat
+  # sbatch --job-name="Guo et al. mm9 ${chrom}" --export=CHROM=${chrom} job_DP_thymocyte-mm9_gs1.sbat
+  # sbatch --job-name="Guo et al. mm9 ${chrom}" --export=CHROM=${chrom} job_DP_thymocyte-mm9_gs2.sbat
+  # sbatch --job-name="Guo et al. mm9 ${chrom}" --export=CHROM=${chrom} job_DP_thymocyte-mm9_gs3.sbat
+  # sbatch --job-name="Guo et al. mm9 ${chrom}" --export=CHROM=${chrom} job_DP_thymocyte-mm9_gs4.sbat
 done

@@ -2,6 +2,7 @@ import pandas as pd
 import os
 import numpy as np
 import sys
+from collections import OrderedDict
 
 
 def read_curve_tracing_results(f, verbose=True):
@@ -1572,6 +1573,7 @@ def max_decrease_indices(x, tol):
     return indices
 
 
+
 def split_ridges(df, df_pos, gb, ridge_datum, scale_range, remove_min_size, 
                  angle_trim=None, 
                  scale_trim=None, scale_trim_thresh=3, scale_trim_window=5,
@@ -1583,11 +1585,11 @@ def split_ridges(df, df_pos, gb, ridge_datum, scale_range, remove_min_size,
     """
     if gb is None:
         if verbose: print("\tSkipping process imagej...")
-        return df, df_pos, ridge_datum
+        return df, df_pos, ridge_datum, OrderedDict()
 
     if angle_trim is None and scale_trim is None and comp_trim is None and scale_dec_trim is None:
         if verbose: print("\tNo splitting enabled")
-        return df, df_pos, ridge_datum
+        return df, df_pos, ridge_datum, OrderedDict()
 
     df_pos_frames = []
     df_frames = []
@@ -1600,12 +1602,30 @@ def split_ridges(df, df_pos, gb, ridge_datum, scale_range, remove_min_size,
     # We'll also rebuild ridge_datum for sub-ridges
     ridge_datum_new = {}
 
+    # New v2.0.3: diagnostics container
+    individual_masks = OrderedDict()
+    angle_label = f"angle_trim {angle_trim}"
+    scale_label = f"scale_trim {scale_trim} std > {scale_trim_thresh} in {scale_trim_window} window"
+    scale_dec_label = f"scale_dec_trim {scale_dec_trim} decrease ({scale_dec_thresh_trim})"
+    comp_label = f"comp_trim {comp_trim}"
+    if angle_trim is not None:
+        individual_masks[angle_label] = {}
+    if scale_trim is not None:
+        individual_masks[scale_label] = {}
+    if scale_dec_trim is not None:
+        individual_masks[scale_dec_label] = {}
+    if comp_trim is not None:
+        individual_masks[comp_label] = {}
+
     def _protect(mask, param, length):
         """Zero-out the first *m* entries of *mask* based on the protection param"""
         m = int(length * param) if (isinstance(param, float) and param < 1) else int(param)
         if m > 0:
             mask[:m] = False
         return mask
+    
+    # New v2.0.3: Moved this outside the loop since it doesn't change per ridge, and is expensive to compute
+    df_lookup = df.drop_duplicates("unique_id").set_index("unique_id")
 
     for uid, df_ridge in gb:
 
@@ -1646,6 +1666,7 @@ def split_ridges(df, df_pos, gb, ridge_datum, scale_range, remove_min_size,
             if mask.any():
                 stats["angle"] += 1
             bad |= mask
+            individual_masks[angle_label][uid] = ~mask  # store GOOD mask
 
         # ---- SCALE (s_dbscan: scale instability via rolling std) ----
         if scale_trim is not None and "dbscan_s_idx" in rec:
@@ -1658,6 +1679,8 @@ def split_ridges(df, df_pos, gb, ridge_datum, scale_range, remove_min_size,
             if mask.any():
                 stats["scale"] += 1
             bad |= mask
+            individual_masks[scale_label][uid] = ~mask  # store GOOD mask
+
 
         # ---- SCALE DECREASE ----
         if scale_dec_trim is not None and len(scale_range) >= scale_dec_thresh_trim:
@@ -1669,6 +1692,7 @@ def split_ridges(df, df_pos, gb, ridge_datum, scale_range, remove_min_size,
             if mask.any():
                 stats["scale_dec"] += 1
             bad |= mask
+            individual_masks[scale_dec_label][uid] = ~mask  # store GOOD mask
 
         # ---- COMP (compartment binary) ----
         if comp_trim is not None:
@@ -1677,7 +1701,7 @@ def split_ridges(df, df_pos, gb, ridge_datum, scale_range, remove_min_size,
             if mask.any():
                 stats["comp"] += 1
             bad |= mask
-
+            individual_masks[comp_label][uid] = ~mask  # store GOOD mask
 
         # ============================================================
         # Extract contiguous runs of "good" points
@@ -1706,24 +1730,9 @@ def split_ridges(df, df_pos, gb, ridge_datum, scale_range, remove_min_size,
         if was_split:
             n_split_ridges += 1
 
-        # Identify which columns belong to df vs df_pos
-        # df_pos_cols = set(df_pos.columns)
-        # df_cols = set(df.columns)
+        n_total_segments += len(segments)  
 
-        # for seg_i, (seg_start, seg_end) in enumerate(segments):
-        #     n_total_segments += 1
-        #     seg_df = df_ridge.iloc[seg_start:seg_end].copy()
-
-        #     new_uid = f"{uid}_t-{seg_i + 1}" if was_split else uid
-        #     seg_df["unique_id"] = new_uid
-
-        #     # Split back into df and df_pos portions
-        #     seg_df_main = seg_df[[c for c in seg_df.columns if c in df_cols]].copy()
-        #     seg_df_pos = seg_df[[c for c in seg_df.columns if c in df_pos_cols]].copy()
-        #     df_frames.append(seg_df_main)
-        #     df_pos_frames.append(seg_df_pos)
-
-        df_lookup = df.drop_duplicates("unique_id").set_index("unique_id")
+        # df_lookup = df.drop_duplicates("unique_id").set_index("unique_id") # v2.0.3: Changed this to before loop
 
         for seg_i, (seg_start, seg_end) in enumerate(segments):
             seg_df = df_ridge.iloc[seg_start:seg_end].copy()
@@ -1790,4 +1799,4 @@ def split_ridges(df, df_pos, gb, ridge_datum, scale_range, remove_min_size,
             print("All ridges filtered. Consider changing parameters.")
         sys.exit(0)
 
-    return df_out, df_pos_out, ridge_datum_new
+    return df_out, df_pos_out, ridge_datum_new, individual_masks

@@ -684,7 +684,7 @@ from cycler import cycler
 
 def plot_n_rect(H, titles, suptitle, resolution, savepath=None, show=False, supxlabel=None, supylabel=None, figsize=None, cmap_label="Intensity", dpi=100, num_ticks=[5, 50], 
                 show_cbar=True, vcenter=None, cmap="viridis", vmax=None, genomic_shift=0, lines=None, line_colors=["blue", "cyan", "lime"], line_labels=None, line_widths=None, 
-                show_legend=False, dp=1, track_1d=None, track_1d_name=None, **kwargs):
+                show_legend=False, dp=1, track_1d=None, track_1d_name=None, linewidth=1, **kwargs):
     """
     Plots n rectagnle Hi-C plots with 1 plot per row
     """
@@ -803,7 +803,7 @@ def plot_n_rect(H, titles, suptitle, resolution, savepath=None, show=False, supx
                             for j, line in enumerate(lines[i]):
                                 label = line_labels[i][j] if line_labels is not None and line_labels[i] is not None else None
                                 # Plot the primary line with a fixed, thin linewidth and default color cycle
-                                ax.plot(line[:, 0], line[:, 1], linewidth=1, label=label, alpha=0.5)
+                                ax.plot(line[:, 0], line[:, 1], linewidth=linewidth, label=label, alpha=0.5)
                                 # If variable widths are provided, overlay a LineCollection with the variable widths
                                 if line_widths is not None:
                                     if isinstance(line_widths, list) and line_widths[i] is not None:
@@ -819,7 +819,7 @@ def plot_n_rect(H, titles, suptitle, resolution, savepath=None, show=False, supx
                     else:
                         for j, line in enumerate(lines):
                             label = line_labels[j] if line_labels is not None else None
-                            ax.plot(line[:, 0], line[:, 1], linewidth=1, label=label, alpha=0.5)
+                            ax.plot(line[:, 0], line[:, 1], linewidth=linewidth, label=label, alpha=0.5)
                             if line_widths is not None:
                                 points = line[::2].reshape(-1, 1, 2)
                                 segments = np.concatenate([points[:-1], points[1:]], axis=1)
@@ -845,7 +845,7 @@ def plot_n_rect(H, titles, suptitle, resolution, savepath=None, show=False, supx
             elif track_1d is not None and i < len(H) + len(track_1d):
                 t_idx = i - len(H)
                 x = np.arange(len(track_1d[t_idx]))
-                ax.plot(x, track_1d[t_idx], color="black", linewidth=1.5, alpha=1.0)
+                ax.plot(x, track_1d[t_idx], color="black", linewidth=linewidth, alpha=1.0)
                 ax.set_title(track_1d_name[t_idx] if track_1d_name is not None else None, fontsize=10)
                 ax.tick_params(axis="y", labelsize=7)
                 ax.set_xlim(0, len(track_1d[t_idx]) - 1)

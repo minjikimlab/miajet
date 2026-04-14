@@ -186,7 +186,8 @@ def generate_contact_maps(hic_file, chromosome, resolution, window_size, data_ty
         comp_binary = binary_dilation(comp_binary, structure=dil_mask)
 
         # Mask out first few bins  from the main diagonal to avoid artifacts
-        comp_binary[-root_within_comp:, :] = False
+        if root_within_comp > 0:
+            comp_binary[-root_within_comp:, :] = False
 
         # Make non-negative
         coe_sq_white += np.abs(np.min(coe_sq_white))

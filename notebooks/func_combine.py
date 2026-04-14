@@ -39,6 +39,109 @@ def extract_comments(csv_path: str) -> list[str]:
     return comments
 
 
+def _parse_star_pattern(pattern: str) -> tuple[str, str]:
+    """Split a single-* pattern into prefix/suffix."""
+    if pattern.count('*') != 1:
+        raise ValueError(f"Pattern must contain exactly one '*': {pattern}")
+    return pattern.split('*')
+
+
+def _resolve_base_name(folder: str, folder_pattern: str, exp_name=None) -> str:
+    """
+    Resolve the expected base run name for a chromosome folder.
+    """
+    if exp_name is None:
+        return os.path.basename(folder)
+
+    prefix, suffix = _parse_star_pattern(folder_pattern)
+    exp_prefix, exp_suffix = _parse_star_pattern(exp_name)
+    folder_regex = re.compile(rf"^{re.escape(prefix)}(.+?){re.escape(suffix)}$")
+
+    folder_name = os.path.basename(folder)
+    m = folder_regex.match(folder_name)
+    if not m:
+        raise ValueError(
+            f"Folder name '{folder_name}' did not match pattern '{folder_pattern}'"
+        )
+
+    wild = m.group(1)
+    return f"{exp_prefix}{wild}{exp_suffix}"
+
+
+def _list_matched_folders(results_dir: str, folder_pattern: str) -> list[str]:
+    """
+    List folders matching `folder_pattern` under `results_dir`, excluding combined outputs.
+    """
+    search_pattern = os.path.join(results_dir, folder_pattern)
+    prefix, suffix = _parse_star_pattern(folder_pattern)
+
+    # If this notebook is already run, then do not include the (already combined) combined folder
+    exclude_name = f"{prefix}_combined{suffix}"
+
+    pattern = re.compile(
+        rf"^{re.escape(prefix)}"
+        r".+"  # supports non-numeric chromosomes (e.g. roman numerals)
+        rf"{re.escape(suffix)}$"
+    )
+
+    matched_folders = [
+        os.path.join(results_dir, d)
+        for d in os.listdir(results_dir)
+        if pattern.match(d) and os.path.isdir(os.path.join(results_dir, d))
+    ]
+
+    matched_folders = [
+        f for f in matched_folders
+        if os.path.basename(f) != exclude_name
+    ]
+
+    if not matched_folders:
+        raise FileNotFoundError(f"No folders found matching {search_pattern}")
+
+    return sorted(matched_folders)
+
+
+def _result_type_sort_key(result_type: str) -> tuple[int, str]:
+    """Keep common result names in a human-friendly order."""
+    if result_type == "all":
+        return (0, result_type)
+    if result_type.startswith("q_val"):
+        return (1, result_type)
+    if result_type == "thresholded":
+        return (2, result_type)
+    return (3, result_type)
+
+
+def discover_result_subdirs(results_dir: str, folder_pattern: str, exp_name=None) -> list[str]:
+    """
+    Discover available `_results_<type>` subdirectories across matching chromosome folders.
+    """
+    matched_folders = _list_matched_folders(results_dir, folder_pattern)
+
+    discovered = set()
+    for folder in matched_folders:
+        base = _resolve_base_name(folder, folder_pattern, exp_name=exp_name)
+        prefix = f"{base}_results_"
+
+        for entry in os.listdir(folder):
+            full_path = os.path.join(folder, entry)
+            if not os.path.isdir(full_path):
+                continue
+            if not entry.startswith(prefix):
+                continue
+
+            result_type = entry[len(prefix):]
+            if result_type:
+                discovered.add(result_type)
+
+    if not discovered:
+        raise FileNotFoundError(
+            f"No result subdirectories found for folders matching {os.path.join(results_dir, folder_pattern)}"
+        )
+
+    return sorted(discovered, key=_result_type_sort_key)
+
+
 
 def combine_results(results_dir, folder_pattern, result_type, exp_name=None, enforce_all_chroms=True):
     """
@@ -62,45 +165,8 @@ def combine_results(results_dir, folder_pattern, result_type, exp_name=None, enf
     (combined_summary, combined_expanded) : tuple of pd.DataFrame
         The concatenated summary and expanded tables
     """
-    # build the full glob pattern
-    search_pattern = os.path.join(results_dir, folder_pattern)
-
-    prefix, suffix = folder_pattern.split('*')
-
-    print(prefix, suffix)
-
-    if exp_name is not None:
-        exp_prefix, exp_suffix = exp_name.split('*')
-        folder_regex = re.compile(
-            rf"^{re.escape(prefix)}(.+?){re.escape(suffix)}$"
-        )
-
-    # If this notebook is already run, then do not include the (already combined) combined folder
-    exclude_name = f"{prefix}_combined{suffix}"
-    print(exclude_name)
-
-    pattern = re.compile(
-        rf"^{re.escape(prefix)}"      # “Repli-HiC_K562_WT_totalS_chr”
-        r".+" # Changed to match any character because ce10 genome is roman numerals
-        rf"{re.escape(suffix)}$"      # “_50Kb”
-    )
-
-    matched_folders = [
-        os.path.join(results_dir, d)
-        for d in os.listdir(results_dir)
-        if pattern.match(d)
-    ]
-
+    matched_folders = _list_matched_folders(results_dir, folder_pattern)
     print(matched_folders)
-
-    # Exclude the combined folder if it exists
-    matched_folders = [
-        f for f in matched_folders
-        if os.path.basename(f) != exclude_name
-    ]
-
-    if not matched_folders:
-        raise FileNotFoundError(f"No folders found matching {search_pattern}")
 
     summary_frames = []
     expanded_frames = []
@@ -111,18 +177,7 @@ def combine_results(results_dir, folder_pattern, result_type, exp_name=None, enf
     successful_chroms = []
     for i, folder in enumerate(matched_folders):
 
-        if exp_name is not None:
-            m = folder_regex.match(os.path.basename(folder))
-            if not m:
-                raise ValueError(
-                    f"Folder name '{os.path.basename(folder)}' "
-                    f"did not match pattern '{folder_pattern}'"
-                )
-            wild = m.group(1)
-            base = f"{exp_prefix}{wild}{exp_suffix}"
-        else:
-            # basename is the actual folder name without the path
-            base = os.path.basename(folder)
+        base = _resolve_base_name(folder, folder_pattern, exp_name=exp_name)
 
         # path to the results-type subdirectory
         res_subdir = os.path.join(folder, f"{base}_results_{result_type}")

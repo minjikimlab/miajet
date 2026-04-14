@@ -2509,101 +2509,91 @@ def temp_plot(df_features, plot_or_not, x_label, y_label, im, save_path, root, r
                 vmax=vmax, num_ticks=[5, 25], dpi=300)
 
 
-    # def plot_curves_transpose(overlay_ridge_condition=False):
-    #     D_curves_transpose = D_curves.T
-    #     R_curves_transpose = R_curves_neighborhood.T > 0
-    #     num_rows = np.ceil(np.sqrt(len(df_ridge))).astype(int)
-    #     fig, axs = plt.subplots(num_rows, num_rows, figsize=(3.5 * num_rows, 3.5 * num_rows), layout='constrained', sharey=True)
+def _contiguous_segments_from_good(good, remove_min_size=1):
+    """Return [(start, end), ...] for contiguous True-runs in `good`."""
+    segments = []
+    in_seg = False
+    seg_start = 0
 
-    #     titles = [f"({genomic_labels(x[0] * resolution / np.sqrt(2), N=1)}, {genomic_labels(window_size / 2 - x[1] * resolution / np.sqrt(2), N=1)})" for x in df_ridge[[x_label, y_label]].values]
+    for i, ok in enumerate(good):
+        if ok and not in_seg:
+            seg_start = i
+            in_seg = True
+        elif not ok and in_seg:
+            segments.append((seg_start, i))
+            in_seg = False
 
-    #     for i, ax in enumerate(axs.flat):
-    #         if i < len(D_curves_transpose):
+    if in_seg:
+        segments.append((seg_start, len(good)))
 
-    #             # reverse direction
-    #             j = i
-
-    #             # Overlay ridge condition color
-    #             if overlay_ridge_condition:
-    #                 ax.plot(np.arange(D_curves_transpose.shape[1]), D_curves_transpose[j], color='gray', alpha=0.6)
-    #                 sc = ax.scatter(np.arange(D_curves_transpose.shape[1]), D_curves_transpose[j], c=R_curves_transpose[j]) # for the colors
-    #                 plt.colorbar(sc, ax=ax)
-                    
-    #             else:
-    #                 ax.plot(np.arange(D_curves_transpose.shape[1]), D_curves_transpose[j], color='blue', marker="o")
-                
-    #             # Find the index of the maximum value
-    #             max_index = np.argmax(D_curves_transpose[j])
-    #             local_max_indices = argrelmax(D_curves_transpose[j])[0]
-
-    #             for local_max_index in local_max_indices:
-                
-    #                 # Plot the local maximum point in orange
-    #                 ax.plot(local_max_index, D_curves_transpose[j, local_max_index], color='orange', marker="x", markersize=8)
-
-    #             # Plot the global maximum point in red
-    #             ax.plot(max_index, D_curves_transpose[j, max_index], color='red', marker="x", markersize=8)
-                
-
-    #             # Set title and x-axis ticks
-    #             ax.set_title(titles[j], fontsize=10)
-    #             ax.set_xticks(np.arange(len(scale_range)))
-    #             ax.set_xticklabels([f"{x:.2f}" for x in scale_range], rotation=50)
-
-    #         else:  # Hide any unused subplots
-    #             ax.axis('off')
-
-    #     fig.suptitle(ridge_title, fontsize=12.5)
-
-    #     save_name = os.path.join(save_path, f"rank-{rank + 1}_{genomic_labels(start_correct)}_scale_curves.png") 
-
-    #     plt.savefig(save_name, dpi=300)
-
-    #     plt.close()
+    return [(s, e) for s, e in segments if (e - s) > remove_min_size]
 
 
-    # def plot_max_scale(step=3):
-    #     fig, ax = plt.subplots(1, local_max.shape[1] + 2, figsize=(4 * (local_max.shape[1] + 2), 5), layout="constrained", sharex=True, sharey=True)
+def diagnostic_split_plot(df_pos, individual_masks, plot_or_not, im, save_path, root,
+                          resolution, remove_min_size=1,
+                          x_label="X_(px)_orig", y_label="Y_(px)_orig",
+                          cmap="Reds", im_vmax=None):
+    """Plot the effect of each splitting criterion independently (not cumulative)."""
+    if not plot_or_not or im is None or not individual_masks:
+        return
 
-    #     global_colors = ["red" if x else "blue" for x in global_max_ridge_cond]
-    #     ax[0].bar(np.arange(D_curves.shape[1]), global_max, facecolor='none', edgecolor=global_colors, width=0.8)
-    #     ax[0].set_title("Global max")
+    grouped = list(df_pos.groupby("unique_id", sort=False))
 
-    #     # then multiple local bar plots
-    #     for j in range(local_max.shape[1]):
+    def _get_lines(mask_dict=None):
+        lines = []
 
-    #         global_colors = ["red" if x else "blue" for x in global_max_ridge_cond]
-    #         ax[j + 1].bar(np.arange(D_curves.shape[1]), global_max, facecolor='none', edgecolor=global_colors, width=0.8)
+        for uid, df_ridge in grouped:
+            coords = convert_imagej_coord_to_numpy(
+                df_ridge[[x_label, y_label]].values,
+                im.shape[0],
+                flip_y=True,
+                start_bin=0
+            )
 
-            
-    #         local_colors = ["red" if x else "blue" for x in local_max_ridge_cond[:, j]]
-    #         ax[j + 1].bar(np.arange(D_curves.shape[1]), local_max[:, j], color=local_colors, alpha=0.8, width=0.5)     
+            # Unsplit panel
+            if mask_dict is None:
+                lines.append(coords)
+                continue
 
-    #         ax[j + 1].set_title(f"Local maxima {j + 1}")
+            good = np.asarray(
+                mask_dict.get(uid, np.ones(len(df_ridge), dtype=bool)),
+                dtype=bool
+            )[:len(df_ridge)]
 
+            for s, e in _contiguous_segments_from_good(good, remove_min_size=remove_min_size):
+                lines.append(coords[s:e])
 
-    #     assigned_colors = ["red" if x else "blue" for x in assigned_s_ridge_cond]
-    #     ax[-1].bar(np.arange(D_curves.shape[1]), assigned_s, color=assigned_colors, width=0.8)
-    #     ax[-1].set_title("Assigned scales")    
-            
-    #     # Generate xticks as before
-    #     xticks = [f"{genomic_labels(window_size / 2 - x[1] * resolution / np.sqrt(2), N=1)}" for x in df_ridge[[x_label, y_label]].values]
-        
-    #     # Create positions and labels for every 3rd tick
-    #     positions = np.arange(0, D_curves.shape[1], step)
-    #     xticks_filtered = xticks[::step]  # Select every 3rd label
-        
-    #     # Set xticks and labels
-    #     ax[0].set_xticks(positions)
-    #     for a in ax:
-    #         a.set_xticklabels(xticks_filtered, rotation=45)
+        return lines
 
-    #     ax[0].set_ylabel("Scale")
-    #     ax[0].set_xlabel("Position")
-    #     fig.suptitle(f"Max scale at each position | median of max: {np.median(global_max):.2f} (median of assigned: {np.nanpercentile(assigned_s, 50, method='lower'):.2f})\n{ridge_title}")
+    titles = ["original", "unsplit"]
+    all_lines = [None, _get_lines(None)]
 
-    #     save_name = os.path.join(save_path, f"rank-{rank + 1}_{genomic_labels(start_correct)}_assigned_scales.png") 
+    # Per-criterion panels
+    for name, mask_dict in individual_masks.items():
+        titles.append(name)
+        all_lines.append(_get_lines(mask_dict))
 
-    #     plt.savefig(save_name, dpi=400)
+    # Combined panel
+    combined_masks = {}
+    for uid, df_ridge in grouped:
+        good = np.ones(len(df_ridge), dtype=bool)
+        for mask_dict in individual_masks.values():
+            good &= np.asarray(
+                mask_dict.get(uid, np.ones(len(df_ridge), dtype=bool)),
+                dtype=bool
+            )[:len(df_ridge)]
+        combined_masks[uid] = good
 
-    #     plt.close()
+    titles.append("all splits")
+    all_lines.append(_get_lines(combined_masks))
+
+    n = len(all_lines)
+    vmax = [None] * n
+    if im_vmax is not None:
+        v = np.percentile(im, im_vmax)
+        vmax = [v] * n
+
+    save_name = os.path.join(save_path, f"{root}_split_diagnostics.png")
+    plot_n_rect([im] * n, titles=titles, suptitle=root, lines=all_lines,
+                resolution=resolution, savepath=save_name, show=False, show_cbar=False,
+                cmap=[cmap] * n, vmax=vmax, num_ticks=[5] * n, dpi=600, linewidth=0.25)
