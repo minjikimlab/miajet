@@ -1,255 +1,586 @@
 samples:
 
-  # Repli-HiC_K562_WT_totalS:
-  #   file: "/nfs/turbo/umms-minjilab/downloaded_data/Repli-HiC_K562_WT_totalS.hic"
-  #   genome: "hg19"
-  #   norm: "VC_SQRT"
-  #   res: "25000"
-  #   exp: "replihic"
-  #   mcool: "/nfs/turbo/umms-minjilab/downloaded_data/Repli-HiC_K562_WT_totalS.ice.mcool"
-  #   win: "6000000"
-  #   chroms: "all"
-  #   q_val: "0.5"
-  #   extra_args:
-  #   - "--diagnostic_plots"
+  Repli-HiC_K562_WT_totalS_25kb:
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/Repli-HiC_K562_WT_totalS.hic"
+    genome: "hg19"
+    norm: "VC_SQRT"
+    res: "25000"
+    exp: "replihic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/Repli-HiC_K562_WT_totalS.ice.mcool"
+    win: "6000000"
+    chroms: "all"
+    q_val: "0.5"
+    # extra_args:
+    # - "--diagnostic_plots"
 
-  # K562_hic_Rao-2014_ENCFF616PUW_hg38:
-  #   file: "/nfs/turbo/umms-minjilab/downloaded_data/K562_hic_Rao-2014_ENCFF616PUW_hg38.hic"
-  #   genome: "hg38"
-  #   norm: "VC_SQRT" # KR failed
-  #   res: "25000"
-  #   exp: "hic"
-  #   mcool: "/nfs/turbo/umms-minjilab/downloaded_data/K562_hic_Rao-2014_4DNFI2R1W3YW_hg38.ice.mcool"
-  #   win: "6000000"
-  #   chroms: "all"
-  #   extra_args:
-  #   - "--diagnostic_plots"
+  K562_hic_Rao-2014_ENCFF616PUW_hg38_25kb:
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/K562_hic_Rao-2014_ENCFF616PUW_hg38.hic"
+    genome: "hg38"
+    norm: "VC_SQRT" # KR failed
+    res: "25000"
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/K562_hic_Rao-2014_4DNFI2R1W3YW_hg38.ice.mcool"
+    win: "6000000"
+    chroms: "all"
+    # extra_args:
+    # - "--diagnostic_plots"
 
 
-  # K562_intacthic_ENCODE-2023_ENCFF621AIY_hg38:
-  #   file: "/nfs/turbo/umms-minjilab/downloaded_data/K562_intacthic_ENCODE-2023_ENCFF621AIY_hg38.hic"
-  #   genome: "hg38"
-  #   norm: "VC_SQRT" # KR failed
-  #   res: "25000"
-  #   exp: "hic"
-  #   mcool: "/nfs/turbo/umms-minjilab/downloaded_data/K562_intacthic_ENCODE-2023_ENCFF808MAG_hg38.ice.mcool"
-  #   win: "6000000"
-  #   chroms: "all"
-  #   extra_args:
-  #   - "--diagnostic_plots"
+  K562_intacthic_ENCODE-2023_ENCFF621AIY_hg38_25kb:
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/K562_intacthic_ENCODE-2023_ENCFF621AIY_hg38.hic"
+    genome: "hg38"
+    norm: "VC_SQRT" # KR failed
+    res: "25000"
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/K562_intacthic_ENCODE-2023_ENCFF808MAG_hg38.ice.mcool"
+    win: "6000000"
+    chroms: "all"
+    # extra_args:
+    # - "--diagnostic_plots"
+
+
+  DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped_25kb:
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped.hic"
+    genome: "mm10"
+    norm: "KR"
+    res: "25000"
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped.ice.mcool"
+    win: "6000000"
+    chroms: "all"
+    # extra_args:
+    # - "--diagnostic_plots"
+
+  GSE199059_CD69negDPWTR1R2R3R4_merged_25kb:
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/GSE199059_CD69negDPWTR1R2R3R4_merged.hic"
+    genome: "mm9"
+    norm: "KR"
+    res: "25000"
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/GSE199059_CD69negDPWTR1R2R3R4_merged.ice.mcool"
+    win: "6000000"
+    chroms: "all"
+    # extra_args:
+    # - "--diagnostic_plots"
+
+  splenic-B-cell_WT_insitu-hic_Kieffer-Kwon-2018_GSE82144_mm9_25kb:
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/splenic-B-cell_WT_insitu-hic_Kieffer-Kwon-2018_GSE82144_mm9.hic"
+    genome: "mm9"
+    norm: "KR"
+    res: "25000"
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/splenic-B-cell_WT_insitu-hic_Kieffer-Kwon-2018_GSE82144_mm9.ice.mcool"
+    win: "6000000"
+    chroms: "all"
+    # extra_args:
+    # - "--diagnostic_plots"
   
-  # DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped:
-  #   file: "/nfs/turbo/umms-minjilab/downloaded_data/DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped.hic"
+  DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped_50kb:
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped.hic"
+    genome: "mm10"
+    norm: "KR"
+    res: "50000"
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped.ice.mcool"
+    win: "6000000"
+    chroms: "all"
+    root_within: "6"
+    root_within_comp: "0"
+    # extra_args:
+    # - "--diagnostic_plots"
+
+  GSE199059_CD69negDPWTR1R2R3R4_merged_50kb:
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/GSE199059_CD69negDPWTR1R2R3R4_merged.hic"
+    genome: "mm9"
+    norm: "KR"
+    res: "50000"
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/GSE199059_CD69negDPWTR1R2R3R4_merged.ice.mcool"
+    win: "6000000"
+    chroms: "all"
+    root_within: "6"
+    root_within_comp: "0"
+    # extra_args:
+    # - "--diagnostic_plots"
+
+  splenic-B-cell_WT_insitu-hic_Kieffer-Kwon-2018_GSE82144_mm9_50kb:
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/splenic-B-cell_WT_insitu-hic_Kieffer-Kwon-2018_GSE82144_mm9.hic"
+    genome: "mm9"
+    norm: "KR"
+    res: "50000"
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/splenic-B-cell_WT_insitu-hic_Kieffer-Kwon-2018_GSE82144_mm9.ice.mcool"
+    win: "6000000"
+    chroms: "all"
+    root_within: "6"
+    root_within_comp: "0"
+    # extra_args:
+    # - "--diagnostic_plots"
+  
+
+  DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped_0.1_30:
+    file: "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/downsampled_files/merged.multires_0.1_inter_30.hic"
+    genome: "mm10"
+    norm: "VC"
+    res: "25000"
+    exp: "hic"
+    win: "6000000"
+    chroms: "all"
+
+  DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped_0.25_30:
+    file: "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/downsampled_files/merged.multires_0.25_inter_30.hic"
+    genome: "mm10"
+    norm: "VC"
+    res: "25000"
+    exp: "hic"
+    win: "6000000"
+    chroms: "all"
+
+  DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped_0.5_30:
+    file: "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/downsampled_files/merged.multires_0.5_inter_30.hic"
+    genome: "mm10"
+    norm: "VC"
+    res: "25000"
+    exp: "hic"
+    win: "6000000"
+    chroms: "all"
+
+  DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped_0.75_30:
+    file: "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/downsampled_files/merged.multires_0.75_inter_30.hic"
+    genome: "mm10"
+    norm: "VC"
+    res: "25000"
+    exp: "hic"
+    win: "6000000"
+    chroms: "all"
+
+  DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped_0.1:
+    file: "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/downsampled_files/merged.multires_0.1_inter.hic"
+    genome: "mm10"
+    norm: "VC"
+    res: "25000"
+    exp: "hic"
+    win: "6000000"
+    chroms: "all"
+
+  DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped_0.25:
+    file: "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/downsampled_files/merged.multires_0.25_inter.hic"
+    genome: "mm10"
+    norm: "VC"
+    res: "25000"
+    exp: "hic"
+    win: "6000000"
+    chroms: "all"
+
+  DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped_0.5:
+    file: "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/downsampled_files/merged.multires_0.5_inter.hic"
+    genome: "mm10"
+    norm: "VC"
+    res: "25000"
+    exp: "hic"
+    win: "6000000"
+    chroms: "all"
+
+  DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped_0.75:
+    file: "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/downsampled_files/merged.multires_0.75_inter.hic"
+    genome: "mm10"
+    norm: "VC"
+    res: "25000"
+    exp: "hic"
+    win: "6000000"
+    chroms: "all"
+
+
+  GM12878_microc_Wu-2025_GSE225201_hg38_25kb:
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/GM12878_microc_Wu-2025_GSE225201_hg38.hic"
+    genome: "hg38"
+    norm: "KR"
+    res: "25000"
+    exp: "hic"
+    # mcool: "/nfs/turbo/umms-minjilab/downloaded_data/GM12878_microc_Wu-2025_GSE225201_hg38.ice.mcool" # Not downloaded but possible
+    win: "6000000"
+    chroms: "all"
+    root_within: "6"
+    q_val: "0.5"
+    consistency: "0.5"
+    length: "8"
+
+  GM12878_insitu-hic_4DNFI1UEG1HD_25kb:
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/GM12878_insitu-hic_4DNFI1UEG1HD.hic"
+    genome: "hg38"
+    norm: "VC_SQRT"
+    res: "25000"
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/GM12878_insitu-hic_4DNFI1UEG1HD.ice.mcool"
+    win: "6000000"
+    chroms: "all"
+    root_within: "6"
+    q_val: "0.5"
+    consistency: "0.5"
+    length: "8"
+    # extra_args:
+    # - "--diagnostic_plots"
+
+  GM12878_intacthic_ENCFF318GOM_25kb:
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/GM12878_intacthic_ENCFF318GOM.hic"
+    genome: "hg38"
+    norm: "VC_SQRT"
+    res: "25000"
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/GM12878_intacthic_ENCFF785BPC.ice.mcool"
+    win: "6000000"
+    chroms: "all"
+    root_within: "6"
+    q_val: "0.5"
+    consistency: "0.5"
+    length: "8"
+
+
+  GM12878_RAD21_chiapet_Kim-2024_4DNFIV9RG6YP_hg38_25kb:
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/GM12878_RAD21_chiapet_Kim-2024_4DNFIV9RG6YP_hg38.hic"
+    genome: "hg38"
+    norm: "NONE"
+    res: "25000"
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/GM12878_RAD21_chiapet_Kim-2024_4DNFIV9RG6YP_hg38.ice.mcool"
+    win: "6000000"
+    chroms: "all"
+    root_within: "6"
+    q_val: "0.5"
+    consistency: "0.5"
+    length: "8"
+    sum_consistency_im: "True"
+
+  GM12878_RNAPII_chiapet_Kim-2024_4DNFICWBQKM9_hg38_25kb:
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/GM12878_RNAPII_chiapet_Kim-2024_4DNFICWBQKM9_hg38.hic"
+    genome: "hg38"
+    norm: "NONE"
+    res: "25000"
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/GM12878_RNAPII_chiapet_Kim-2024_4DNFICWBQKM9_hg38.ice.mcool"
+    win: "6000000"
+    chroms: "all"
+    root_within: "6"
+    q_val: "0.5"
+    consistency: "0.5"
+    length: "8"
+    sum_consistency_im: "True"
+
+  GM12878_RNAPII_chiadrop_Kim-2024_4DNFI3ZH8UYR_hg38_25kb:
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/GM12878_RNAPII_chiadrop_Kim-2024_4DNFI3ZH8UYR_hg38.hic"
+    genome: "hg38"
+    norm: "NONE"
+    res: "25000"
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/GM12878_RNAPII_chiadrop_Kim-2024_4DNFI3ZH8UYR_hg38.ice.mcool"
+    win: "6000000"
+    chroms: "all"
+    root_within: "6"
+    q_val: "0.5"
+    consistency: "0.5"
+    length: "8"
+    sum_consistency_im: "True"
+
+  zebrafish-embryo_sperm_hic_Wike-2021_4DNFI4P145EM_z11:
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/zebrafish-embryo_sperm_hic_Wike-2021_4DNFI4P145EM_z11.hic"
+    genome: "danRer11"
+    norm: "KR"
+    res: "50000"
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/zebrafish-embryo_sperm_hic_Wike-2021_4DNFI4P145EM_z11.ice.mcool"
+    win: "6000000"
+    chroms: "all"
+    compartment: "False"
+    angle_turbulence: "0.75"
+    adj_nondec: "False" # Disable consistency
+    q_val: "0.5"
+    root_within: "6"
+    # extra_args:
+    #   - "--diagnostic_plots"
+
+  zebrafish-embryo_sperm_hic_Wike-2021_4DNFI4P145EM_z11_sparse:
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/zebrafish-embryo_sperm_hic_Wike-2021_4DNFI4P145EM_z11.hic"
+    genome: "danRer11"
+    norm: "KR"
+    res: "50000"
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/zebrafish-embryo_sperm_hic_Wike-2021_4DNFI4P145EM_z11.ice.mcool"
+    win: "6000000"
+    chroms: "chr4"
+    compartment: "False"
+    angle_turbulence: "0.75"
+    adj_nondec: "False" 
+    q_val: "0.5"
+    root_within: "6"
+    sum_consistency_im: "True"
+    # extra_args:
+    #   - "--diagnostic_plots"
+
+  c-elegans-CA1200-L2-L3-JK07-JK08_control-auxin-1hr_hic_Kim-2023_GSE188849_ce10:
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/c-elegans-CA1200-L2-L3-JK07-JK08_control-auxin-1hr_hic_Kim-2023_GSE188849_ce10.hic"
+    genome: "ce10"
+    norm: "KR"
+    res: "5000"
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/c-elegans-CA1200-L2-L3-JK07-JK08_control-auxin-1hr_hic_Kim-2023_GSE188849_ce10.ice.mcool"
+    win: "800000"
+    chroms: "all"
+    compartment: "True"
+    q_val: "0.5"
+    root_within: "5"
+    root_within_comp: "10"
+    angle_turbulence: "0.5"
+    # extra_args:
+    # - "--diagnostic_plots"
+
+  c-elegans-JK05-L3_SMC3-auxin-1hr_hic_Kim-2023_GSE237663_ce10:
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/c-elegans-JK05-L3_SMC3-auxin-1hr_hic_Kim-2023_GSE237663_ce10.hic"
+    genome: "ce10"
+    norm: "KR"
+    res: "5000"
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/c-elegans-JK05-L3_SMC3-auxin-1hr_hic_Kim-2023_GSE237663_ce10.ice.mcool"
+    win: "800000"
+    chroms: "all"
+    compartment: "True"
+    q_val: "0.5"
+    root_within: "5"
+    root_within_comp: "10"
+    angle_turbulence: "0.5"
+    # extra_args:
+    # - "--diagnostic_plots"
+
+
+  c-elegans-JK06-L3_WAPL-auxin-1hr_hic_Kim-2023_GSE237663_ce10:
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/c-elegans-JK06-L3_WAPL-auxin-1hr_hic_Kim-2023_GSE237663_ce10.hic"
+    genome: "ce10"
+    norm: "KR"
+    res: "5000"
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/c-elegans-JK06-L3_WAPL-auxin-1hr_hic_Kim-2023_GSE237663_ce10.ice.mcool"
+    win: "800000"
+    chroms: "all"
+    compartment: "True"
+    q_val: "0.5"
+    root_within: "5"
+    root_within_comp: "10"
+    angle_turbulence: "0.5"
+    # extra_args:
+    # - "--diagnostic_plots"
+
+
+  HCT116_RAD21-auxin-6hr_intacthic_Guckelberger-2024_ENCFF317OIA_hg38_10kb:
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/HCT116_RAD21-auxin-6hr_intacthic_Guckelberger-2024_ENCFF317OIA_hg38.hic"
+    genome: "hg38"
+    norm: "VC_SQRT" # KR failed
+    res: "10000" 
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/HCT116_RAD21-auxin-6hr_intacthic_Guckelberger-2024_ENCFF461RFV_hg38.ice.mcool"
+    win: "1200000"
+    chroms: "all"
+    root_within: "5"
+    root_within_comp: "0"
+    length: "8"
+    q_val: "0.5"
+
+  HCT116_RAD21-auxin-0hr_intacthic_Guckelberger-2024_ENCFF528XGK_hg38_10kb:
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/HCT116_RAD21-auxin-0hr_intacthic_Guckelberger-2024_ENCFF528XGK_hg38.hic"
+    genome: "hg38"
+    norm: "VC_SQRT" # KR failed
+    res: "10000" 
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/HCT116_RAD21-auxin-0hr_intacthic_Guckelberger-2024_ENCFF109GNA_hg38.ice.mcool"
+    win: "1200000"
+    chroms: "all"
+    root_within: "5"
+    root_within_comp: "0"
+    length: "8"
+    q_val: "0.5"
+
+
+  HCT116_RAD21-auxin-0hr_hic_Rao-2017_4DNFIP71EWXC_hg38_10kb:
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/HCT116_RAD21-auxin-0hr_hic_Rao-2017_4DNFIP71EWXC_hg38.hic"
+    genome: "hg38"
+    norm: "VC_SQRT"
+    res: "10000" 
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/HCT116_RAD21-auxin-0hr_hic_Rao-2017_4DNFIP71EWXC_hg38.ice.mcool"
+    win: "1200000"
+    chroms: "all"
+    # chroms: "chr1,chr2,chr3,chr4,chr5,chr6,chr7,chrX"
+    root_within: "5"
+    root_within_comp: "0"
+    length: "8"
+    q_val: "0.5"
+    # extra_args:
+    # - "--diagnostic_plots"
+
+  HCT116_RAD21-auxin-6hr_hic_Rao-2017_4DNFILIM6FDL_hg38_10kb:
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/HCT116_RAD21-auxin-6hr_hic_Rao-2017_4DNFILIM6FDL_hg38.hic"
+    genome: "hg38"
+    norm: "VC_SQRT"
+    res: "10000" 
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/HCT116_RAD21-auxin-6hr_hic_Rao-2017_4DNFILIM6FDL_hg38.ice.mcool"
+    win: "1200000"
+    chroms: "all"
+    root_within: "5"
+    root_within_comp: "0"
+    length: "8"
+    q_val: "0.5"
+    # extra_args:
+    # - "--diagnostic_plots"
+
+  mESC_CTCF-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10_2nkb: 
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_CTCF-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.hic"
+    genome: "mm10"
+    norm: "VC_SQRT"
+    res: "20000" # 25 kb not present
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_CTCF-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.mcool"
+    win: "5000000"
+    chroms: "all"
+    root_within: "5"
+    q_val: "0.8"
+    consistency: "0.5"
+
+  mESC_RAD21-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10_2nkb: 
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_RAD21-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.hic"
+    genome: "mm10"
+    norm: "NONE" # KR failed, VC_SQRT failed, VC failed
+    res: "20000" # 25 kb not present
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_RAD21-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.mcool"
+    win: "5000000"
+    chroms: "all"
+    root_within: "5"
+    q_val: "0.8"
+    consistency: "0.5"
+
+  mESC_YY1-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10_2nkb: 
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_YY1-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.hic"
+    genome: "mm10"
+    norm: "VC_SQRT"
+    res: "20000" # 25 kb not present
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_YY1-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.mcool"
+    win: "5000000"
+    chroms: "all"
+    root_within: "5"
+    q_val: "0.8"
+    consistency: "0.5"
+
+  mESC_WAPL-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10_2nkb: 
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_WAPL-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.hic"
+    genome: "mm10"
+    norm: "VC_SQRT"
+    res: "20000" # 25 kb not present
+    exp: "hic"
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_WAPL-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.mcool"
+    win: "5000000"
+    chroms: "all"
+    root_within: "5"
+    q_val: "0.8"
+    consistency: "0.5"
+
+  GSE130275_mESC_WT_combined_2.6B_2nkb: 
+    file: "/nfs/turbo/umms-minjilab/downloaded_data/GSE130275_mESC_WT_combined_2.6B.hic"
+    genome: "mm10"
+    norm: "KR"
+    res: "25000" 
+    exp: "hic" # technically micro-C
+    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/GSE130275_mESC_WT_combined_2.6B.ice.mcool"
+    win: "5000000"
+    chroms: "all"
+    root_within: "5"
+    q_val: "0.8"
+    consistency: "0.5"
+    # extra_args:
+    # - "--diagnostic_plots"
+
+
+  # POTENTIALLY INCLUDE 
+
+  # mESC_CTCF-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10_2nkb_CURVED: 
+  #   file: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_CTCF-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.hic"
+  #   genome: "mm10"
+  #   norm: "VC_SQRT"
+  #   res: "20000" # 25 kb not present
+  #   exp: "hic"
+  #   mcool: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_CTCF-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.mcool"
+  #   win: "5000000"
+  #   chroms: "all"
+  #   root_within: "5"
+  #   angle_trim: "None"
+  #   q_val: "0.8"
+  #   angle_turbulence: "0.5"
+
+  # mESC_RAD21-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10_2nkb_CURVED: 
+  #   file: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_RAD21-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.hic"
+  #   genome: "mm10"
+  #   norm: "NONE" # KR failed, VC_SQRT failed, VC failed
+  #   res: "20000" # 25 kb not present
+  #   exp: "hic"
+  #   mcool: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_RAD21-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.mcool"
+  #   win: "5000000"
+  #   chroms: "all"
+  #   root_within: "5"
+  #   angle_trim: "None"
+  #   q_val: "0.8"
+  #   angle_turbulence: "0.5"
+
+  # mESC_YY1-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10_2nkb_CURVED: 
+  #   file: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_YY1-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.hic"
+  #   genome: "mm10"
+  #   norm: "VC_SQRT"
+  #   res: "20000" # 25 kb not present
+  #   exp: "hic"
+  #   mcool: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_YY1-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.mcool"
+  #   win: "5000000"
+  #   chroms: "all"
+  #   root_within: "5"
+  #   angle_trim: "None"
+  #   q_val: "0.8"
+  #   angle_turbulence: "0.5"
+
+  # mESC_WAPL-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10_2nkb_CURVED: 
+  #   file: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_WAPL-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.hic"
+  #   genome: "mm10"
+  #   norm: "VC_SQRT"
+  #   res: "20000" # 25 kb not present
+  #   exp: "hic"
+  #   mcool: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_WAPL-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.mcool"
+  #   win: "5000000"
+  #   chroms: "all"
+  #   root_within: "5"
+  #   angle_trim: "None"
+  #   q_val: "0.8"
+  #   angle_turbulence: "0.5"
+
+  # GSE130275_mESC_WT_combined_2.6B_2nkb_CURVED: 
+  #   file: "/nfs/turbo/umms-minjilab/downloaded_data/GSE130275_mESC_WT_combined_2.6B.hic"
   #   genome: "mm10"
   #   norm: "KR"
-  #   res: "50000"
-  #   exp: "hic"
-  #   mcool: "/nfs/turbo/umms-minjilab/downloaded_data/DP-thymocytes_WT_hic_Guo-2022_GSE199059_mm10-remapped.ice.mcool"
-  #   win: "6000000"
-  #   chroms: "all"
-  #   root_within: "6"
-  #   root_within_comp: "0"
-  #   extra_args:
-  #   - "--diagnostic_plots"
-
-  # GSE199059_CD69negDPWTR1R2R3R4_merged:
-  #   file: "/nfs/turbo/umms-minjilab/downloaded_data/GSE199059_CD69negDPWTR1R2R3R4_merged.hic"
-  #   genome: "mm9"
-  #   norm: "KR"
-  #   res: "50000"
-  #   exp: "hic"
-  #   mcool: "/nfs/turbo/umms-minjilab/downloaded_data/GSE199059_CD69negDPWTR1R2R3R4_merged.ice.mcool"
-  #   win: "6000000"
-  #   chroms: "all"
-  #   root_within: "6"
-  #   root_within_comp: "0"
-  #   extra_args:
-  #   - "--diagnostic_plots"
-
-  # splenic-B-cell_WT_insitu-hic_Kieffer-Kwon-2018_GSE82144_mm9:
-  #   file: "/nfs/turbo/umms-minjilab/downloaded_data/splenic-B-cell_WT_insitu-hic_Kieffer-Kwon-2018_GSE82144_mm9.hic"
-  #   genome: "mm9"
-  #   norm: "KR"
-  #   res: "25000"
-  #   exp: "hic"
-  #   mcool: "/nfs/turbo/umms-minjilab/downloaded_data/splenic-B-cell_WT_insitu-hic_Kieffer-Kwon-2018_GSE82144_mm9.ice.mcool"
-  #   win: "6000000"
-  #   chroms: "all"
-
-  # GM12878_microc_Wu-2025_GSE225201_hg38:
-  #   file: "/nfs/turbo/umms-minjilab/downloaded_data/GM12878_microc_Wu-2025_GSE225201_hg38.hic"
-  #   genome: "hg38"
-  #   norm: "KR"
-  #   res: "50000"
-  #   exp: "hic"
-  #   # mcool: "/nfs/turbo/umms-minjilab/downloaded_data/GM12878_microc_Wu-2025_GSE225201_hg38.ice.mcool" # Not downloaded but possible
-  #   win: "6000000"
+  #   res: "25000" 
+  #   exp: "hic" # technically micro-C
+  #   mcool: "/nfs/turbo/umms-minjilab/downloaded_data/GSE130275_mESC_WT_combined_2.6B.ice.mcool"
+  #   win: "5000000"
   #   chroms: "all"
   #   root_within: "5"
-  #   length: "8"
-  #   q_val: "0.5"
-  #   ridge_strength_turbulence: "0.75"
-
-  # GM12878_insitu-hic_4DNFI1UEG1HD:
-  #   file: "/nfs/turbo/umms-minjilab/downloaded_data/GM12878_insitu-hic_4DNFI1UEG1HD.hic"
-  #   genome: "hg38"
-  #   norm: "VC_SQRT"
-  #   res: "50000"
-  #   exp: "hic"
-  #   mcool: "/nfs/turbo/umms-minjilab/downloaded_data/GM12878_insitu-hic_4DNFI1UEG1HD.ice.mcool"
-  #   win: "6000000"
-  #   chroms: "all"
-  #   root_within: "5"
-  #   length: "8"
-  #   q_val: "0.5"
-  #   ridge_strength_turbulence: "0.75"
-  #   extra_args:
-  #   - "--diagnostic_plots"
-
-  # GM12878_intacthic_ENCFF318GOM:
-  #   file: "/nfs/turbo/umms-minjilab/downloaded_data/GM12878_intacthic_ENCFF318GOM.hic"
-  #   genome: "hg38"
-  #   norm: "VC_SQRT"
-  #   res: "50000"
-  #   exp: "hic"
-  #   mcool: "/nfs/turbo/umms-minjilab/downloaded_data/GM12878_intacthic_ENCFF785BPC.ice.mcool"
-  #   win: "6000000"
-  #   chroms: "all"
-  #   root_within: "5"
-  #   length: "8"
-  #   q_val: "0.5"
-  #   ridge_strength_turbulence: "0.75"
-
-  # GM12878_RAD21_chiapet_Kim-2024_4DNFIV9RG6YP_hg38:
-  #   file: "/nfs/turbo/umms-minjilab/downloaded_data/GM12878_RAD21_chiapet_Kim-2024_4DNFIV9RG6YP_hg38.hic"
-  #   genome: "hg38"
-  #   norm: "NONE"
-  #   res: "50000"
-  #   exp: "hic"
-  #   mcool: "/nfs/turbo/umms-minjilab/downloaded_data/GM12878_RAD21_chiapet_Kim-2024_4DNFIV9RG6YP_hg38.ice.mcool"
-  #   win: "6000000"
-  #   chroms: "all"
-  #   root_within: "5"
-  #   length: "8"
-  #   q_val: "0.5"
-  #   ridge_strength_turbulence: "0.75"
-
-  # GM12878_RNAPII_chiapet_Kim-2024_4DNFICWBQKM9_hg38:
-  #   file: "/nfs/turbo/umms-minjilab/downloaded_data/GM12878_RNAPII_chiapet_Kim-2024_4DNFICWBQKM9_hg38.hic"
-  #   genome: "hg38"
-  #   norm: "NONE"
-  #   res: "50000"
-  #   exp: "hic"
-  #   mcool: "/nfs/turbo/umms-minjilab/downloaded_data/GM12878_RNAPII_chiapet_Kim-2024_4DNFICWBQKM9_hg38.ice.mcool"
-  #   win: "6000000"
-  #   chroms: "all"
-  #   root_within: "5"
-  #   length: "8"
-  #   q_val: "0.5"
-  #   ridge_strength_turbulence: "0.75"
-
-  # GM12878_RNAPII_chiadrop_Kim-2024_4DNFI3ZH8UYR_hg38:
-  #   file: "/nfs/turbo/umms-minjilab/downloaded_data/GM12878_RNAPII_chiadrop_Kim-2024_4DNFI3ZH8UYR_hg38.hic"
-  #   genome: "hg38"
-  #   norm: "NONE"
-  #   res: "50000"
-  #   exp: "hic"
-  #   mcool: "/nfs/turbo/umms-minjilab/downloaded_data/GM12878_RNAPII_chiadrop_Kim-2024_4DNFI3ZH8UYR_hg38.ice.mcool"
-  #   win: "6000000"
-  #   chroms: "all"
-  #   root_within: "5"
-  #   length: "8"
-  #   q_val: "0.5"
-  #   ridge_strength_turbulence: "0.75"
-
-  # zebrafish-embryo_sperm_hic_Wike-2021_4DNFI4P145EM_z11:
-  #   file: "/nfs/turbo/umms-minjilab/downloaded_data/zebrafish-embryo_sperm_hic_Wike-2021_4DNFI4P145EM_z11.hic"
-  #   genome: "danRer11"
-  #   norm: "KR"
-  #   res: "50000"
-  #   exp: "hic"
-  #   mcool: "/nfs/turbo/umms-minjilab/downloaded_data/zebrafish-embryo_sperm_hic_Wike-2021_4DNFI4P145EM_z11.ice.mcool"
-  #   win: "6000000"
-  #   chroms: "all"
-  #   compartment: "False"
-  #   angle_turbulence: "0.75"
-  #   adj_nondec: "False" # Disable consistency
-  #   q_val: "0.5"
-  #   root_within: "6"
-  #   extra_args:
-  #     - "--diagnostic_plots"
-
-  # zebrafish-embryo_sperm_hic_Wike-2021_4DNFI4P145EM_z11_sparse:
-  #   file: "/nfs/turbo/umms-minjilab/downloaded_data/zebrafish-embryo_sperm_hic_Wike-2021_4DNFI4P145EM_z11.hic"
-  #   genome: "danRer11"
-  #   norm: "KR"
-  #   res: "50000"
-  #   exp: "hic"
-  #   mcool: "/nfs/turbo/umms-minjilab/downloaded_data/zebrafish-embryo_sperm_hic_Wike-2021_4DNFI4P145EM_z11.ice.mcool"
-  #   win: "6000000"
-  #   chroms: "chr4"
-  #   compartment: "False"
-  #   angle_turbulence: "0.75"
-  #   adj_nondec: "False" 
-  #   q_val: "0.5"
-  #   root_within: "6"
-  #   sum_consistency_im: "True"
-  #   extra_args:
-  #     - "--diagnostic_plots"
-
-  # c-elegans-CA1200-L2-L3-JK07-JK08_control-auxin-1hr_hic_Kim-2023_GSE188849_ce10:
-  #   file: "/nfs/turbo/umms-minjilab/downloaded_data/c-elegans-CA1200-L2-L3-JK07-JK08_control-auxin-1hr_hic_Kim-2023_GSE188849_ce10.hic"
-  #   genome: "ce10"
-  #   norm: "KR"
-  #   res: "5000"
-  #   exp: "hic"
-  #   mcool: "/nfs/turbo/umms-minjilab/downloaded_data/c-elegans-CA1200-L2-L3-JK07-JK08_control-auxin-1hr_hic_Kim-2023_GSE188849_ce10.ice.mcool"
-  #   win: "800000"
-  #   chroms: "all"
-  #   compartment: "True"
-  #   q_val: "0.5"
-  #   root_within: "5"
-  #   root_within_comp: "10"
-  #   angle_turbulence: "0.5"
-  #   extra_args:
-  #   - "--diagnostic_plots"
-
-  # c-elegans-JK05-L3_SMC3-auxin-1hr_hic_Kim-2023_GSE237663_ce10:
-  #   file: "/nfs/turbo/umms-minjilab/downloaded_data/c-elegans-JK05-L3_SMC3-auxin-1hr_hic_Kim-2023_GSE237663_ce10.hic"
-  #   genome: "ce10"
-  #   norm: "KR"
-  #   res: "5000"
-  #   exp: "hic"
-  #   mcool: "/nfs/turbo/umms-minjilab/downloaded_data/c-elegans-JK05-L3_SMC3-auxin-1hr_hic_Kim-2023_GSE237663_ce10.ice.mcool"
-  #   win: "800000"
-  #   chroms: "all"
-  #   compartment: "True"
-  #   q_val: "0.5"
-  #   root_within: "5"
-  #   root_within_comp: "10"
+  #   q_val: "0.8"
+  #   angle_trim: "None"
   #   angle_turbulence: "0.5"
   #   extra_args:
   #   - "--diagnostic_plots"
 
 
-  # c-elegans-JK06-L3_WAPL-auxin-1hr_hic_Kim-2023_GSE237663_ce10:
-  #   file: "/nfs/turbo/umms-minjilab/downloaded_data/c-elegans-JK06-L3_WAPL-auxin-1hr_hic_Kim-2023_GSE237663_ce10.hic"
-  #   genome: "ce10"
-  #   norm: "KR"
-  #   res: "5000"
-  #   exp: "hic"
-  #   mcool: "/nfs/turbo/umms-minjilab/downloaded_data/c-elegans-JK06-L3_WAPL-auxin-1hr_hic_Kim-2023_GSE237663_ce10.ice.mcool"
-  #   win: "800000"
-  #   chroms: "all"
-  #   compartment: "True"
-  #   q_val: "0.5"
-  #   root_within: "5"
-  #   root_within_comp: "10"
-  #   angle_turbulence: "0.5"
-  #   extra_args:
-  #   - "--diagnostic_plots"
 
 
+
+
+
+
+  # Chose to use 10 kb for HCT116
   # HCT116_RAD21-auxin-6hr_intacthic_Guckelberger-2024_ENCFF317OIA_hg38_25kb:
   #   file: "/nfs/turbo/umms-minjilab/downloaded_data/HCT116_RAD21-auxin-6hr_intacthic_Guckelberger-2024_ENCFF317OIA_hg38.hic"
   #   genome: "hg38"
@@ -344,118 +675,12 @@ samples:
   #   chroms: "all"
   #   root_within: "18"
 
-  HCT116_RAD21-auxin-6hr_intacthic_Guckelberger-2024_ENCFF317OIA_hg38_10kb:
-    file: "/nfs/turbo/umms-minjilab/downloaded_data/HCT116_RAD21-auxin-6hr_intacthic_Guckelberger-2024_ENCFF317OIA_hg38.hic"
-    genome: "hg38"
-    norm: "VC_SQRT" # KR failed
-    res: "10000" 
-    exp: "hic"
-    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/HCT116_RAD21-auxin-6hr_intacthic_Guckelberger-2024_ENCFF461RFV_hg38.ice.mcool"
-    win: "1200000"
-    chroms: "all"
-    root_within: "5"
-    length: "8"
-
-  HCT116_RAD21-auxin-0hr_intacthic_Guckelberger-2024_ENCFF528XGK_hg38_10kb:
-    file: "/nfs/turbo/umms-minjilab/downloaded_data/HCT116_RAD21-auxin-0hr_intacthic_Guckelberger-2024_ENCFF528XGK_hg38.hic"
-    genome: "hg38"
-    norm: "VC_SQRT" # KR failed
-    res: "10000" 
-    exp: "hic"
-    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/HCT116_RAD21-auxin-0hr_intacthic_Guckelberger-2024_ENCFF109GNA_hg38.ice.mcool"
-    win: "1200000"
-    chroms: "all"
-    root_within: "5"
-    length: "8"
 
 
-  HCT116_RAD21-auxin-0hr_hic_Rao-2017_4DNFIP71EWXC_hg38_10kb:
-    file: "/nfs/turbo/umms-minjilab/downloaded_data/HCT116_RAD21-auxin-0hr_hic_Rao-2017_4DNFIP71EWXC_hg38.hic"
-    genome: "hg38"
-    norm: "VC_SQRT"
-    res: "10000" 
-    exp: "hic"
-    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/HCT116_RAD21-auxin-0hr_hic_Rao-2017_4DNFIP71EWXC_hg38.ice.mcool"
-    win: "1200000"
-    chroms: "all"
-    root_within: "5"
-    length: "8"
-    extra_args:
-    - "--diagnostic_plots"
-
-  HCT116_RAD21-auxin-6hr_hic_Rao-2017_4DNFILIM6FDL_hg38_10kb:
-    file: "/nfs/turbo/umms-minjilab/downloaded_data/HCT116_RAD21-auxin-6hr_hic_Rao-2017_4DNFILIM6FDL_hg38.hic"
-    genome: "hg38"
-    norm: "VC_SQRT"
-    res: "10000" 
-    exp: "hic"
-    mcool: "/nfs/turbo/umms-minjilab/downloaded_data/HCT116_RAD21-auxin-6hr_hic_Rao-2017_4DNFILIM6FDL_hg38.ice.mcool"
-    win: "1200000"
-    chroms: "all"
-    root_within: "5"
-    length: "8"
-
-  # mESC_CTCF-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10_2nkb: 
-  #   file: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_CTCF-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.hic"
-  #   genome: "mm10"
-  #   norm: "VC_SQRT"
-  #   res: "20000" , 25 kb not present
-  #   exp: "hic"
-  #   mcool: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_CTCF-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.mcool"
-  #   win: "5000000"
-  #   chroms: "all"
-  #   root_within: "6"
-  #   q_val: "0.8"
-
-  # mESC_RAD21-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10_2nkb: 
-  #   file: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_RAD21-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.hic"
-  #   genome: "mm10"
-  #   norm: "NONE" # KR failed, VC_SQRT failed, VC failed
-  #   res: "20000" , 25 kb not present
-  #   exp: "hic"
-  #   mcool: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_RAD21-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.mcool"
-  #   win: "5000000"
-  #   chroms: "all"
-  #   root_within: "6"
-  #   q_val: "0.8"
-
-  # mESC_YY1-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10_2nkb: 
-  #   file: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_YY1-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.hic"
-  #   genome: "mm10"
-  #   norm: "VC_SQRT"
-  #   res: "20000" , 25 kb not present
-  #   exp: "hic"
-  #   mcool: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_YY1-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.mcool"
-  #   win: "5000000"
-  #   chroms: "all"
-  #   root_within: "6"
-  #   q_val: "0.8"
-
-  # mESC_WAPL-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10_2nkb: 
-  #   file: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_WAPL-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.hic"
-  #   genome: "mm10"
-  #   norm: "VC_SQRT"
-  #   res: "20000" , 25 kb not present
-  #   exp: "hic"
-  #   mcool: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_WAPL-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.mcool"
-  #   win: "5000000"
-  #   chroms: "all"
-  #   root_within: "6"
-  #   q_val: "0.8"
-
-  # GSE130275_mESC_WT_combined_2.6B_2nkb: 
-  #   file: "/nfs/turbo/umms-minjilab/downloaded_data/GSE130275_mESC_WT_combined_2.6B.hic"
-  #   genome: "mm10"
-  #   norm: "KR"
-  #   res: "25000" 
-  #   exp: "hic" # technically micro-C
-  #   mcool: "/nfs/turbo/umms-minjilab/downloaded_data/GSE130275_mESC_WT_combined_2.6B.ice.mcool"
-  #   win: "5000000"
-  #   chroms: "all"
-  #   root_within: "6"
-  #   q_val: "0.8"
 
 
+
+  # Chose not to use 50 kb for mESC but 20/25 kb
   # mESC_CTCF-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10_50kb: 
   #   file: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_CTCF-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.hic"
   #   genome: "mm10"
@@ -517,46 +742,49 @@ samples:
   #   chroms: "all" 
 
 
-
   # mESC_CTCF-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10_10kb: 
   #   file: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_CTCF-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.hic"
   #   genome: "mm10"
   #   norm: "VC_SQRT"
-  #   res: "10000" , 25 kb not present
+  #   res: "10000" # 25 kb not present
   #   exp: "hic"
   #   mcool: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_CTCF-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.mcool"
   #   win: "2000000"
   #   chroms: "all"
+  #   angle_range: "45 135"
 
   # mESC_RAD21-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10_10kb: 
   #   file: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_RAD21-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.hic"
   #   genome: "mm10"
   #   norm: "NONE" # KR failed, VC_SQRT failed, VC failed
-  #   res: "10000" , 25 kb not present
+  #   res: "10000" # 25 kb not present
   #   exp: "hic"
   #   mcool: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_RAD21-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.mcool"
   #   win: "2000000"
   #   chroms: "all"
+  #   angle_range: "45 135"
 
   # mESC_YY1-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10_10kb: 
   #   file: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_YY1-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.hic"
   #   genome: "mm10"
   #   norm: "VC_SQRT"
-  #   res: "10000" , 25 kb not present
+  #   res: "10000" # 25 kb not present
   #   exp: "hic"
   #   mcool: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_YY1-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.mcool"
   #   win: "2000000"
   #   chroms: "all"
+  #   angle_range: "45 135"
 
   # mESC_WAPL-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10_10kb: 
   #   file: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_WAPL-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.hic"
   #   genome: "mm10"
   #   norm: "VC_SQRT"
-  #   res: "10000" , 25 kb not present
+  #   res: "10000" # 25 kb not present
   #   exp: "hic"
   #   mcool: "/nfs/turbo/umms-minjilab/downloaded_data/mESC_WAPL-auxin-3hr_microc_Hsieh-2022_GSE178982_mm10.mcool"
   #   win: "2000000"
   #   chroms: "all"
+  #   angle_range: "45 135"
 
   # GSE130275_mESC_WT_combined_2.6B_10kb: 
   #   file: "/nfs/turbo/umms-minjilab/downloaded_data/GSE130275_mESC_WT_combined_2.6B.hic"
@@ -567,14 +795,99 @@ samples:
   #   mcool: "/nfs/turbo/umms-minjilab/downloaded_data/GSE130275_mESC_WT_combined_2.6B.ice.mcool"
   #   win: "2000000"
   #   chroms: "all" 
+  #   angle_range: "45 135"
+  #   extra_args:
+  #   - "--diagnostic_plots"
 
 
 
-  
 
+  # Chose not to use 50 kb but 25kb for GM12878
+  # GM12878_microc_Wu-2025_GSE225201_hg38_50kb:
+  #   file: "/nfs/turbo/umms-minjilab/downloaded_data/GM12878_microc_Wu-2025_GSE225201_hg38.hic"
+  #   genome: "hg38"
+  #   norm: "KR"
+  #   res: "50000"
+  #   exp: "hic"
+  #   # mcool: "/nfs/turbo/umms-minjilab/downloaded_data/GM12878_microc_Wu-2025_GSE225201_hg38.ice.mcool" # Not downloaded but possible
+  #   win: "6000000"
+  #   chroms: "all"
+  #   root_within: "5"
+  #   length: "8"
+  #   q_val: "0.5"
+  #   ridge_strength_turbulence: "0.5"
 
+  # GM12878_insitu-hic_4DNFI1UEG1HD_50kb:
+  #   file: "/nfs/turbo/umms-minjilab/downloaded_data/GM12878_insitu-hic_4DNFI1UEG1HD.hic"
+  #   genome: "hg38"
+  #   norm: "VC_SQRT"
+  #   res: "50000"
+  #   exp: "hic"
+  #   mcool: "/nfs/turbo/umms-minjilab/downloaded_data/GM12878_insitu-hic_4DNFI1UEG1HD.ice.mcool"
+  #   win: "6000000"
+  #   chroms: "all"
+  #   root_within: "5"
+  #   length: "8"
+  #   q_val: "0.5"
+  #   ridge_strength_turbulence: "0.5"
+  #   extra_args:
+  #   - "--diagnostic_plots"
 
+  # GM12878_intacthic_ENCFF318GOM_50kb:
+  #   file: "/nfs/turbo/umms-minjilab/downloaded_data/GM12878_intacthic_ENCFF318GOM.hic"
+  #   genome: "hg38"
+  #   norm: "VC_SQRT"
+  #   res: "50000"
+  #   exp: "hic"
+  #   mcool: "/nfs/turbo/umms-minjilab/downloaded_data/GM12878_intacthic_ENCFF785BPC.ice.mcool"
+  #   win: "6000000"
+  #   chroms: "all"
+  #   root_within: "5"
+  #   length: "8"
+  #   q_val: "0.5"
+  #   ridge_strength_turbulence: "0.5"
 
+  # GM12878_RAD21_chiapet_Kim-2024_4DNFIV9RG6YP_hg38_50kb:
+  #   file: "/nfs/turbo/umms-minjilab/downloaded_data/GM12878_RAD21_chiapet_Kim-2024_4DNFIV9RG6YP_hg38.hic"
+  #   genome: "hg38"
+  #   norm: "NONE"
+  #   res: "50000"
+  #   exp: "hic"
+  #   mcool: "/nfs/turbo/umms-minjilab/downloaded_data/GM12878_RAD21_chiapet_Kim-2024_4DNFIV9RG6YP_hg38.ice.mcool"
+  #   win: "6000000"
+  #   chroms: "all"
+  #   root_within: "5"
+  #   length: "8"
+  #   q_val: "0.5"
+  #   ridge_strength_turbulence: "0.5"
+
+  # GM12878_RNAPII_chiapet_Kim-2024_4DNFICWBQKM9_hg38_50kb:
+  #   file: "/nfs/turbo/umms-minjilab/downloaded_data/GM12878_RNAPII_chiapet_Kim-2024_4DNFICWBQKM9_hg38.hic"
+  #   genome: "hg38"
+  #   norm: "NONE"
+  #   res: "50000"
+  #   exp: "hic"
+  #   mcool: "/nfs/turbo/umms-minjilab/downloaded_data/GM12878_RNAPII_chiapet_Kim-2024_4DNFICWBQKM9_hg38.ice.mcool"
+  #   win: "6000000"
+  #   chroms: "all"
+  #   root_within: "5"
+  #   length: "8"
+  #   q_val: "0.5"
+  #   ridge_strength_turbulence: "0.5"
+
+  # GM12878_RNAPII_chiadrop_Kim-2024_4DNFI3ZH8UYR_hg38_50kb:
+  #   file: "/nfs/turbo/umms-minjilab/downloaded_data/GM12878_RNAPII_chiadrop_Kim-2024_4DNFI3ZH8UYR_hg38.hic"
+  #   genome: "hg38"
+  #   norm: "NONE"
+  #   res: "50000"
+  #   exp: "hic"
+  #   mcool: "/nfs/turbo/umms-minjilab/downloaded_data/GM12878_RNAPII_chiadrop_Kim-2024_4DNFI3ZH8UYR_hg38.ice.mcool"
+  #   win: "6000000"
+  #   chroms: "all"
+  #   root_within: "5"
+  #   length: "8"
+  #   q_val: "0.5"
+  #   ridge_strength_turbulence: "0.5"
 
 
   

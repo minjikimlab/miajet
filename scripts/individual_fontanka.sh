@@ -1,15 +1,14 @@
 #!/bin/bash
 
 
-#SBATCH --account=rjhryan0 
-#SBATCH --partition=standard 
+#SBATCH --account=minjilab99
+#SBATCH --partition=large-mem
 #SBATCH --cpus-per-task=4
-#SBATCH --mem=60g
+#SBATCH --mem=200g
 #SBATCH --gpus=0 
-#SBATCH --time=2:00:00  
+#SBATCH --time=24:00:00  
 #SBATCH --mail-type=FAIL 
-
-echo "Using rjhyrna0 account"
+#SBATCH --output=slurm_out/slurm-%j.out
 
 conda activate fontanka
 

@@ -2255,6 +2255,8 @@ def format_summary_table(df_agg_in, df_features_in, chromosome, resolution, rank
     df_agg[["start", "end"]] = df_features_in.iloc[df_agg["unique_id"].map(key)][["x (bp)", "y (bp)"]].reset_index(drop=True)
     df_agg["chrom"] = chromosome
 
+    df_agg["unique_id"] = df_agg["chrom"] + "_" + df_agg["unique_id"]
+
     # sort by ranking
     df_agg.sort_values(ranking, inplace=True, ascending=False, ignore_index=True)
 
@@ -2305,6 +2307,8 @@ def format_expanded_table(df_features, ridge_datum, chromosome, resolution, scal
         frames.append(df_ridge)
     
     df = pd.concat(frames, ignore_index=True)
+
+    df["unique_id"] = df["chrom"] + "_" + df["unique_id"]
 
     return df[keep].copy()
 
@@ -2593,7 +2597,7 @@ def diagnostic_split_plot(df_pos, individual_masks, plot_or_not, im, save_path, 
         v = np.percentile(im, im_vmax)
         vmax = [v] * n
 
-    save_name = os.path.join(save_path, f"{root}_split_diagnostics.png")
+    save_name = os.path.join(save_path, f"{root}_split_diagnostics.pdf")
     plot_n_rect([im] * n, titles=titles, suptitle=root, lines=all_lines,
                 resolution=resolution, savepath=save_name, show=False, show_cbar=False,
-                cmap=[cmap] * n, vmax=vmax, num_ticks=[5] * n, dpi=600, linewidth=0.25)
+                cmap=[cmap] * n, vmax=vmax, num_ticks=[5] * n, dpi=350, linewidth=0.25)

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --account=minjilab0 
+#SBATCH --account=minjilab99
 #SBATCH --partition=standard 
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=8g 

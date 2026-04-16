@@ -431,3 +431,47 @@ def generate_bed_2(df_summary, df_expanded, eps, fraction, project_midpoint_to_d
     df_summary_copy = df_summary_copy.merge(df_plot_summary, on='unique_id', how='inner')
 
     return df_summary_copy
+
+
+
+def generate_bed_3(df_summary, df_expanded, project_midpoint_to_diag=False):
+    """
+    Identical API and invariants to `generate_bed_df` but computes the start and end in a different way
+
+    Uses the midpoint as simply the start, end
+    """
+
+    if df_summary.empty or df_expanded.empty:
+        return pd.DataFrame()
+    
+    df_plot_extrusion = df_expanded.groupby('unique_id').apply(assign_extrusion, include_groups=False).reset_index()
+
+    if project_midpoint_to_diag:
+        # New: project the midpoint (i.e. the point closest of jet to the main diagonal) TO THE MAIN DIAGONAL
+        # I.e. assign it as the midpoint
+        df_plot_midpoint = df_expanded.groupby('unique_id').apply(assign_midpoint_main_diagonal, include_groups=False).reset_index()
+    else:
+        # This is the assignment we've been using for individual plots so far
+        df_plot_midpoint = df_expanded.groupby('unique_id').apply(assign_midpoint, include_groups=False).reset_index()
+
+    # simply concatenate
+    df_plot_summary = pd.merge(left=df_plot_extrusion, right=df_plot_midpoint, on="unique_id", how="inner")
+
+    # compute virtual jet length
+    # df_plot_summary["delta x"] = np.abs(df_plot_summary["extrusion x"] - df_plot_summary["mp x"])
+    # df_plot_summary["delta y"] = np.abs(df_plot_summary["extrusion y"] - df_plot_summary["mp y"])
+
+    # df_plot_summary["virtual jet length"] = df_plot_summary.apply(lambda x : max(x["delta x"], x["delta y"]), axis=1)
+
+    df_plot_summary["start"] = np.minimum(df_plot_summary["mp y"], df_plot_summary["mp x"])
+    df_plot_summary["end"] = np.maximum(df_plot_summary["mp y"], df_plot_summary["mp x"])
+
+    # just keep the essentials for merging
+    df_plot_summary = df_plot_summary[['unique_id', 'start', 'end']]
+    df_summary_copy = df_summary.copy()
+    # Drop start and end columns of the old summary dataframe (this is generated from the miajet program)
+    df_summary_copy = df_summary_copy.drop(columns=['start', 'end'])
+    # Join on "unique_id" with df_plot_summary
+    df_summary_copy = df_summary_copy.merge(df_plot_summary, on='unique_id', how='inner')
+
+    return df_summary_copy

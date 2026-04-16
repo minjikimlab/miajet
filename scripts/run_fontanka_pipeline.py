@@ -15,7 +15,9 @@ def main(hic_file, data_name, genome, resolution, window_size):
     # Shared parameters
     # resolution = 50000      # 50 kb
     # window_size = int(6e6)  # 6 Mb
-    base_save_dir = "/nfs/turbo/umms-minjilab/sionkim/benchmark"
+    # base_save_dir = "/nfs/turbo/umms-minjilab/sionkim/benchmark"
+    base_save_dir = "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/other_methods"
+
     angle_leniency_deg = 20
     num_cores = 4
     angle_leniency_rad = np.radians(angle_leniency_deg)
