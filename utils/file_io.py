@@ -47,9 +47,9 @@ def save_csv(df_in, save_name, root, parameter_str, dp=3, exclude_rounding=["s_i
     # Round dp
     # df = df.round(rounding_dict)
 
-    # Round signifciant figures instead (v1.0.22)
+    # Round decimal points (fixed bug)
     for col, sf in rounding_dict.items():
-        df[col] = df[col].apply(lambda x: float(f"{x:.{sf}g}") if pd.notnull(x) else x)
+        df[col] = df[col].apply(lambda x: float(f"{x:.{sf}f}") if pd.notnull(x) else x)
 
     # convert any numpy arrays to a json format string
     if convert_json is not None:

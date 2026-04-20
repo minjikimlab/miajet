@@ -21,7 +21,9 @@ python -m miajet "${HIC_FILE}" \
   --compartment "False" \
   --normalization "NONE" \
   --window_size "5000000" \
-  --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v2.0.2" \
+  --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v2.0.3_test" \
+  --root_within "5" \
+  --q_val "0.25" \
   --num_cores 4 \
   --verbose \
   --diagnostic_plots

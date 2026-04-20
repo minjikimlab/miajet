@@ -94,7 +94,7 @@ def plot_overlap_diagnostic(hic_file, plot_chrom, resolution, data_type, normali
 
     fig, ax = plt.subplots(figsize=(20, 20), layout="constrained", dpi=400)
 
-    im = ax.imshow(H, cmap="Reds", interpolation="none", vmax=np.percentile(H, 98))
+    im = ax.imshow(H, cmap="Reds", interpolation="none", vmax=np.percentile(H, 99.5))
     ax.scatter(df_pos_A_chrom["x_bin"], df_pos_A_chrom["y_bin"], s=0.3, c="blue", label=A_name)
     ax.scatter(df_pos_B_chrom["x_bin"], df_pos_B_chrom["y_bin"], s=0.3, c="green", label=B_name)
     ax.scatter(df_pos_intersection_chrom["y_bin"], df_pos_intersection_chrom["x_bin"], s=0.3, c="cyan", marker="o", label=f"{A_name} AND {B_name}")

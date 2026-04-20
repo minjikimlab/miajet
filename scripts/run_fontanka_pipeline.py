@@ -96,7 +96,7 @@ def main(hic_file, data_name, genome, resolution, window_size):
         "fontanka", "slice-windows",
         f"{hic_file}::resolutions/{resolution}",
         snips_path, # this is the output file (i.e. snips)
-        "-W", str(window_size),
+        "-W", str(window_size // 3),
         "-p", f"{num_cores}", # number of cores
         "--view", arms_save_path,
         "--expected", cvd_save_path,
@@ -104,14 +104,14 @@ def main(hic_file, data_name, genome, resolution, window_size):
     subprocess.run(cmd, check=True)
 
     # Apply binary fountain mask
-    out_path = os.path.join(save_dir, f"FONTANKA_{data_name}.{resolution}.predicted.fountains.tsv")
+    out_path = os.path.join(save_dir, f"FONTANKA_ws-small_{data_name}.{resolution}.predicted.fountains.tsv")
     mask_cmd = [
         "conda", "run", "-n", "fontanka",
         "fontanka", "apply-binary-fountain-mask",
         f"{hic_file}::resolutions/{resolution}",
         out_path,
         "-A", str(angle_leniency_rad),
-        "-W", str(window_size),
+        "-W", str(window_size // 3),
         "-p", str(num_cores),
         "--snips", snips_path,
         "--view", arms_save_path,

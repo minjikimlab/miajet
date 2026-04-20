@@ -2,11 +2,11 @@
 
 
 #SBATCH --account=minjilab99
-#SBATCH --partition=large-mem
+#SBATCH --partition=standard
 #SBATCH --cpus-per-task=4
-#SBATCH --mem=200g
+#SBATCH --mem=60g
 #SBATCH --gpus=0 
-#SBATCH --time=24:00:00  
+#SBATCH --time=12:00:00  
 #SBATCH --mail-type=FAIL 
 #SBATCH --output=slurm_out/slurm-%j.out
 

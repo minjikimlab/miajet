@@ -1287,9 +1287,16 @@ def _process_ridge(args, agg_pval, scale_range, adj_nondec, ang_frac,
     saliency_values = ridge_strength * adj * angle_fraction
     jet_saliency = float(np.sum(saliency_values[angle_mask]))
 
-    perc_satisfied = np.mean(adj)
-    sum_consistency = np.sum(adj)
-    sum_consistency_im = np.sum(adj * df_ridge["input"].values)
+    # v2.0.2
+    # perc_satisfied = np.mean(adj)
+    # sum_consistency = np.sum(adj)
+    # sum_consistency_im = np.sum(adj * df_ridge["input"].values)
+
+    # v2.0.3 (TEST: Multiply by angle_fraction)
+    perc_satisfied = np.mean(adj * angle_fraction)
+    sum_consistency = np.sum(adj * angle_fraction)
+    sum_consistency_im = np.sum(adj * angle_fraction * df_ridge["input"].values)
+
     jetness = np.mean(angle_mask)
     length = len(df_ridge)
 

@@ -18,8 +18,8 @@ CHROMS = {
 }
 
 FIXED_ARGS = [
-    # "--save_dir_root", "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v2.0.2_mESC_noangletrim",
-    "--save_dir_root", "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v2.0.2", # main result folder for revision
+    # "--save_dir_root", "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v2.0.2", # main result folder for revision
+    "--save_dir_root", "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v2.0.3_test", 
     "--num_cores", "4",
     "--verbose",
 ]

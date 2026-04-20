@@ -102,8 +102,8 @@ def parse_args():
                         default="nearest", help="Padding method for scipy.ndimage.rotate. (default: 'nearest')")
     parser.add_argument("--convolution_padding", type=str, required=False, choices=["reflect", "constant", "nearest", "mirror", "wrap"],
                         default="nearest", help="Padding method for scipy.ndimage.correlate convolution. (default: 'nearest')")
-    parser.add_argument("--resolve_conflict", type=str, required=False, default="saliency", 
-                        choices=["length", "p-val", "p-val_white", "saliency", "avg_width", "sum_consistency", "sum_consistency_im", "blobness", "angle_turbulence"],
+    parser.add_argument("--resolve_conflict", type=str, required=False, default="combined", 
+                        choices=["length", "p-val", "p-val_white", "saliency", "avg_width", "sum_consistency", "sum_consistency_im", "blobness", "angle_turbulence", "combined"],
                     help="The jet statistic to minimize or maximize among overlapping jets. Needs to be a column in the summary dataframe. "
                         "(default: 'blobness')")     
     parser.add_argument("--rem_k_strata", type=int, required=False, default=1,

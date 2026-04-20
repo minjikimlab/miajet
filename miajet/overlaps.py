@@ -4,8 +4,14 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 
+def _minmax(s):
+    smin, smax = s.min(), s.max()
+    if smax > smin:
+        return (s - smin) / (smax - smin)
+    return pd.Series(0.0, index=s.index)
 
-def find_and_remove_overlaps(df_agg, df_features, iou_threshold=0.6, verbose=False, resolve_conflict="p-val",
+
+def find_and_remove_overlaps(df_agg, df_features, iou_threshold=0.6, verbose=False, resolve_conflict="p-val", mixing_param=0.5,
                              x_label="X_(px)_unmap",
                              y_label="Y_(px)_unmap",):
     """
@@ -36,6 +42,15 @@ def find_and_remove_overlaps(df_agg, df_features, iou_threshold=0.6, verbose=Fal
 
     # df_agg_merge = df_agg_merge.merge(df_features[[contour_label, "s_imagej", x_label, y_label, "width"]],
     #                                    how="inner", on=[contour_label, "s_imagej"])    
+
+    df_agg["neg_log10_pval_norm"] = _minmax(-np.log10(df_agg["p-val"].clip(1e-300)))
+    df_agg["saliency_norm"] = _minmax(df_agg["saliency"])
+    df_features["neg_log10_pval_norm"] = _minmax(-np.log10(df_features["p-val"].clip(1e-300)))
+    df_features["saliency_norm"] = _minmax(df_features["saliency"])
+
+    if resolve_conflict == "combined":
+        df_agg["combined"] = mixing_param * df_agg["neg_log10_pval_norm"] + (1 - mixing_param) * df_agg["saliency_norm"]
+        df_features["combined"] = mixing_param * df_features["neg_log10_pval_norm"] + (1 - mixing_param) * df_features["saliency_norm"]
 
     df_feature_minimal = df_features[["unique_id", x_label, y_label, "width", resolve_conflict]]
 
@@ -106,7 +121,7 @@ def find_and_remove_overlaps(df_agg, df_features, iou_threshold=0.6, verbose=Fal
             # Then we minimize
             min_p_val_index = np.argmin(group_p_vals)
         else:
-            # Then we maximize (e.g. length, saliency, sum_consistency)
+            # Then we maximize (e.g. length, saliency, sum_consistency, combined)
             min_p_val_index = np.argmax(group_p_vals)
         
         min_p_val_indexer = group_indexes[min_p_val_index]

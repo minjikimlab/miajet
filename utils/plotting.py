@@ -473,12 +473,13 @@ def plot_n_hic(
             vmax_i = global_vmax
             vmin_i = global_vmin
         else:
-            vmin_i = kwargs.get("vmin", None)
+            # vmin_i = kwargs.get("vmin", None)
+            vmin_i = np.nanmin(H[i]) if kwargs.get("vmin", None) is None else kwargs.get("vmin", None)
 
         # ------------------------------------------------------------
         # Draw image (handling centred vs. linear colour scales)
         # ------------------------------------------------------------
-        if vcenter_i is None:
+        if vcenter_i is None or vmin_i > vcenter_i:
             im = ax.imshow(
                 H[i],
                 interpolation="none",
