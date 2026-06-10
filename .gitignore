@@ -8,6 +8,7 @@
 !job*
 !submit_*
 !environment.yml
+!environment_macOS.yml
 
 !demo_data/**
 !imagej_macros/**

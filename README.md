@@ -148,15 +148,30 @@ These parameters control low-level algorithmic behavior and typically do not nee
 
 ## Examples
 ```bash
-python -m miajet /nfs/turbo/umms-minjilab/downloaded_data/GSE199059_CD69negDPWTR1R2R3R4_merged.hic \
+python -m miajet demo_data/GSE199059_CD69negDPWTR1R2R3R4_merged.ice_small_chr3_.hic \
   --chrom "chr3" \
   --exp_type "hic" \
   --resolution 25000 \
   --window_size 6000000 \
-  --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output" \
+  --save_dir_root "demo_output" \
   --num_cores 4 \
   --verbose \
-  --diagnostic_plots
+  --diagnostic_plots # (Optional) Takes a longer time to generate diagnostic figures
+```
+```bash
+python -m miajet demo_data/zebrafish-embryo_sperm_hic_Wike-2021_4DNFI4P145EM_z11.ice_small_chr14_.hic \
+  --chrom "chr14" \
+  --exp_type "hic" \
+  --resolution 50000 \
+  --window_size 6000000 \
+  --compartment "False" \
+  --angle_turbulence 0.75 \
+  --consistency 0.4 \
+  --q_val 0.5 \
+  --save_dir_root "demo_output" \
+  --num_cores 4 \
+  --verbose \
+  --diagnostic_plots # (Optional) Takes a longer time to generate diagnostic figures
 ```
 ```bash
 python -m miajet /nfs/turbo/umms-minjilab/downloaded_data/Repli-HiC_K562_WT_totalS.hic \
@@ -167,7 +182,7 @@ python -m miajet /nfs/turbo/umms-minjilab/downloaded_data/Repli-HiC_K562_WT_tota
   --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output" \
   --num_cores 4 \
   --verbose \
-  --diagnostic_plots
+  --diagnostic_plots # (Optional) Takes a longer time to generate diagnostic figures
 ```
 ```bash
 python -m miajet "test1cii_s-23_hic_003.hic" \
@@ -180,7 +195,7 @@ python -m miajet "test1cii_s-23_hic_003.hic" \
   --save_dir_root "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output" \
   --num_cores 4 \
   --verbose \
-  --diagnostic_plots
+  --diagnostic_plots # (Optional) Takes a longer time to generate diagnostic figures
 ```
 
 ## Installing MIA-Jet

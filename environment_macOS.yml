@@ -1,0 +1,28 @@
+name: jet-env
+channels:
+  - conda-forge
+  - bioconda
+  - pytorch
+  - defaults
+dependencies:
+  - python=3.11.9
+  - pandas=2.2.2
+  - numpy=1.26.4
+  - matplotlib=3.8.4
+  - scipy=1.16.1
+  - opencv=4.11.0
+  - shapely=2.1.1
+  - psutil=5.9.8
+  - pyvirtualdisplay=3.0
+  - statsmodels=0.14.5
+  - scikit-learn=1.3.2
+  - scikit-image=0.26.0
+  - yq
+  - tqdm
+  # - pybedgraph (not available on macOS)
+  - pip
+  - pip:
+    - hic-straw==1.3.1
+    - multiprocess==0.70.16
+    - pyBedGraph
+
