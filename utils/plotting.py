@@ -378,6 +378,7 @@ def plot_n_hic(
     standardize_cbar=False,
     share_xy=True,
     hide_axis=False,
+    fig_fontsize=12.5,
     **kwargs,
 ):
     """Plot *n* Hi-C matrices in a compact grid.
@@ -516,7 +517,7 @@ def plot_n_hic(
         # ------------------------------------------------------------
         # Axis labelling
         # ------------------------------------------------------------
-        ax.set_title(titles[i], fontsize=10)
+        ax.set_title(titles[i], fontsize=fig_fontsize)
 
         def_xticks = np.arange(0, H[i].shape[1], np.ceil(H[i].shape[1] / num_ticks).astype(int))
         def_yticks = np.arange(0, H[i].shape[0], np.ceil(H[i].shape[0] / num_ticks).astype(int))
@@ -533,7 +534,8 @@ def plot_n_hic(
             ax.set_yticklabels(ticks_bp_y, fontsize=8)
 
         if hide_axis:
-            ax.set_axis_off()
+            # ax.set_axis_off()
+            ax.axis("off")
 
     # ------------------------------------------------------------------
     # Draw a single shared colourbar if requested
@@ -545,7 +547,9 @@ def plot_n_hic(
     # ------------------------------------------------------------------
     # Figure-level titles / labels & I/O
     # ------------------------------------------------------------------
-    fig.suptitle(suptitle, fontsize=12.5)
+    fig.suptitle(suptitle, fontsize=fig_fontsize)
+    fig.set_constrained_layout_pads(h_pad=0.05, w_pad=0.05, hspace=0.05)
+
     if supxlabel:
         fig.supxlabel(supxlabel)
     if supylabel:

@@ -177,6 +177,13 @@ def parse_args():
     parser.add_argument("--length", type=none_or_float, required=False, default=5,
                         help="Filters according to minimum length of jet. (default: 5)")
 
+
+    # Debug parameters
+    parser.add_argument("--chip_file", type=str, required=False, default=None,
+                        help="Path to the chip file for debugging purposes.")
+    parser.add_argument("--chrom_size_file", type=str, required=False, default=None,
+                        help="Path to the chromosome size file for ChIP-seq.")
+
     
     return parser.parse_args()
 

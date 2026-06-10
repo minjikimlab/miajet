@@ -11,7 +11,7 @@ from .rank_ridges import filter_dist_diag, generate_summary_table, filter_ridges
     compute_saliency_parallel, filter_dist_diag
 from .analyze_ridges import plot_distribution_diagnostic, plot_top_k_diagnostic, temp_plot, diagnostic_filter_plot, plot_top_k, \
     save_results, plot_entropy_distribution, plot_corner_diagnostic, rank_true_ridges, plot_saliency_distribution, save_scale_space, \
-    diagnostic_split_plot
+    diagnostic_split_plot, load_chip_signal
 from .compute_p_value import compute_significance, correct_significance, threshold_significance
 from .overlaps import find_and_remove_overlaps
 # from .stripiness import compute_stripiness
@@ -49,12 +49,13 @@ def main():
         root=config.root
     )
     # Update the thresholds 
+    # print("WARNING: RUNNING WHITE MODE SET b_vmax TO 60TH NOT 75TH PERCENTILE!")
     config = clip_scale_range_and_update_thresholds(im, config, b_vmax=75, b_vmin=25) 
+    # CHUNK IMAGE
+    chunks = save_image_chunks(im, config.save_dir, config.root, config.verbose)
     total_time += time.time() - t0
     if config.verbose: print(f"Generating Hi-C image... {time.time() - t0:.0f}s Done")
 
-    # CHUNK IMAGE
-    chunks = save_image_chunks(im, config.save_dir, config.root, config.verbose)
 
     # RUN IMAGEJ
     if config.verbose: print("Running ImageJ...")
@@ -101,6 +102,18 @@ def main():
     total_time += time.time() - t0
     if config.verbose: print(f"Inserting unmapped regions into ridges... {time.time() - t0:.0f}s Done")
 
+    # READ IN CHIP-SEQ SIGNAL ONLY AFTER UNMAPPABLE REGIONS (do it with im_orig to get the full chromosome)
+    if config.chip_file is not None:
+        if config.verbose: print("Reading in ChIP-seq signal...")
+        t0 = time.time()
+        chip_signal, chip_name = load_chip_signal(chromosome=config.chrom, resolution=config.resolution, rm_idx=None,  
+                                                  target_width=im_orig.shape[1], chrom_size_file=config.chrom_size_file, 
+                                                  bedgraph_file=config.chip_file)
+        total_time += time.time() - t0
+        if config.verbose: print(f"Reading in ChIP-seq signal... {time.time() - t0:.0f}s Done")
+    else:
+        chip_signal, chip_name = None, None
+
 
     # DATA STRUCTURE CONSTRUCTION
     if config.verbose: print("Constructing data structures...")
@@ -131,16 +144,16 @@ def main():
                           root="diagnostic_3_split_ridges", resolution=config.resolution, remove_min_size=1)
     temp_plot(df_pos, config.diagnostic_plots, x_label="X_(px)_unmap", y_label="Y_(px)_unmap", im=comp_binary, 
       save_path=f"{config.save_sub_dir}/", im_vmax=None, resolution=config.resolution, cmap="binary_r",
-        root=f"diagnostic_3_splitting_compartments")
+        root=f"diagnostic_3_splitting_compartments", chip_signal=chip_signal, chip_name=chip_name)
     # Filter out ridges that are far form the diagonal after splitting
     df_pos = filter_dist_diag(df, df_pos, root_within=config.root_within, window_size=config.window_size, 
                               resolution=config.resolution, square_size_original=square_size + len(rm_idx), verbose=config.verbose)
     temp_plot(df_pos, config.diagnostic_plots, x_label="X_(px)_orig", y_label="Y_(px)_orig", im=im_orig, 
               save_path=f"{config.save_sub_dir}/", im_vmax=99.5, resolution=config.resolution, 
-              root=f"diagnostic_4_splitting_and_filter_root_within")
+              root=f"diagnostic_4_splitting_and_filter_root_within", chip_signal=chip_signal, chip_name=chip_name)
     temp_plot(df_pos, config.diagnostic_plots, x_label="X_(px)_unmap", y_label="Y_(px)_unmap", im=comp_binary, 
       save_path=f"{config.save_sub_dir}/", im_vmax=None, resolution=config.resolution, cmap="binary_r",
-        root=f"diagnostic_4_splitting_compartments_and_filter_root_within")
+        root=f"diagnostic_4_splitting_compartments_and_filter_root_within", chip_signal=chip_signal, chip_name=chip_name)
     total_time += time.time() - t0
     if config.verbose: print(f"Splitting ridges based on scale space features... {time.time() - t0:.0f}s Done") 
 
@@ -185,7 +198,7 @@ def main():
                                                   resolve_conflict=config.resolve_conflict) # Will be maximized if not p-val or p-val_white
     temp_plot(df_features_thresholded, config.diagnostic_plots, x_label="X_(px)_orig", y_label="Y_(px)_orig", im=im_orig, 
               save_path=f"{config.save_sub_dir}/", im_vmax=99.5, resolution=config.resolution, 
-              root=f"diagnostic_6_remove_overlaps")
+              root=f"diagnostic_6_remove_overlaps", chip_signal=chip_signal, chip_name=chip_name)
     total_time += time.time() - t0
     if config.verbose: print(f"Removing overlaps... {time.time() - t0:.0f}s Done")
 
@@ -200,7 +213,7 @@ def main():
                                                              compartment=config.compartment,verbose=config.verbose)
     temp_plot(df_features_alpha, config.diagnostic_plots,x_label="X_(px)_orig", y_label="Y_(px)_orig", im=im_orig, 
               save_path=f"{config.save_sub_dir}/", im_vmax=99.5, resolution=config.resolution, 
-              root=f"diagnostic_7_significant_jets")
+              root=f"diagnostic_7_significant_jets", chip_signal=chip_signal, chip_name=chip_name)
     total_time += time.time() - t0
     if config.verbose: print(f"Correcting and thresholding jets... {time.time() - t0:.0f}s Done")
     
@@ -212,19 +225,19 @@ def main():
                  df_features, ridge_datum, "all", "sum_consistency_im", config.save_sub_dir, config.chrom, square_size,
                  rm_idx, config.window_size, config.resolution, scale_range=config.scale_range, 
                  root=config.root, parameter_str=config.parameter_str,
-                 im=im_orig, plot=True, im_vmax=99.5)
+                 im=im_orig, plot=True, im_vmax=99.5, chip_signal=chip_signal, chip_name=chip_name)
 
     save_results(df_agg_thresholded, # Save filtered
                  df_features_thresholded, ridge_datum, "all", "sum_consistency_im", config.dir_thresholded, config.chrom, square_size,
                  rm_idx, config.window_size, config.resolution, scale_range=config.scale_range, 
                  root=config.root, parameter_str=config.parameter_str,
-                im=im_orig, plot=True, im_vmax=99.5)
+                im=im_orig, plot=True, im_vmax=99.5, chip_signal=chip_signal, chip_name=chip_name)
 
     save_results(df_agg_alpha, # Save filtered and significant
                 df_features_alpha, ridge_datum, "all", "sum_consistency_im", config.dir_alpha, config.chrom, square_size,
                 rm_idx, config.window_size, config.resolution, scale_range=config.scale_range, 
                 root=config.root, parameter_str=config.parameter_str,
-                im=im_orig, plot=True, im_vmax=99.5)
+                im=im_orig, plot=True, im_vmax=99.5, chip_signal=chip_signal, chip_name=chip_name)
 
     # plot_saliency_distribution(df_agg, q=config.saliency_thresh, save_path=config.save_sub_dir)
 

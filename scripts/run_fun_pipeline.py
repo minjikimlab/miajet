@@ -19,7 +19,8 @@ def main(hic_file, data_name, genome, resolution, window_size):
     # HARD-CODED PARAMETER: "--extension_pixels", "10", "100", "5",
     # HARD-CODED PARAMETER: signal_noise_background = 1.3
     # base_save_dir = "/nfs/turbo/umms-minjilab/sionkim/benchmark"
-    base_save_dir = "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/other_methods"
+    # base_save_dir = "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/other_methods"
+    base_save_dir = "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/other_methods_runtime"
 
     # ext_length = int(window_size * 0.75) # DEPRECATED – SEE NOTEBOOK
     buffer = window_size // 6
@@ -42,6 +43,21 @@ def main(hic_file, data_name, genome, resolution, window_size):
     clr = cooler.Cooler(f"{hic_file}::resolutions/{resolution}", mode="r")
     rename_dict = {c: c.lstrip("chr") for c in clr.chromnames}
     cooler.rename_chroms(clr, rename_dict)
+
+    # Re-open after renaming
+    clr = cooler.Cooler(f"{hic_file}::resolutions/{resolution}", mode="r")
+
+    # Make chromsizes directly from the cooler, because FUN iterates over cooler chroms.
+    # FUN expects the chromsizes file to use chr-prefixed names.
+    chromsizes = clr.chromsizes.copy()
+    chromsizes.index = [
+        c if c.startswith("chr") else f"chr{c}"
+        for c in chromsizes.index
+    ]
+
+    f_chromsizes = f"{save_dir}/{genome}.chrom.sizes"
+    chromsizes.to_csv(f_chromsizes, sep="\t", header=False)
+
 
     cmd = [
         "conda", "run", "-n", "fun-env",

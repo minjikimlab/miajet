@@ -95,9 +95,9 @@ def plot_overlap_diagnostic(hic_file, plot_chrom, resolution, data_type, normali
     fig, ax = plt.subplots(figsize=(20, 20), layout="constrained", dpi=400)
 
     im = ax.imshow(H, cmap="Reds", interpolation="none", vmax=np.percentile(H, 99.5))
-    ax.scatter(df_pos_A_chrom["x_bin"], df_pos_A_chrom["y_bin"], s=0.3, c="blue", label=A_name)
-    ax.scatter(df_pos_B_chrom["x_bin"], df_pos_B_chrom["y_bin"], s=0.3, c="green", label=B_name)
-    ax.scatter(df_pos_intersection_chrom["y_bin"], df_pos_intersection_chrom["x_bin"], s=0.3, c="cyan", marker="o", label=f"{A_name} AND {B_name}")
+    ax.scatter(df_pos_A_chrom["x_bin"], df_pos_A_chrom["y_bin"], s=0.05, c="blue", label=A_name, alpha=0.5)
+    ax.scatter(df_pos_B_chrom["x_bin"], df_pos_B_chrom["y_bin"], s=0.05, c="green", label=B_name, alpha=0.5)
+    ax.scatter(df_pos_intersection_chrom["y_bin"], df_pos_intersection_chrom["x_bin"], s=0.05, c="cyan", marker="o", label=f"{A_name} AND {B_name}", alpha=0.5)
     # ax.scatter(df_pos_diff_A_chrom["x_bin"], df_pos_diff_A_chrom["y_bin"], s=3, c="blue", marker="x", label=f"{A_name} - {B_name}", alpha=0.5)
     # ax.scatter(df_pos_diff_B_chrom["x_bin"], df_pos_diff_B_chrom["y_bin"], s=3, c="green", marker="x", label=f"{B_name} - {A_name}", alpha=0.5)
 
@@ -171,6 +171,109 @@ def match_by_iou(dfA: pd.DataFrame, dfB: pd.DataFrame,
     return matches
 
 
+
+
+def candidate_pairs_by_iou(
+    dfA: pd.DataFrame,
+    dfB: pd.DataFrame,
+    x_label,
+    y_label,
+    buffer_radius=1.0,
+    iou_threshold=0.0,
+):
+    geomsB = {}
+
+    for uid_b, grp_b in dfB.groupby("unique_id", sort=False):
+        coords_b = list(zip(grp_b[x_label], grp_b[y_label]))
+
+        if len(set(coords_b)) < 2:
+            geom_b = Point(coords_b[0]).buffer(buffer_radius)
+        else:
+            geom_b = LineString(coords_b).buffer(buffer_radius)
+
+        geomsB[uid_b] = geom_b
+
+    matches = []
+
+    for uid_a, grp_a in dfA.groupby("unique_id", sort=False):
+        coords_a = list(zip(grp_a[x_label], grp_a[y_label]))
+
+        if len(set(coords_a)) < 2:
+            geom_a = Point(coords_a[0]).buffer(buffer_radius)
+        else:
+            geom_a = LineString(coords_a).buffer(buffer_radius)
+
+        for uid_b, geom_b in geomsB.items():
+            inter = geom_a.intersection(geom_b).area
+            if inter <= 0:
+                continue
+
+            union = geom_a.union(geom_b).area
+            if union <= 0:
+                continue
+
+            iou = inter / union
+
+            if iou >= iou_threshold:
+                matches.append((uid_a, uid_b, iou))
+
+    return matches
+
+
+def unique_pairs2(pairs_a2b, pairs_b2a=None, method="optimal"):
+    if pairs_b2a is None:
+        pairs_b2a = []
+
+    edges = []
+
+    for a, b, w in pairs_a2b:
+        edges.append((a, b, w))
+
+    for b, a, w in pairs_b2a:
+        edges.append((a, b, w))  # flip orientation
+
+    if method == "optimal":
+        G = nx.Graph()
+
+        for a, b, w in edges:
+            left = ("a", a)
+            right = ("b", b)
+
+            # Avoid overwriting a stronger duplicate edge with a weaker one
+            if G.has_edge(left, right):
+                G[left][right]["weight"] = max(G[left][right]["weight"], w)
+            else:
+                G.add_edge(left, right, weight=w)
+
+        matching = nx.algorithms.matching.max_weight_matching(
+            G,
+            maxcardinality=True,   # important if your goal is max number of overlaps
+            weight="weight",
+        )
+
+        result = []
+        for u, v in matching:
+            if u[0] == "a":
+                result.append((u[1], v[1]))
+            else:
+                result.append((v[1], u[1]))
+
+        return result
+
+    else:
+        edges.sort(key=lambda t: t[2], reverse=True)
+
+        used_a = set()
+        used_b = set()
+        result = []
+
+        for a, b, w in edges:
+            if a not in used_a and b not in used_b:
+                result.append((a, b))
+                used_a.add(a)
+                used_b.add(b)
+
+        return result
 
 
 def unique_pairs(pairs_a2b: List[PairT], pairs_b2a: List[PairT], method="optimal") -> List[Tuple[Hashable, Hashable]]:

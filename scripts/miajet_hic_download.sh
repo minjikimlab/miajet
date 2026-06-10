@@ -54,7 +54,7 @@ files_gse=(
     # "GSE82144_Kieffer-Kwon-2017-resting_B_cells_WT_30.hic" # Kieffer-Kwon et al. 2017, Splenic B cells, In-situ Hi-C, mm9, WT
     # "GSE188849_CA1200_auxin1hr_L2-L3_JK07_JK08_30.hic" # Morao et al. 2022 (TIR1 ctrl in Isiaka et al. 2023), Hi-C, ce10, Control
     # "GSE237663_hic_processed.tar.gz" # Kim et al. 2023, C. elegans, Hi-C, ce11, WAPL-1 depletion AND SMC-3 depletion
-    "GSE225201_GM12878_Micro-C.nodups.mapq_20.hic" # Wu et al. 2025, GM12878, Micro-C, hg38, WT
+    # "GSE225201_GM12878_Micro-C.nodups.mapq_20.hic" # Wu et al. 2025, GM12878, Micro-C, hg38, WT
 )
 
 files_gsm=(

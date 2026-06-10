@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --account=minjilab0 
+#SBATCH --account=minjilab99
 #SBATCH --partition=standard 
 #SBATCH --cpus-per-task=6
 #SBATCH --mem=120g 
@@ -31,18 +31,18 @@ echo "highest resolution: $highest_res"
 
 # # Use Cooler to write the .mcool matrix as interactions in bedpe format
 output_bedpe="${input_mcool%.mcool}.${highest_res}.bedpe"
-# echo "cooler dump --join $input_mcool::/resolutions/$highest_res > $output_bedpe"
-# cooler dump --join "$input_mcool::/resolutions/$highest_res" > "$output_bedpe"
+echo "cooler dump --join $input_mcool::/resolutions/$highest_res > $output_bedpe"
+cooler dump --join "$input_mcool::/resolutions/$highest_res" > "$output_bedpe"
 
 # # Convert the ginteractions file to short format with score using awk
-# awk -F "\t" '{print 0, $1, $2, 0, 0, $4, $5, 1, $7}' ${output_bedpe} > ${output_bedpe}.short
+awk -F "\t" '{print 0, $1, $2, 0, 0, $4, $5, 1, $7}' ${output_bedpe} > ${output_bedpe}.short
 
 # # Sort the short format with score file
-# sort --parallel=6 -k2,2d -k6,6d ${output_bedpe}.short > ${output_bedpe}.short.sorted
+sort --parallel=6 -k2,2d -k6,6d ${output_bedpe}.short > ${output_bedpe}.short.sorted
 
 # Convert the short format with score file to .hic using juicer pre
 java -Xms100g -Xmx120g \
     -jar $juicer_tools_jar pre \
     --threads 6 \
-    -r 1000,2000,5000,10000,20000,50000,100000,250000,500000,1000000 \
+    -r 1000,2000,5000,10000,20000,25000,50000,100000,250000,500000,1000000 \
     ${output_bedpe}.short.sorted $output_hic $chrom_sizes

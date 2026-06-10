@@ -1076,6 +1076,9 @@ def compute_saliency(df_pos, ridge_datum, im_p_val=None, im_p_val2=None,
         if uid not in ridge_datum:
             continue
 
+        if uid == "11_6.595":
+            pass
+
         rec = ridge_datum[uid]
         s_idx = int(rec["s_idx"])
         D_curves = rec["D_curves"]
@@ -1292,7 +1295,7 @@ def _process_ridge(args, agg_pval, scale_range, adj_nondec, ang_frac,
     # sum_consistency = np.sum(adj)
     # sum_consistency_im = np.sum(adj * df_ridge["input"].values)
 
-    # v2.0.3 (TEST: Multiply by angle_fraction)
+    # v2.0.3
     perc_satisfied = np.mean(adj * angle_fraction)
     sum_consistency = np.sum(adj * angle_fraction)
     sum_consistency_im = np.sum(adj * angle_fraction * df_ridge["input"].values)
@@ -1319,7 +1322,7 @@ def _process_ridge(args, agg_pval, scale_range, adj_nondec, ang_frac,
             im_p_val.shape[0], flip_y=False, start_bin=0)
         # dbscan_angle_values = np.array([A_curves[dbscan_s_idx[i], i] for i in range(len(dbscan_s_idx))])
         dbscan_angle_values = A_curves[dbscan_s_idx, np.arange(n_pos)]
-        ridge_angles = -dbscan_angle_values + 90
+        ridge_angles = -dbscan_angle_values + 90 # correct
         # ridge_widths = scale_to_width(scale_range[dbscan_s_idx])
 
         l_mean, r_mean, c_mean, \

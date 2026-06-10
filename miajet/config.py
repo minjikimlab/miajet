@@ -80,6 +80,8 @@ class Config:
     ridge_strength_turbulence: Optional[float] = None  # TODO: confirm type
     angle_satisfied: Optional[float] = None  # TODO: confirm type
     length: Optional[float] = None  # TODO: confirm type
+    chip_file: Optional[str] = None
+    chrom_size_file: Optional[str] = None
 
 def assign_defaults(args: argparse.Namespace) -> argparse.Namespace:
     """
@@ -188,6 +190,8 @@ def process_args(args: argparse.Namespace) -> Config:
         ridge_strength_turbulence=args.ridge_strength_turbulence,
         angle_satisfied=args.angle_satisfied,
         length=args.length,
+        chip_file=args.chip_file,
+        chrom_size_file=args.chrom_size_file,
     )
 
     # Main direcotry (level 1): ImageJ parameters
@@ -417,6 +421,8 @@ def print_parameters(config: Config):
         print("* Convolution padding:", config.convolution_padding)
         print("* Remove k strata:", config.rem_k_strata)
         print("* Resolve conflict:", config.resolve_conflict)
+        print("* Chip file:", config.chip_file)
+        print("* Chromosome size file:", config.chrom_size_file)
 
         
 

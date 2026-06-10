@@ -228,7 +228,10 @@ def generate_contact_maps(hic_file, chromosome, resolution, window_size, data_ty
     im_orig = mat_orig_rot[center_orig-window_size_bin_rect_orig:center_orig, :]
     im_orig = cv.normalize(im_orig, None, alpha=0, beta=1, norm_type=cv.NORM_MINMAX, dtype=cv.CV_32F)
 
+    # print('WARNING: USING WHITENED IMAGE FOR MAIN IMAGE!')
     return im_sq, im_orig, im_pval_sq, coe_sq_white, comp_binary, rm_idx, save_name, N
+    # return coe_sq_white, im_orig, im_pval_sq, coe_sq_white, comp_binary, rm_idx, save_name, N
+
 
 
 

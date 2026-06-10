@@ -33,11 +33,23 @@ def extract_chipseq_values(chip_files, intervals, f_chrom_sizes, chromosomes, na
     for i, f_chip in enumerate(chip_files):
         # loop through each chip-seq experiment
 
-        bg = BedGraph(f_chrom_sizes, f_chip)
+        # bg = BedGraph(f_chrom_sizes, f_chip, min_value=-1e10)
+        bg = BedGraph(f_chrom_sizes, f_chip, chroms_to_load=list(chromosomes), min_value=-1e10) # CHANGED 05/11/26
 
         chip_val = []
         for j, inter in enumerate(intervals):
             # loop through each jet caller method
+
+            required_cols = {"chrom", "start", "end", "unique_id"}
+
+            if inter is None or inter.empty:
+                print(f"No intervals for {names[j]}")
+                chip_val.append({})
+                continue
+
+            missing_cols = required_cols.difference(inter.columns)
+            if missing_cols:
+                raise KeyError(f"intervals[{j}] is missing required columns: {sorted(missing_cols)}")
 
             # genome wide
             unique_ids = []

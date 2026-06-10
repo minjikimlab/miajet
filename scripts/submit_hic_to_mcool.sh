@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --account=minjilab0 
+#SBATCH --account=minjilab99
 #SBATCH --partition=standard 
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=4g 
@@ -33,9 +33,14 @@ hic_list=(
   # /nfs/turbo/umms-minjilab/downloaded_data/c-elegans-CA1200-L2-L3-JK07-JK08_control-auxin-1hr_hic_Kim-2023_GSE188849_ce10.hic
   # /nfs/turbo/umms-minjilab/downloaded_data/c-elegans-JK05-L3_SMC3-auxin-1hr_hic_Kim-2023_GSE237663_ce10.hic
   # /nfs/turbo/umms-minjilab/downloaded_data/c-elegans-JK06-L3_WAPL-auxin-1hr_hic_Kim-2023_GSE237663_ce10.hic
+  "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/downsampled_files/merged.multires_0.1_inter.hic"
+  "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/downsampled_files/merged.multires_0.25_inter.hic"
+  "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/downsampled_files/merged.multires_0.5_inter.hic"
+  "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/downsampled_files/merged.multires_0.75_inter.hic"
 )
 
 for hic in "${hic_list[@]}"; do
   name="$(basename "${hic%.hic}")"
-  sbatch --job-name="hic2mcool_${name}" --export=HIC="${hic}" job_hic_to_mcool.sh
+  # sbatch --job-name="hic2mcool_${name}" --export=HIC="${hic}" job_hic_to_mcool.sh
+  sbatch --job-name="hic2mcool_${name}" --export=HIC="${hic}" job_hic_to_mcool_hictk.sh # hictk version
 done

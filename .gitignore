@@ -6,7 +6,7 @@
 !chroms.sh
 !pyproject.toml
 !job*
-!submit*
+!submit_*
 !environment.yml
 
 !demo_data/**

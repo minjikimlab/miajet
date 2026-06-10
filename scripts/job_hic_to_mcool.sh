@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --account=minjilab0 
+#SBATCH --account=minjilab99
 #SBATCH --partition=standard 
 #SBATCH --cpus-per-task=6
 #SBATCH --mem=80g 
@@ -22,7 +22,7 @@ fi
 base="${hic%.hic}"
 sample="$(basename "$base")"       # e.g. GM12878_insitu-hic_4DNFI1UEG1HD
 out="${base}.ice.mcool"
-tmp_dir=/scratch/minjilab_root/minjilab0/sionkim/temp
+tmp_dir=/scratch/minjilab_root/minjilab99/sionkim/temp
 
 echo
 echo "[$(date)] Processing: $hic -> $out"

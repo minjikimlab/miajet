@@ -85,7 +85,7 @@ def process_sigma_pyvd(s, lt, ut, image_path, save_path, root, memory_alloc, mac
     s_str = str(s)
     s_rounded = f"{s:.3f}"
     max_attempts = 5
-    timeout_seconds = 120
+    timeout_seconds = 300
     attempt = 0
     current_ut, current_lt = ut, lt
     t0 = time.time()

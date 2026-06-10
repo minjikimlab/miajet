@@ -175,7 +175,7 @@ def add_side_stats(ax, stats, xpos=-0.35, ystart=0.95, dy=0.05, fontsize=10):
                 transform=ax.transAxes, fontsize=fontsize,
                 ha='left', va='top')
 
-def add_pairwise_sig(ax, positions, groups, y_pad=0.05):
+def add_pairwise_sig(ax, positions, groups, y_pad=0.05, fontsize=8):
     """
     Draws significance bars for every pair of groups.
     For crowded plots keep only selected pairs 
@@ -208,7 +208,7 @@ def add_pairwise_sig(ax, positions, groups, y_pad=0.05):
         ax.text((x1 + x2) / 2,
                 y + h/2,
                 format_sig(p),
-                ha='center', va='bottom', fontsize=8)
+                ha='center', va='bottom', fontsize=fontsize)
         
 
 def title_boxplot(ax_title, side_by_side_titles, side_by_side_data):

@@ -2137,8 +2137,10 @@ def make_bed(df_pos_all, N, chromosome, window_size, resolution, x_label, y_labe
     # define the rows
     df_pos_all["x1"] = np.ceil(rows * resolution).astype(int)
     df_pos_all["x2"] = np.ceil(df_pos_all["x1"] + resolution / 2).astype(int)
+
+    df_pos_all['name'] = chromosome + "_" + df_pos_all['unique_id']
         
-    df_pos_all[["chr1", "x1", "x2", "chr2", "y1", "y2"]].to_csv(save_name, sep="\t", header=None, index=False)
+    df_pos_all[["chr1", "x1", "x2", "chr2", "y1", "y2", "name"]].to_csv(save_name, sep="\t", header=None, index=False)
 
 
 
@@ -2318,7 +2320,8 @@ def save_results(df_agg, df_features, ridge_datum, K, ranking, save_path, chromo
                  im, im_vmax, plot,
                  contour_label="Contour Number",
                  x_label="X_(px)_orig", 
-                 y_label="Y_(px)_orig"
+                 y_label="Y_(px)_orig",
+                 chip_signal=None, chip_name=None,
                ):
     """
     Saves 3 results for the top K ridges (or all if K == "all"):
@@ -2433,7 +2436,8 @@ def save_results(df_agg, df_features, ridge_datum, K, ranking, save_path, chromo
 
         plot_n_rect([im, im], titles=[None, None], suptitle=root, lines=[None, lines], 
                     resolution=resolution, savepath=save_name, show=False, cmap=["Reds", "Reds"], 
-                    vmax=[np.percentile(im, im_vmax), np.percentile(im, im_vmax)], num_ticks=[5, 25], dpi=300)
+                    vmax=[np.percentile(im, im_vmax), np.percentile(im, im_vmax)], num_ticks=[5, 25], dpi=300, 
+                    track_1d=chip_signal, track_1d_name=chip_name)
 
 
 def diagnostic_filter_plot(df_agg, df_features, individual_masks, plot_or_not, im, save_path, root,
@@ -2484,8 +2488,47 @@ def diagnostic_filter_plot(df_agg, df_features, individual_masks, plot_or_not, i
 
 
 
+from pyBedGraph import BedGraph
+from scipy import ndimage
+def load_chip_signal(chromosome, resolution, rm_idx, target_width,
+                     chrom_size_file, bedgraph_file, stat="max"):
+    """
+    Load a 1D ChIP-seq track, drop the same bins dropped from the Hi-C image,
+    and resize it to match the rotated-rectangle image width.
+
+    Returns None when the hic_file does not contain `require_token` so callers
+    can transparently pass the result as track_1d (None disables the track).
+    """
+    chrom_size_df = pd.read_csv(chrom_size_file, sep="\t", header=None,
+                                names=["chrom", "size"])
+    chrom_data_size = chrom_size_df.loc[chrom_size_df["chrom"] == chromosome, "size"].values[0]
+
+    start_list = np.arange(0, chrom_data_size, resolution, dtype=np.int32)
+    end_list = np.clip(start_list + resolution, 0, chrom_data_size)
+
+    bedgraph = BedGraph(chrom_size_file, bedgraph_file,
+                        chroms_to_load=[chromosome],
+                        ignore_missing_bp=False,
+                        min_value=0)
+    bedgraph.load_chrom_data(chromosome)
+
+    chip_signal = bedgraph.stats(start_list=start_list, end_list=end_list,
+                                 stat=stat, chrom_name=chromosome)
+
+    if rm_idx is not None and len(rm_idx) > 0:
+        chip_signal = np.delete(chip_signal, rm_idx)
+
+    # Resize to match the rotated rectangle image width (im.shape[1])
+    chip_signal = ndimage.zoom(chip_signal, target_width / len(chip_signal), order=1)
+
+    chip_name = os.path.basename(bedgraph_file)
+
+    return chip_signal, chip_name
+
+
+
 def temp_plot(df_features, plot_or_not, x_label, y_label, im, save_path, root, resolution, 
-              cmap="Reds", im_vmax=None):
+              cmap="Reds", im_vmax=None, chip_signal=None, chip_name=None):
 
     if not plot_or_not or im is None: # Control for diagnostic
         return
@@ -2494,8 +2537,8 @@ def temp_plot(df_features, plot_or_not, x_label, y_label, im, save_path, root, r
     gb = df_features.groupby("unique_id", sort=False)
     for rank, (indexer, df_ridge) in enumerate(gb):
 
-        if indexer == "2_12.44":
-            pass
+        # if indexer == "2_12.44":
+        #     pass
 
         ridge_coords = convert_imagej_coord_to_numpy(df_ridge[[x_label, y_label]].values, im.shape[0], flip_y=True, start_bin=0)
 
@@ -2510,7 +2553,8 @@ def temp_plot(df_features, plot_or_not, x_label, y_label, im, save_path, root, r
 
     plot_n_rect([im, im], titles=[None, None], suptitle=root, lines=[None, lines], 
                 resolution=resolution, savepath=save_name, show=False, cmap=[cmap, cmap], 
-                vmax=vmax, num_ticks=[5, 25], dpi=300)
+                vmax=vmax, num_ticks=[5, 25], 
+                track_1d=chip_signal, track_1d_name=chip_name, dpi=300)
 
 
 def _contiguous_segments_from_good(good, remove_min_size=1):

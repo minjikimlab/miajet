@@ -19,6 +19,7 @@ dependencies:
   - scikit-image=0.26.0
   - yq
   - tqdm
+  - pybedgraph
   - pip
   - pip:
     - hic-straw==1.3.1

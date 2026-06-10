@@ -9,7 +9,11 @@ with open("submit_all_config.yaml") as f:
     config = yaml.safe_load(f)
 
 # SAVE_DIR_ROOT = "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v2.0.2"
-SAVE_DIR_ROOT = "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v2.0.3_test"
+SAVE_DIR_ROOT = "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v2.0.3"
+# SAVE_DIR_ROOT = "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v2.0.3_mESC_angle_range"
+# SAVE_DIR_ROOT = "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v2.0.3_mESC_pval"
+# SAVE_DIR_ROOT = "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v2.0.3_gm12878"
+# SAVE_DIR_ROOT = "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v2.0.3_white2"
 COMBINE_SCRIPT = "combine_chrom_results.py"
 
 SBATCH_ARGS = [
@@ -73,8 +77,11 @@ for sample, params in config.get("samples", {}).items():
         "--wrap",
         shlex.join(cmd),
     ]
+
+    # DO ONE OF THE FOLLOWING:
     print(f"Submitting {job_name}")
     subprocess.run(sbatch_cmd)
 
+    # OR THIS
     # print(f"Running in current session: {job_name}")
     # subprocess.run(cmd, check=True)

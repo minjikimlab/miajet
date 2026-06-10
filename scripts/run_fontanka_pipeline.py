@@ -16,7 +16,8 @@ def main(hic_file, data_name, genome, resolution, window_size):
     # resolution = 50000      # 50 kb
     # window_size = int(6e6)  # 6 Mb
     # base_save_dir = "/nfs/turbo/umms-minjilab/sionkim/benchmark"
-    base_save_dir = "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/other_methods"
+    # base_save_dir = "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/other_methods"
+    base_save_dir = "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/other_methods_runtime"
 
     angle_leniency_deg = 20
     num_cores = 4

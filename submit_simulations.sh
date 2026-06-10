@@ -20,12 +20,35 @@ FILES=(
 #     "/nfs/turbo/umms-minjilab/sionkim/Fun_modified/sim_chrom_size_20Mb.txt"
 # )
 
+# Old method before runtime monitoring
 # for i in "${!FILES[@]}"; do
-#     sbatch  --export=HIC_FILE="${FILES[$i]}",CHROM="chrS",NORM="NONE",RES="25000",EXP="hic",WIN="5000000" \
-#       job_all_noproc.sh
+#     sbatch  --export=HIC_FILE="${FILES[$i]}" \
+#       job_simulation.sh
 # done
 
+
+RUN_STAMP=$(date +%Y%m%d_%H%M%S)
+JOBS_TSV="submitted_simulation_jobs_${RUN_STAMP}_$$.tsv"
+printf 'jobid\tlabel\thic_file\n' > "$JOBS_TSV"
+
 for i in "${!FILES[@]}"; do
-    sbatch  --export=HIC_FILE="${FILES[$i]}" \
-      job_simulation.sh
+    hic="${FILES[$i]}"
+    sim_dir=$(basename "$(dirname "$(dirname "$hic")")")   # e.g. out_fast_bounded_jets
+    base=$(basename "$hic" .hic) # e.g. test1b_s-23_hic_003
+    label="${sim_dir}/${base}"
+
+    jobid=$(sbatch --parsable \
+        --job-name="sim_${sim_dir}_${base}" \
+        --export=HIC_FILE="$hic" \
+        job_simulation.sh)
+    jobid=${jobid%%;*} 
+
+    if [[ -n "$jobid" ]]; then
+        printf '%s\t%s\t%s\n' "$jobid" "$label" "$hic" >> "$JOBS_TSV"
+        echo "Submitted $label as job $jobid"
+    else
+        echo "WARNING: submission failed for $hic" >&2
+    fi
 done
+
+echo "Wrote job records to $JOBS_TSV"

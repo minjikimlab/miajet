@@ -2,6 +2,8 @@
 import yaml
 import subprocess
 import os
+from datetime import datetime
+RUN_STAMP = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 # Load config
 with open("submit_all_config.yaml") as f:
@@ -18,8 +20,12 @@ CHROMS = {
 }
 
 FIXED_ARGS = [
-    # "--save_dir_root", "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v2.0.2", # main result folder for revision
-    "--save_dir_root", "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v2.0.3_test", 
+    # "--save_dir_root", "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v2.0.3",
+    "--save_dir_root", "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v2.0.3_runtime", 
+    # "--save_dir_root", "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v2.0.3_mESC_angle_range", 
+    # "--save_dir_root", "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v2.0.3_mESC_pval", 
+    # "--save_dir_root", "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v2.0.3_gm12878", 
+    # "--save_dir_root", "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v2.0.3_white2", 
     "--num_cores", "4",
     "--verbose",
 ]
@@ -36,6 +42,9 @@ FLAG_RENAMES = {
     "compartment": "compartment",
     "root_within": "root_within",
 }
+
+# Keep track of JOB IDs for runtime/memory consumption monitoring
+submitted = [] 
 
 for sample, params in config["samples"].items():
     genome = params["genome"]
@@ -62,7 +71,7 @@ for sample, params in config["samples"].items():
             "--account=minjilab99",
             "--partition=standard",
             "--cpus-per-task=4",
-            "--mem=45g",
+            "--mem=60g",
             "--time=6:00:00",
             "--mail-type=FAIL",
             "--output=slurm_out/slurm-%j.out",
@@ -70,4 +79,17 @@ for sample, params in config["samples"].items():
         ]
 
         print(f"Submitting {job_name}")
-        subprocess.run(sbatch_cmd)
+        # subprocess.run(sbatch_cmd)
+        res = subprocess.run(sbatch_cmd, capture_output=True, text=True)
+        print(res.stdout.strip() or res.stderr.strip())
+        jobid = res.stdout.strip().split()[-1] if res.returncode == 0 and res.stdout.strip() else None
+        submitted.append({"jobid": jobid, "sample": sample, "chrom": chrom, "job_name": job_name})
+
+
+# after the loops:
+out_path = f"submitted_jobs_{RUN_STAMP}.tsv"
+with open(out_path, "w") as fh:
+    fh.write("jobid\tsample\tchrom\tjob_name\n")
+    for s in submitted:
+        fh.write(f"{s['jobid']}\t{s['sample']}\t{s['chrom']}\t{s['job_name']}\n")
+print(f"Wrote {len(submitted)} job records to {out_path}")

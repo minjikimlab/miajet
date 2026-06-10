@@ -6,8 +6,8 @@ import numpy as np
 import cv2 as cv
 import pandas as pd
 
-
-
+from utils.processing import read_hic_file, whiten_matrix
+from miajet.hic_image import compute_rm_idx
 
 def get_pileups(hic_file, bed_df_in, resolution, chrom_sizes,
                 chromosomes='all', window_range=(None, None),
@@ -99,9 +99,10 @@ def get_pileups(hic_file, bed_df_in, resolution, chrom_sizes,
             key = chrom[3:] if no_chr_prefix and chrom.startswith('chr') else chrom
             mzd = hic.getMatrixZoomData(key, key, data_type, normalization,
                                          'BP', int(resolution))
-            mat = mzd.getRecordsAsMatrix(int(row['start']), int(row['end']),
-                                         int(row['start']), int(row['end']))
-            pileups.append(mat)
+            mat = mzd.getRecordsAsMatrix(int(row['start'] - resolution), int(row['end']),
+                                         int(row['start'] - resolution), int(row['end']))
+            
+            pileups.append(mat[1:, 1:])
 
     return pileups, bed_df
 
@@ -155,7 +156,7 @@ def remove_and_resize_square_stacks(stack, stack_positions, expected_stack_size)
 
     for i, arr in enumerate(stack):
         # check it's 2D and square
-        if arr.ndim != 2 or arr.shape[0] != arr.shape[1]:
+        if arr.ndim != 2 or arr.shape[0] != arr.shape[1] or arr.shape[0] == 0:
             bad_indices.append(i)
             continue
 
@@ -297,6 +298,9 @@ def get_pileups_dynamic_resolution(
     selected_resolutions = []
     for _, row in tqdm(bed_df.iterrows(), total=len(bed_df), desc="Retrieving pileups", disable=not verbose):
 
+        # if row['unique_id'] == "chrX_9_5.933_t-1":
+        #     pass # debug 
+
 
         chrom = row['chrom']
         key = chrom[3:] if no_chr_prefix and chrom.startswith('chr') else chrom
@@ -339,6 +343,184 @@ def get_pileups_dynamic_resolution(
         pileups.append(mat[1:, 1:])
 
     return pileups, bed_df, selected_resolutions
+
+
+
+
+def get_pileups_dynamic_resolution_white(
+    hic_file,
+    bed_df_in,
+    expected_stack_size,
+    chrom_sizes,
+    chromosomes='all',
+    window_range=(None, None),
+    data_type="observed",  # retained for API compatibility; whitening uses OE
+    normalization="KR",
+    sort=False,
+    verbose=False
+):
+    """
+    Generates whitened Hi-C pileups for each region in bed_df_in, choosing for each
+    region the resolution that makes (region_length / resolution) as close as possible
+    to expected_stack_size.
+
+    Processes one chromosome at a time to avoid caching whole-chromosome matrices.
+    """
+
+    if bed_df_in.empty:
+        print("Warning: Empty bed_df_in provided. Returning empty results.")
+        return [np.zeros((expected_stack_size, expected_stack_size))], pd.DataFrame(), []
+
+    # 1) Copy & optional sort
+    bed_df = bed_df_in.copy()
+    if sort:
+        def chrom_key(c):
+            m = re.search(r"(\d+)$", c)
+            if m:
+                return int(m.group(1))
+            cl = c.lower()
+            return {'x': 23, 'y': 24, 'm': 25, 'mt': 25}.get(
+                cl[-2:] if len(cl) > 1 else cl[-1], 100
+            )
+
+        bed_df['_ck'] = bed_df['chrom'].map(chrom_key)
+        bed_df = (
+            bed_df.sort_values(['_ck', 'start', 'end'])
+            .drop(columns=['_ck'])
+            .reset_index(drop=True)
+        )
+
+    # 2) apply window_range if given
+    win_up, win_down = window_range
+    if win_up is not None or win_down is not None:
+        bed_df['mid'] = ((bed_df['start'] + bed_df['end']) // 2)
+        win_up = win_up or 0
+        win_down = win_down or 0
+        bed_df['start'] = bed_df['mid'] - win_up
+        bed_df['end'] = bed_df['mid'] + win_down
+        bed_df = bed_df.drop(columns=['mid'])
+
+        chrom_sizes = chrom_sizes.copy()
+        chrom_sizes['name'] = chrom_sizes['chrom'] + '-valid'
+        bed_df[['start', 'end']] = bed_df[['start', 'end']].astype(int)
+        bed_df = bf.trim(bed_df, chrom_sizes).dropna().reset_index(drop=True)
+        bed_df[['start', 'end']] = bed_df[['start', 'end']].astype(int)
+
+    # 3) restrict to desired chromosomes
+    if chromosomes == 'all':
+        chrom_set = bed_df['chrom'].unique().tolist()
+    elif isinstance(chromosomes, str):
+        chrom_set = [chromosomes]
+    else:
+        chrom_set = list(set(bed_df['chrom']).intersection(chromosomes))
+
+    bed_df = bed_df[bed_df['chrom'].isin(chrom_set)].reset_index(drop=True)
+
+    # open hic & fetch available resolutions
+    hic = hicstraw.HiCFile(hic_file)
+    avail_res = sorted(hic.getResolutions())
+
+    # determine whether 'chr' prefix is used in the file
+    names = [c.name for c in hic.getChromosomes()]
+    no_chr_prefix = not any(n.startswith('chr') for n in names)
+
+    def hic_key(chrom):
+        return chrom[3:] if no_chr_prefix and chrom.startswith('chr') else chrom
+
+    def choose_resolution(length):
+        candidates = [r for r in avail_res if length / r >= expected_stack_size]
+
+        if candidates:
+            return max(candidates)
+
+        best_res = min(avail_res, key=lambda r: abs((length / r) - expected_stack_size))
+        print(f"\tWarning: No resolution that guarantees the matrix size to be {expected_stack_size}")
+        print(f"\tThe closest resolution is {best_res} yielding a {int(length / best_res)} size matrix")
+        return best_res
+
+    def whiten_chrom_matrix(chromosome, resolution):
+        mat_oe = read_hic_file(
+            filename=hic_file,
+            chrom=chromosome,
+            resolution=resolution,
+            positions="all",
+            data_type="oe",
+            normalization=normalization,
+            verbose=verbose
+        )
+
+        mat_oe = mat_oe.astype(np.float32)
+        mat_oe[np.isnan(mat_oe)] = 0
+
+        rm_idx = np.asarray(
+            compute_rm_idx(mat_oe, expected_stack_size, verbose=verbose),
+            dtype=int
+        )
+
+        keep_idx = np.setdiff1d(np.arange(mat_oe.shape[0]), rm_idx)
+        mat_oe_sub = mat_oe[np.ix_(keep_idx, keep_idx)]
+
+        coe_sq = np.log10(mat_oe_sub + 1)
+        coe_sq = cv.normalize(
+            coe_sq,
+            None,
+            alpha=0,
+            beta=1,
+            norm_type=cv.NORM_MINMAX,
+            dtype=cv.CV_32F
+        )
+
+        coe_sq_white, _ = whiten_matrix(
+            A_for_corr=coe_sq,
+            A_for_whiten=coe_sq,
+            epsilon=1e-5
+        )
+
+        old_to_new = np.full(mat_oe.shape[0], -1, dtype=int)
+        old_to_new[keep_idx] = np.arange(len(keep_idx))
+
+        return coe_sq_white.astype(np.float32, copy=False), old_to_new
+
+    # 4) precompute resolutions / chrom keys while preserving output order
+    bed_df['_pileup_idx'] = np.arange(len(bed_df))
+    bed_df['_hic_chrom'] = bed_df['chrom'].map(hic_key)
+    bed_df['_resolution'] = [
+        choose_resolution(int(row['end']) - int(row['start']))
+        for _, row in bed_df.iterrows()
+    ]
+
+    selected_resolutions = bed_df['_resolution'].tolist()
+    pileups = [None] * len(bed_df)
+
+    # 5) process one chromosome at a time, and one resolution within that chromosome
+    chrom_iter = bed_df.groupby('_hic_chrom', sort=False)
+    for chromosome, chrom_df in tqdm(
+        chrom_iter,
+        total=bed_df['_hic_chrom'].nunique(),
+        desc="Retrieving whitened pileups",
+        disable=not verbose
+    ):
+        for resolution, res_df in chrom_df.groupby('_resolution', sort=False):
+            coe_sq_white, old_to_new = whiten_chrom_matrix(chromosome, resolution)
+
+            for _, row in res_df.iterrows():
+                start_bin = int(row['start']) // resolution
+                end_bin = int(np.ceil(int(row['end']) / resolution))
+
+                bins = np.arange(start_bin, end_bin)
+                bins = bins[(bins >= 0) & (bins < len(old_to_new))]
+
+                idx = old_to_new[bins]
+                idx = idx[idx >= 0]
+
+                pileups[int(row['_pileup_idx'])] = coe_sq_white[np.ix_(idx, idx)]
+
+            del coe_sq_white, old_to_new
+
+    bed_df = bed_df.drop(columns=['_pileup_idx', '_hic_chrom', '_resolution'])
+
+    return pileups, bed_df, selected_resolutions
+
 
 
 def assign_start_end(row):
@@ -434,7 +616,7 @@ def generate_bed_2(df_summary, df_expanded, eps, fraction, project_midpoint_to_d
 
 
 
-def generate_bed_3(df_summary, df_expanded, project_midpoint_to_diag=False):
+def generate_bed_3(df_summary, df_expanded, project_midpoint_to_diag=False, eps=0):
     """
     Identical API and invariants to `generate_bed_df` but computes the start and end in a different way
 
@@ -463,8 +645,8 @@ def generate_bed_3(df_summary, df_expanded, project_midpoint_to_diag=False):
 
     # df_plot_summary["virtual jet length"] = df_plot_summary.apply(lambda x : max(x["delta x"], x["delta y"]), axis=1)
 
-    df_plot_summary["start"] = np.minimum(df_plot_summary["mp y"], df_plot_summary["mp x"])
-    df_plot_summary["end"] = np.maximum(df_plot_summary["mp y"], df_plot_summary["mp x"])
+    df_plot_summary["start"] = np.minimum(df_plot_summary["mp y"], df_plot_summary["mp x"]) - eps
+    df_plot_summary["end"] = np.maximum(df_plot_summary["mp y"], df_plot_summary["mp x"]) + eps
 
     # just keep the essentials for merging
     df_plot_summary = df_plot_summary[['unique_id', 'start', 'end']]
