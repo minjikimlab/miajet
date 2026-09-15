@@ -199,8 +199,10 @@ python -m miajet "test1cii_s-23_hic_003.hic" \
 2. Create conda environment: `conda env create -f environment.yml` (default name is `jet-env`)
 3. Activate environment: `conda activate jet-env`
 4. Build: `python -m pip install -e .` 
-5. Run examples
-Note: Typical install times will be up to 5 minutes depending on the conda version. It is recommended for conda to be ≥23.10 for mamba to be integrated. 
+5. Run examples. The example command for running GSE199059_CD69negDPWTR1R2R3R4_merged will take approximately 13 minutes for a system with 30GB RAM and 4 CPU cores. 
+
+Note: Typical install times will be up to 5 minutes depending on the conda version. It is recommended for conda to be ≥23.10 for mamba to be integrated, or creating the conda environment may take a long time. 
+
 
 ## Output Table
 There are 3 key outputs of the MIA-Jet program: 
