@@ -4,16 +4,12 @@
 
 ## Release notes
 * Major changes to the program with v1.1.x. 
-* The current program is optimized for linux or macOS systems (HPC clusters)
+* The current program is optimized for linux only (HPC clusters)
 * The [bioRxiv](https://www.biorxiv.org/content/10.1101/2025.08.27.672730v1) paper uses results (`saliency-90-p-0.1`) from an earlier version of the program (v1.0.19), for which the processed data is available to download via [this link](https://www.dropbox.com/scl/fi/rp8sooa9wm0pp3qdry3pb/miajet_output_v1.0.19_paper_data_chr_combined.zip?rlkey=vbrlg3m3ijkgu2jnsbffvq658&st=luo39mcz&dl=0).
 
 ## Overview
 
 At its most basic input, MIA-Jet requires a Hi-C data file and a small set of [required parameters](#required). MIA-Jet also offers extensive customization for various types of 3C data via [extended](#extended), [trim](#trim-parameters), [filter](#filter-parameters), and [fixed parameters](#fixed-parameters). Setting `--exp_type` automatically assigns sensible defaults for many parameters; directly specifying any parameter will take precedence over these automatic assignments. We highlight the automatic defaults for `--exp_type "hic"` and `--exp_type "replihic"`. 
-
-### Example output
-
-TODO: Make a figure that showcases all the parameters 
 
 ## Input
 
@@ -204,6 +200,7 @@ python -m miajet "test1cii_s-23_hic_003.hic" \
 3. Activate environment: `conda activate jet-env`
 4. Build: `python -m pip install -e .` 
 5. Run examples
+Note: Typical install times will be up to 5 minutes depending on the conda version. It is recommended for conda to be ≥23.10 for mamba to be integrated. 
 
 ## Output Table
 There are 3 key outputs of the MIA-Jet program: 
