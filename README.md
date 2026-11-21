@@ -4,8 +4,8 @@
 
 ## Release notes
 * Major changes to the program with v1.1.x. 
-* The current program is optimized for linux only (HPC clusters)
-* The [bioRxiv](https://www.biorxiv.org/content/10.1101/2025.08.27.672730v1) paper uses results (`saliency-90-p-0.1`) from an earlier version of the program (v1.0.19), for which the processed data is available to download via [this link](https://www.dropbox.com/scl/fi/rp8sooa9wm0pp3qdry3pb/miajet_output_v1.0.19_paper_data_chr_combined.zip?rlkey=vbrlg3m3ijkgu2jnsbffvq658&st=luo39mcz&dl=0).
+* The current program is optimized for linux, preferably on a HPC environment.
+* To run the notebooks in `notebooks-release` to generate each figure, download the analysis data (v2.0.3) from [https://doi.org/10.5281/zenodo.24429571](https://doi.org/10.5281/zenodo.24429571). 
 
 ## Overview
 
@@ -143,6 +143,9 @@ These parameters control low-level algorithmic behavior and typically do not nee
 
 
 ## Examples
+
+To run the demo, please download the demo data files from this [link](https://www.dropbox.com/scl/fo/zsbxf0qukq9h9lrs8pvpa/AG9YHhFgy6usmiuycRhQ1SU?rlkey=z94uyhz42b0zjf8ez2s3yxsbt&st=dyzv3ugo&dl=0). Alternatively, these files are in [https://doi.org/10.5281/zenodo.24429571](https://doi.org/10.5281/zenodo.24429571). 
+
 ```bash
 python -m miajet demo_data/GSE199059_CD69negDPWTR1R2R3R4_merged.ice_small_chr3_.hic \
   --chrom "chr3" \
