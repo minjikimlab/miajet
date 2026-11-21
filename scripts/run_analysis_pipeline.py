@@ -11,10 +11,11 @@ from matplotlib_venn import venn2
 
 import sys
 sys.path.append('..')
-from notebooks.func_analysis import *
-from notebooks.func_plotting import *
-from notebooks.func_iou import *
-from notebooks.func_pileup import *
+sys.path.append('../notebooks-release')
+from func_analysis import *
+from func_plotting import *
+from func_iou import *
+from func_pileup import *
 from utils.plotting import plot_hic, plot_n_hic, genomic_labels, format_ticks
 
 
