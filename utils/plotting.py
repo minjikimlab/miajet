@@ -11,7 +11,7 @@ def save_histogram(im, save_path, vmax_perc, vmin_perc, file_name):
     Save the histogram of the image
 
     Parameters:
-    -----------
+    -------
     im : np.ndarray
         The image data for the histogram
     save_path : str
@@ -24,7 +24,7 @@ def save_histogram(im, save_path, vmax_perc, vmin_perc, file_name):
         The name of the file to save the histogram as
 
     Returns:
-    --------
+    ----
     None, but saves the histogram plot to the specified path
     """
     plt.figure(figsize=(10, 5))
@@ -134,13 +134,37 @@ def genomic_label_int(pos):
     else:
         return int(round(pos))
 
-def genomic_labels(pos, N=0):
+def genomic_labels(pos, N=0, add_res=False):
     if np.abs(pos) >= 1e6:
-        return f"{pos / 1e6:.{N}f}Mb".rstrip("0").rstrip(".")
+        x = f"{pos / 1e6:.{N}f}Mb".rstrip("0").rstrip(".")
     elif np.abs(pos) >= 1e3:
-        return f"{pos / 1e3:.{N}f}Kb".rstrip("0").rstrip(".")
+        x = f"{pos / 1e3:.{N}f}Kb".rstrip("0").rstrip(".")
     else:
-        return f"{pos:.{N}f}bp".rstrip("0").rstrip(".")
+        x = f"{pos:.{N}f}bp".rstrip("0").rstrip(".")
+
+    if add_res:
+        return f"res. {x}"
+    return x
+
+def genomic_labels2(pos, N=None, add_res=False):
+
+    if N is None:
+        if np.abs(pos) >= 1e6:
+            N = 1 # for Mb use 1 decimal place
+        else:
+            N = 0 # for kb use 0 decimal places
+
+    if np.abs(pos) >= 1e6:
+        x = f"{pos / 1e6:.{N}f}Mb".rstrip("0").rstrip(".")
+    elif np.abs(pos) >= 1e3:
+        x = f"{pos / 1e3:.{N}f}kb".rstrip("0").rstrip(".")
+    else:
+        x = f"{pos:.{N}f}bp".rstrip("0").rstrip(".")
+
+    if add_res:
+        return f"res. {x}"
+    return x
+
 
 def chr_num_to_string(x):
     return "chr{}".format(int(x))
@@ -201,159 +225,7 @@ def plot_hic(A, title, resolution, genomic_shift=0, savepath=None, show=True, lo
 
         
 
-        
-# def plot_n_hic(H, titles, suptitle, resolution, ppr=5, genomic_shift=0, savepath=None, show=False, supxlabel=None, supylabel=None, figsize=None, cmap_label="Intensity", dpi=100, num_ticks=5, show_cbar=True, vcenter=None, cmap="viridis", vmax=None, **kwargs):
-#     """
-#     Plots n Hi-C plots with max plots per row `ppr`, each with its own colorbar.
-#         genomic_shift : starting genomic coordinates of Hi-C region,
-#         either a number or a list of the number of Hi-C plots
     
-#     """
-    
-#     if isinstance(H, np.ndarray):
-#         if H.ndim == 3:  
-#             H = list(H)  
-#         else:
-#             raise ValueError("Numpy array H must be 3-dimensional with shape (num_matrices, dim1, dim2)")
-            
-#     if isinstance(H, list):
-#         closest_multiple = ppr - len(H) % ppr if len(H) % ppr != 0 else 0
-        
-#         num_rows = (len(H) + closest_multiple) // ppr 
-#         num_cols = min(len(H), ppr)
-            
-#         if figsize is not None:
-            
-#             if isinstance(genomic_shift, list) or isinstance(genomic_shift, np.ndarray):
-#                 fig, axs = plt.subplots(num_rows, num_cols, figsize=figsize, layout='constrained', dpi=dpi)
-#             else:
-#                 fig, axs = plt.subplots(num_rows, num_cols, figsize=figsize, layout='constrained',
-#                                         sharex='all', sharey='all', dpi=dpi)
-#         else:
-#             if isinstance(genomic_shift, list) or isinstance(genomic_shift, np.ndarray):
-#                 fig, axs = plt.subplots(num_rows, num_cols, figsize=(4.2 * num_cols, 3 * num_rows + 1), layout='constrained', dpi=dpi)
-#             else:
-#                 fig, axs = plt.subplots(num_rows, num_cols, figsize=(4.2 * num_cols, 3 * num_rows + 1), layout='constrained',
-#                                         sharex='all', sharey='all', dpi=dpi)
-
-#         for i, ax in enumerate(axs.flat):
-#             if i < len(H):
-                
-#                 if isinstance(vmax, np.ndarray) or isinstance(vmax, list):
-                    
-#                     if isinstance(cmap, np.ndarray) or isinstance(cmap, list):
-#                         if vcenter is None:
-#                             im = ax.imshow(H[i], interpolation="none", cmap=cmap[i], vmax=vmax[i], **kwargs)
-#                         elif isinstance(vcenter, np.ndarray) or isinstance(vcenter, list):
-#                             if vcenter[i] is not None:
-#                                 im = ax.imshow(H[i], interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter[i], vmax=vmax[i]), cmap=cmap[i], **kwargs)
-#                             else:
-#                                 im = ax.imshow(H[i], interpolation="none", cmap=cmap[i], vmax=vmax[i], **kwargs)
-#                         else:
-#                             im = ax.imshow(H[i], interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter, vmax=vmax[i]), cmap=cmap[i], **kwargs)
-#                     else:
-#                         if vcenter is None:
-#                             im = ax.imshow(H[i], interpolation="none", cmap=cmap,vmax=vmax[i],  **kwargs)
-#                         elif isinstance(vcenter, np.ndarray) or isinstance(vcenter, list):
-#                             if vcenter[i] is not None:
-#                                 im = ax.imshow(H[i], interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter[i], vmax=vmax[i]), cmap=cmap, **kwargs)
-#                             else:
-#                                 im = ax.imshow(H[i], interpolation="none", cmap=cmap, vmax=vmax[i], **kwargs)
-#                         else:
-#                             im = ax.imshow(H[i], interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter, vmax=vmax[i]), cmap=cmap, **kwargs)                    
-                    
-#                 elif vmax is not None:
-#                     # should be a number
-#                     # let's NOT interpret it as a percentile
-
-#                     if isinstance(cmap, np.ndarray) or isinstance(cmap, list):
-#                         if vcenter is None:
-#                             im = ax.imshow(H[i], interpolation="none", cmap=cmap[i], vmax=vmax, **kwargs)
-#                         elif isinstance(vcenter, np.ndarray) or isinstance(vcenter, list):
-#                             if vcenter[i] is not None:
-#                                 im = ax.imshow(H[i], interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter[i], vmax=vmax), cmap=cmap[i], **kwargs)
-#                             else:
-#                                 im = ax.imshow(H[i], interpolation="none", cmap=cmap[i], vmax=vmax, **kwargs)
-#                         else:
-#                             im = ax.imshow(H[i], interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter, vmax=vmax), cmap=cmap[i], **kwargs)
-#                     else:
-#                         if vcenter is None:
-#                             im = ax.imshow(H[i], interpolation="none", cmap=cmap,vmax=vmax,  **kwargs)
-#                         elif isinstance(vcenter, np.ndarray) or isinstance(vcenter, list):
-#                             if vcenter[i] is not None:
-#                                 im = ax.imshow(H[i], interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter[i], vmax=vmax), cmap=cmap, **kwargs)
-#                             else:
-#                                 im = ax.imshow(H[i], interpolation="none", cmap=cmap, vmax=vmax, **kwargs)
-#                         else:
-#                             im = ax.imshow(H[i], interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter, vmax=vmax), cmap=cmap, **kwargs)
-                        
-#                 else:
-
-
-#                     if isinstance(cmap, np.ndarray) or isinstance(cmap, list):
-#                         if vcenter is None:
-#                             im = ax.imshow(H[i], interpolation="none", cmap=cmap[i], **kwargs)
-#                         elif isinstance(vcenter, np.ndarray) or isinstance(vcenter, list):
-#                             if vcenter[i] is not None:
-#                                 im = ax.imshow(H[i], interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter[i]), cmap=cmap[i], **kwargs)
-#                             else:
-#                                 im = ax.imshow(H[i], interpolation="none", cmap=cmap[i], **kwargs)
-#                         else:
-#                             im = ax.imshow(H[i], interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter), cmap=cmap[i], **kwargs)
-#                     else:
-#                         if vcenter is None:
-#                             im = ax.imshow(H[i], interpolation="none", cmap=cmap, **kwargs)
-#                         elif isinstance(vcenter, np.ndarray) or isinstance(vcenter, list):
-#                             if vcenter[i] is not None:
-#                                 im = ax.imshow(H[i], interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter[i]), cmap=cmap, **kwargs)
-#                             else:
-#                                 im = ax.imshow(H[i], interpolation="none", cmap=cmap, **kwargs)
-#                         else:
-#                             im = ax.imshow(H[i], interpolation="none", norm=colors.TwoSlopeNorm(vcenter=vcenter), cmap=cmap, **kwargs)
-                    
-                
-#                 if show_cbar:
-#                     cbar = fig.colorbar(im, ax=ax)  # Add a colorbar to each subplot
-#                     cbar.set_label(cmap_label, rotation=270)
-                
-#                 ax.set_title(titles[i], fontsize=10)
-                                
-#                 def_xticks = np.arange(0, H[i].shape[1], np.ceil(H[i].shape[1] / num_ticks).astype(int))
-#                 def_yticks = np.arange(0, H[i].shape[0], np.ceil(H[i].shape[0] / num_ticks).astype(int))
-                
-#                 if isinstance(genomic_shift, list) or isinstance(genomic_shift, np.ndarray):
-#                     ticks_bp_x = [genomic_labels(x, N=1) for x in list(genomic_shift[i] + def_xticks * resolution)]
-#                     ticks_bp_y = [genomic_labels(x, N=1) for x in list(genomic_shift[i] + def_yticks * resolution)]
-#                 else:
-#                     ticks_bp_x = [genomic_labels(x, N=1) for x in list(genomic_shift + def_xticks * resolution)]
-#                     ticks_bp_y = [genomic_labels(x, N=1) for x in list(genomic_shift + def_yticks * resolution)]
-                
-                
-#                 ax.set_xticks(def_xticks)
-#                 ax.set_xticklabels(ticks_bp_x, fontsize=8, rotation=45)
-                
-#                 ax.set_yticks(def_yticks)
-#                 ax.set_yticklabels(ticks_bp_y, fontsize=8)
-                
-#             else:  # Hide any unused subplots
-#                 ax.axis('off')
-
-#         fig.suptitle(suptitle, fontsize=12.5)
-
-#         if supxlabel:
-#             fig.supxlabel(supxlabel)
-#         if supylabel:
-#             fig.supylabel(supylabel)
-
-#         if savepath is not None:
-#             plt.savefig(savepath, dpi=400)
-        
-#         if show:
-#             plt.show()
-#         else:
-#             plt.close(fig)
-#     else:
-#         print("Please put variables `H`, `titles` into a list for one plot case. Or use `plot_hic`")
 
 
 def plot_n_hic(
@@ -375,10 +247,23 @@ def plot_n_hic(
     vcenter=None,
     cmap="Reds",
     vmax=None,
+    vmin=None,
     standardize_cbar=False,
     share_xy=True,
     hide_axis=False,
     fig_fontsize=12.5,
+    cbar_fontsize=10,
+    tick_fontsize=8,
+    add_res=None,
+    center_window=False,
+    jet_points=None,     # NEW: list of (n_points, 2) arrays in resized image coordinates
+    jet_color="black",
+    jet_size=4,
+    jet_cmap="viridis",   # NEW: cmap used when jet_color is a 1-D value array
+    jet_cmap_label=None,  # NEW: label for the jet colourbar
+    jet_vmin=None,        # NEW: optional fixed scale across panels
+    jet_norm=None,        # NEW: a matplotlib Normalize / LogNorm / SymLogNorm instance
+    jet_vmax=None,        # NEW
     **kwargs,
 ):
     """Plot *n* Hi-C matrices in a compact grid.
@@ -394,9 +279,7 @@ def plot_n_hic(
     value of *False* reproduces the original behaviour exactly.
     """
 
-    # ------------------------------------------------------------------
     # Validate / normalise input array(s)
-    # ------------------------------------------------------------------
     if isinstance(H, np.ndarray):
         if H.ndim == 3:
             H = list(H)
@@ -408,26 +291,24 @@ def plot_n_hic(
 
     n_mats = len(H)
 
-    # ------------------------------------------------------------------
     # Determine global limits when a shared colourbar is requested
-    # ------------------------------------------------------------------
-    global_vmin = kwargs.get("vmin", None)
+    global_vmin = None          # was: kwargs.get("vmin", None)
     global_vmax = None
 
     if standardize_cbar:
-        # -- vmax --------------------------------------------------------
+        #  vmax 
         if vmax is None:
             global_vmax = max(np.nanmax(h) for h in H)
         else:
             global_vmax = max(vmax) if isinstance(vmax, (list, np.ndarray)) else vmax
-        # -- vmin --------------------------------------------------------
-        if global_vmin is None:
+        #  vmin 
+        if vmin is None:
             global_vmin = min(np.nanmin(h) for h in H)
+        else:
+            global_vmin = min(vmin) if isinstance(vmin, (list, np.ndarray)) else vmin
     # (If standardize_cbar is False we leave vmin/vmax handling to per-panel logic)
 
-    # ------------------------------------------------------------------
     # Figure / grid layout
-    # ------------------------------------------------------------------
     closest_multiple = ppr - n_mats % ppr if n_mats % ppr else 0
     num_rows = (n_mats + closest_multiple) // ppr
     num_cols = min(n_mats, ppr)
@@ -435,6 +316,8 @@ def plot_n_hic(
     if share_xy:
         share_xy = not isinstance(genomic_shift, (list, np.ndarray))
     fig_size = figsize if figsize is not None else (4.5 * num_cols, 3 * num_rows + 1)
+
+    jet_points = list(jet_points) if jet_points is not None else None
 
     fig, axs = plt.subplots(
         num_rows,
@@ -449,15 +332,26 @@ def plot_n_hic(
 
     first_im = None  # reference image for a potential global colourbar
 
-    # ------------------------------------------------------------------
     # Helper for kwargs without vmin/vmax (to avoid conflicts with `norm`)
-    # ------------------------------------------------------------------
     def _kwargs_without_limits(src):
         return {k: v for k, v in src.items() if k not in {"vmin", "vmax"}}
 
-    # ------------------------------------------------------------------
+    # Helper for centered window 
+    def _centered_axis_labels(ticks, center_px, res):
+        labels = []
+        for p in ticks:
+            lbl = genomic_labels2(abs(int(p) - center_px) * res)
+            labels.append(f"-{lbl}" if p < center_px else lbl)
+        return labels
+
+    # Helper: keep only the upper (positive) half of a divergent colormap
+    def _upper_half_cmap(cmap_src, n=256):
+        base = cmap_src if isinstance(cmap_src, colors.Colormap) else plt.get_cmap(cmap_src)
+        return colors.LinearSegmentedColormap.from_list(
+            f"{base.name}_upper", base(np.linspace(0.5, 1.0, n))
+        )
+
     # Main plotting loop
-    # ------------------------------------------------------------------
     for i, ax in enumerate(axs.flat):
         if i >= n_mats:
             ax.axis("off")
@@ -475,20 +369,37 @@ def plot_n_hic(
             vmin_i = global_vmin
         else:
             # vmin_i = kwargs.get("vmin", None)
-            vmin_i = np.nanmin(H[i]) if kwargs.get("vmin", None) is None else kwargs.get("vmin", None)
+            # vmin_i = np.nanmin(H[i]) if kwargs.get("vmin", None) is None else kwargs.get("vmin", None)
+            vmin_i = vmin[i] if isinstance(vmin, (list, np.ndarray)) else vmin
+            if vmin_i is None:
+                vmin_i = np.nanmin(H[i])
 
-        # ------------------------------------------------------------
         # Draw image (handling centred vs. linear colour scales)
-        # ------------------------------------------------------------
-        if vcenter_i is None or vmin_i > vcenter_i:
+        if vcenter_i is None:
             im = ax.imshow(
                 H[i],
                 interpolation="none",
                 cmap=cmap_i,
                 vmax=vmax_i,
                 vmin=vmin_i,
+                # vmin=vcenter_i, # Make the vcenter the lower limit if vcenter was specified
                 **_kwargs_without_limits(kwargs),
             )
+        elif vmin_i > vcenter_i:
+            print('Warning: vmin is greater than vcenter. Since vcenter is specified, we will default the cmap to only include the positive half')
+
+            # Data lie entirely above the centre: use only the positive
+            # (upper) half of the divergent colormap, spanning [vcenter, vmax]
+            # so colours remain consistent with the divergent centre.
+            norm = colors.Normalize(vmin=vcenter_i, vmax=vmax_i)
+            im = ax.imshow(
+                H[i],
+                interpolation="none",
+                cmap=_upper_half_cmap(cmap_i),
+                norm=norm,
+                **_kwargs_without_limits(kwargs),
+            )
+
         else:
             # Use TwoSlopeNorm for a symmetric / centred scale.  Remove any
             # vmin/vmax from kwargs to avoid conflicts with `norm`.
@@ -509,14 +420,70 @@ def plot_n_hic(
         if first_im is None:
             first_im = im
 
+        # jet line overlay
+        if jet_points is not None:
+            jp = np.asarray(jet_points[i], dtype=float)
+            if jp.size:
+                if jet_points is not None:
+                    jp = np.asarray(jet_points[i], dtype=float)
+                    if jp.size:
+                        ny, nx = H[i].shape[:2]
+                        jp = jp.copy()
+                        jp[:, 0] = jp[:, 0] * nx - 0.5   # x (columns)
+                        jp[:, 1] = jp[:, 1] * ny - 0.5   # y (rows)
+
+                    # allow a per-panel list of colour specs (parallel to jet_points)
+                    jc = jet_color
+                    if isinstance(jc, list) and len(jc) == n_mats:
+                        jc = jc[i]
+                    # is this a 1-D numeric array (one value per point)?
+                    jc_arr = None if (jc is None or isinstance(jc, str)) else np.asarray(jc)
+                    jc_is_values = (
+                        jc_arr is not None
+                        and jc_arr.ndim == 1
+                        and jc_arr.size == jp.shape[0]
+                        and np.issubdtype(jc_arr.dtype, np.number)
+                    )
+                    if jc_is_values:
+                        sc_kwargs = dict(
+                            s=jet_size,
+                            c=jc_arr.astype(float),
+                            cmap=jet_cmap,
+                            linewidths=0,
+                            alpha=0.9,
+                            zorder=10,
+                        )
+                        if jet_norm is not None:
+                            sc_kwargs["norm"] = jet_norm          # vmin/vmax come from the norm
+                        else:
+                            sc_kwargs["vmin"] = jet_vmin
+                            sc_kwargs["vmax"] = jet_vmax
+                        sc = ax.scatter(jp[:, 0], jp[:, 1], **sc_kwargs)
+                        jcbar = fig.colorbar(sc, ax=ax, fraction=0.046, pad=0.04)
+                        if jet_cmap_label is not None:
+                            jcbar.set_label(jet_cmap_label, rotation=270, labelpad=12)
+                        jcbar.ax.tick_params(labelsize=cbar_fontsize)
+                    else:
+                        ax.scatter(
+                            jp[:, 0], jp[:, 1],
+                            s=jet_size,
+                            c=jc,
+                            linewidths=0,
+                            alpha=0.9,
+                            zorder=10,
+                        )
+
+
         # Individual colourbar unless a shared one is requested
         if show_cbar and not standardize_cbar:
             cbar = fig.colorbar(im, ax=ax)
             cbar.set_label(cmap_label, rotation=270)
+            _uniformly_space_cbar(cbar, im, num_ticks)
+            cbar.ax.tick_params(labelsize=cbar_fontsize)
 
-        # ------------------------------------------------------------
+        # 
         # Axis labelling
-        # ------------------------------------------------------------
+        # 
         ax.set_title(titles[i], fontsize=fig_fontsize)
 
         def_xticks = np.arange(0, H[i].shape[1], np.ceil(H[i].shape[1] / num_ticks).astype(int))
@@ -525,28 +492,72 @@ def plot_n_hic(
         gshift = genomic_shift[i] if isinstance(genomic_shift, (list, np.ndarray)) else genomic_shift
 
         if resolution is not None and not hide_axis:
-            ticks_bp_x = [genomic_labels(gshift + x * res_i, N=1) for x in def_xticks]
-            ticks_bp_y = [genomic_labels(gshift + y * res_i, N=1) for y in def_yticks]
 
-            ax.set_xticks(def_xticks)
-            ax.set_xticklabels(ticks_bp_x, fontsize=8, rotation=45)
-            ax.set_yticks(def_yticks)
-            ax.set_yticklabels(ticks_bp_y, fontsize=8)
+            if center_window:
+                # Centred-window mode: the middle bin is genomic
+                # coordinate 0.  Ticks fan out symmetrically, negative
+                # to the left/top and positive to the right/bottom.
+                # ``genomic_shift`` is ignored.  H[i] is assumed square,
+                # so x and y share the same ticks/labels.
+                m = H[i].shape[1]
+                center_px = m // 2
+                step = max(int(np.ceil(m / num_ticks)), 1)
+                offsets = np.arange(0, center_px + 1, step)
+                cw_ticks = np.unique(np.concatenate([center_px - offsets, center_px + offsets]))
+                cw_labels = _centered_axis_labels(cw_ticks, center_px, res_i)
+                ax.set_xticks(cw_ticks)
+                ax.set_xticklabels(cw_labels, fontsize=tick_fontsize, rotation=45)
+                ax.set_yticks(cw_ticks)
+                ax.set_yticklabels(cw_labels, fontsize=tick_fontsize)
+            else:
+                ticks_bp_x = [genomic_labels2(gshift + x * res_i, N=1) for x in def_xticks]
+                ticks_bp_y = [genomic_labels2(gshift + y * res_i, N=1) for y in def_yticks]
+
+                ax.set_xticks(def_xticks)
+                ax.set_xticklabels(ticks_bp_x, fontsize=tick_fontsize, rotation=45)
+                ax.set_yticks(def_yticks)
+                ax.set_yticklabels(ticks_bp_y, fontsize=tick_fontsize)
+
+
+            # ticks_bp_x = [genomic_labels(gshift + x * res_i, N=1) for x in def_xticks]
+            # ticks_bp_y = [genomic_labels(gshift + y * res_i, N=1) for y in def_yticks]
+
+            # ax.set_xticks(def_xticks)
+            # ax.set_xticklabels(ticks_bp_x, fontsize=8, rotation=45)
+            # ax.set_yticks(def_yticks)
+            # ax.set_yticklabels(ticks_bp_y, fontsize=8)
 
         if hide_axis:
             # ax.set_axis_off()
             ax.axis("off")
 
-    # ------------------------------------------------------------------
+        # Optional resolution annotation
+        if add_res is not None:
+            _positions = {
+                "bottom right": (0.97, 0.03, "right", "bottom"),
+                "bottom left":  (0.03, 0.03, "left",  "bottom"),
+                "top right":    (0.97, 0.97, "right", "top"),
+                "top left":     (0.03, 0.97, "left",  "top"),
+            }
+            _key = add_res.lower() if isinstance(add_res, str) else "bottom right"
+            _x, _y, _ha, _va = _positions.get(_key, _positions["bottom right"])
+            ax.text(
+                _x, _y,
+                genomic_labels2(res_i, add_res=True),
+                transform=ax.transAxes,
+                color="black",
+                fontsize=23,
+                ha=_ha, va=_va,
+            )
+
     # Draw a single shared colourbar if requested
-    # ------------------------------------------------------------------
     if show_cbar and standardize_cbar and first_im is not None:
         cbar = fig.colorbar(first_im, ax=axs.ravel().tolist(), shrink=0.6)
         cbar.set_label(cmap_label, rotation=270)
+        _uniformly_space_cbar(cbar, first_im, num_ticks)
+        cbar.ax.tick_params(labelsize=cbar_fontsize)
 
-    # ------------------------------------------------------------------
     # Figure-level titles / labels & I/O
-    # ------------------------------------------------------------------
     fig.suptitle(suptitle, fontsize=fig_fontsize)
     fig.set_constrained_layout_pads(h_pad=0.05, w_pad=0.05, hspace=0.05)
 
@@ -556,13 +567,26 @@ def plot_n_hic(
         fig.supylabel(supylabel)
 
     if savepath:
-        plt.savefig(savepath, dpi=400)
+        plt.savefig(savepath, dpi=400, bbox_inches="tight")
     if show:
         plt.show()
     else:
         plt.close(fig)
 
+def _uniformly_space_cbar(cbar, im, num):
+    """Place *num* evenly-spaced ticks along the colourbar.
 
+    Under a piecewise-linear ``TwoSlopeNorm`` matplotlib's default
+    locator works in *data* space, so round-number ticks bunch up on the
+    side spanning the wider data range and the other side ends up nearly
+    empty.  Mapping evenly-spaced display positions in [0, 1] back through
+    ``norm.inverse`` restores uniform spacing on the bar.
+    """
+    if not isinstance(im.norm, colors.TwoSlopeNorm):
+        return
+    ticks = im.norm.inverse(np.linspace(0, 1, max(num, 2)))
+    cbar.set_ticks(ticks)
+    cbar.set_ticklabels([f"{t:.3g}" for t in ticks])
 
 
 
@@ -951,7 +975,7 @@ def convert_imagej_coord_to_numpy(coords, window_size_bin, flip_y, start_bin=0):
     keep `flip_y` as False.
 
     Parameters
-    ----------
+    ------
     coords : np.ndarray
         Coordinates in the format [[x1, y1], [x2, y2], ...]
         where x is the horizontal axis and y is the vertical axis
@@ -968,7 +992,7 @@ def convert_imagej_coord_to_numpy(coords, window_size_bin, flip_y, start_bin=0):
         then you don't want the coords to be global coordinates, but rather local to the chunk
 
     Returns
-    -------
+    ---
     ridge_coords : np.ndarray
         Coordinates in the format [[x1, y1], [x2, y2], ...]
         where x is the horizontal axis and y is the vertical axis
@@ -1318,7 +1342,7 @@ def plot_p_value_basics(im, ridge_points, ridge_widths,
     fig, ax = plt.subplots(7, 3, figsize=(20, 22), layout="constrained", height_ratios=[3, 1, 1, 1, 1, 1, 1])
     fig.suptitle(fig_suptitle)
     
-    # --- First row: Original image and ridge points ---
+    # First row: Original image and ridge points
     # Original image
     imcm = ax[0, 0].imshow(im, cmap='Reds')
     ax[0, 0].set_title("Original")
@@ -1372,7 +1396,7 @@ def plot_p_value_basics(im, ridge_points, ridge_widths,
     ax[0, 2].set_title("Original with Ridge Points and Boxes")
     ax[0, 2].legend()
     
-    # --- Second row: Number of points in boxes ---
+    # Second row: Number of points in boxes
     ax[1, 1].plot(center_num_points, '-o', color="cyan")
     ax[1, 1].set_title("Center Box Number of Points")
     ax[1, 1].set_ylabel("Number of Points")
@@ -1388,7 +1412,7 @@ def plot_p_value_basics(im, ridge_points, ridge_widths,
     ax[1, 0].set_ylabel("Number of Points")
     ax[1, 0].set_xlabel("Ridge Point Index")
     
-    # --- Third row: Boxplot, histogram and ECDF of intensity values ---
+    # Third row: Boxplot, histogram and ECDF of intensity values
     # Boxplot
     ax[2, 0].plot(ridge_widths, "-o")
     ax[2, 0].set_title("Ridge Widths")
@@ -1413,7 +1437,7 @@ def plot_p_value_basics(im, ridge_points, ridge_widths,
     ax[2, 2].set_ylabel("Cumulative Frequency")
     ax[2, 2].set_xlabel("Intensity")
     
-    # --- Fourth row: Mean intensity values ---
+    # Fourth row: Mean intensity values
     ax[3, 0].plot(center_means, '-o', color="cyan", label="Center")
     ax[3, 0].plot(left_means, '-o', color="blue", label="Left")
     ax[3, 0].plot(right_means, '-o', color="green", label="Right")
@@ -1438,7 +1462,7 @@ def plot_p_value_basics(im, ridge_points, ridge_widths,
     ax[3, 2].set_ylabel("Cumulative Frequency")
     ax[3, 2].set_xlabel("Mean Intensity")
     
-    # --- Fifth row: Median intensity values ---
+    # Fifth row: Median intensity values
     ax[4, 0].plot(center_medians, '-o', color="cyan", label="Center")
     ax[4, 0].plot(left_medians, '-o', color="blue", label="Left")
     ax[4, 0].plot(right_medians, '-o', color="green", label="Right")
@@ -1463,7 +1487,7 @@ def plot_p_value_basics(im, ridge_points, ridge_widths,
     ax[4, 2].set_ylabel("Cumulative Frequency")
     ax[4, 2].set_xlabel("Median Intensity")
     
-    # --- Sixth row: Mean test statistic plots ---
+    # Sixth row: Mean test statistic plots
     ax[5, 0].plot(mean_CR_subtract, '-o')
     ax[5, 0].set_title("Mean C - avg(L, R)")
     ax[5, 0].set_xlabel("Ridge Point Index")
@@ -1477,7 +1501,7 @@ def plot_p_value_basics(im, ridge_points, ridge_widths,
     ax[5, 2].set_xlabel("Ridge Point Index")
 
 
-    # --- Seventh row: Median test statistic plots ---
+    # Seventh row: Median test statistic plots
     ax[6, 0].plot(med_CR_subtract, '-o')
     ax[6, 0].set_title("Median C - avg(L, R)")
     ax[6, 0].set_xlabel("Ridge Point Index")
@@ -1502,3 +1526,406 @@ def plot_p_value_basics(im, ridge_points, ridge_widths,
     else:
         plt.show()
     
+
+
+def plot_n_hic_widths(
+    H,
+    titles,
+    suptitle,
+    resolution,
+    ppr=5,
+    genomic_shift=0,
+    savepath=None,
+    show=False,
+    supxlabel=None,
+    supylabel=None,
+    figsize=None,
+    cmap_label="Intensity",
+    dpi=100,
+    num_ticks=5,
+    show_cbar=True,
+    vcenter=None,
+    cmap="Reds",
+    vmax=None,
+    vmin=None,
+    standardize_cbar=False,
+    share_xy=True,
+    hide_axis=False,
+    fig_fontsize=12.5,
+    cbar_fontsize=10,
+    tick_fontsize=8,
+    add_res=None,
+    center_window=False,
+    jet_points=None,              # list of (n_points, 2) arrays in normalized [0,1] coords
+    jet_color="black",
+    jet_size=4,
+    jet_cmap="viridis",           # cmap used when jet_color is a 1-D value array
+    jet_cmap_label=None,          # label for the jet colourbar
+    jet_vmin=None,                # optional fixed scale across panels
+    jet_norm=None,                # a matplotlib Normalize / LogNorm / SymLogNorm instance
+    jet_vmax=None,
+    jet_box_coords=None,          # list length n_mats; each entry is a list of
+                                  #   (k, 2) polygons in normalized [0,1] coords
+                                  #   (column, row)  i.e. the CENTER boxes.
+    jet_box_left_coords=None,     # optional LEFT boxes, same structure
+    jet_box_right_coords=None,    # optional RIGHT boxes, same structure
+    jet_box_color="mediumseagreen",
+    jet_box_left_color="orange",
+    jet_box_right_color="blue",
+    jet_box_linewidth=1.0,
+    jet_box_alpha=1.0,
+    **kwargs,
+):
+    """Plot *n* Hi-C matrices in a compact grid.
+
+    If ``standardize_cbar`` is *True*, all panels share a single colour scale
+    (common *vmin*/*vmax*) **and** a single colourbar.  When a non-``None``
+    ``vcenter`` is supplied, the shared scale is implemented with
+    :class:`matplotlib.colors.TwoSlopeNorm`, so the zero (or other specified
+    centre) is aligned and symmetric across every image and the global
+    colourbar.
+
+    In addition to the scatter overlay controlled by ``jet_points``, this
+    version can overlay the jet **width boxes** (rotated rectangles), exactly
+    as ``plot_hic_with_annotation`` draws ``center_box_coords`` /
+    ``left_box_coords`` / ``right_box_coords``.  Box coordinates are supplied
+    per panel in *normalized* ``[0, 1]`` image coordinates (same convention as
+    ``jet_points``), so they are rescaled to each panel's pixel grid
+    automatically.  A per-panel entry may be ``None`` (no boxes for that panel).
+    """
+
+    
+    # Validate / normalise input array(s)
+    
+    if isinstance(H, np.ndarray):
+        if H.ndim == 3:
+            H = list(H)
+        else:
+            raise ValueError("Numpy array H must be 3-dim with shape (n, m, m)")
+
+    if not isinstance(H, list):
+        raise TypeError("H must be a list or 3-D numpy array")
+
+    n_mats = len(H)
+
+    
+    # Determine global limits when a shared colourbar is requested
+    
+    global_vmin = None
+    global_vmax = None
+
+    if standardize_cbar:
+        #  vmax 
+        if vmax is None:
+            global_vmax = max(np.nanmax(h) for h in H)
+        else:
+            global_vmax = max(vmax) if isinstance(vmax, (list, np.ndarray)) else vmax
+        #  vmin 
+        if vmin is None:
+            global_vmin = min(np.nanmin(h) for h in H)
+        else:
+            global_vmin = min(vmin) if isinstance(vmin, (list, np.ndarray)) else vmin
+    # (If standardize_cbar is False we leave vmin/vmax handling to per-panel logic)
+
+    
+    # Figure / grid layout
+    
+    closest_multiple = ppr - n_mats % ppr if n_mats % ppr else 0
+    num_rows = (n_mats + closest_multiple) // ppr
+    num_cols = min(n_mats, ppr)
+
+    if share_xy:
+        share_xy = not isinstance(genomic_shift, (list, np.ndarray))
+    fig_size = figsize if figsize is not None else (4.5 * num_cols, 3 * num_rows + 1)
+
+    jet_points = list(jet_points) if jet_points is not None else None
+    jet_box_coords = list(jet_box_coords) if jet_box_coords is not None else None
+    jet_box_left_coords = list(jet_box_left_coords) if jet_box_left_coords is not None else None
+    jet_box_right_coords = list(jet_box_right_coords) if jet_box_right_coords is not None else None
+
+    fig, axs = plt.subplots(
+        num_rows,
+        num_cols,
+        figsize=fig_size,
+        layout="constrained",
+        sharex="all" if share_xy else False,
+        sharey="all" if share_xy else False,
+        dpi=dpi,
+        squeeze=False,
+    )
+
+    first_im = None  # reference image for a potential global colourbar
+
+    
+    # Helper for kwargs without vmin/vmax (to avoid conflicts with `norm`)
+    
+    def _kwargs_without_limits(src):
+        return {k: v for k, v in src.items() if k not in {"vmin", "vmax"}}
+
+    # Helper for centered window
+    def _centered_axis_labels(ticks, center_px, res):
+        labels = []
+        for p in ticks:
+            lbl = genomic_labels2(abs(int(p) - center_px) * res)
+            labels.append(f"-{lbl}" if p < center_px else lbl)
+        return labels
+
+    # Helper: keep only the upper (positive) half of a divergent colormap
+    def _upper_half_cmap(cmap_src, n=256):
+        base = cmap_src if isinstance(cmap_src, colors.Colormap) else plt.get_cmap(cmap_src)
+        return colors.LinearSegmentedColormap.from_list(
+            f"{base.name}_upper", base(np.linspace(0.5, 1.0, n))
+        )
+
+    
+    # Helper: draw a set of width boxes for one panel.
+    #
+    # ``boxes`` is a list of (k, 2) polygons in normalized [0, 1] coords, with
+    # column 0 = x (columns) and column 1 = y (rows).  They are rescaled to the
+    # panel's pixel grid exactly like ``jet_points`` (``* n - 0.5``, no y-flip,
+    # because the image is drawn with origin='upper').
+    
+    def _draw_boxes(ax, boxes, nx, ny, color, label=None):
+        if boxes is None:
+            return
+        for bi, b in enumerate(boxes):
+            b = np.asarray(b, dtype=float)
+            if b.size == 0:
+                continue
+            xs = b[:, 0] * nx - 0.5   # column (x)
+            ys = b[:, 1] * ny - 0.5   # row (y); no flip (origin='upper')
+            ax.plot(
+                xs, ys,
+                color=color,
+                linestyle="-",
+                linewidth=jet_box_linewidth,
+                alpha=jet_box_alpha,
+                marker=None,
+                zorder=6,
+                label=(label if bi == 0 else None),
+            )
+
+    
+    # Main plotting loop
+    
+    for i, ax in enumerate(axs.flat):
+        if i >= n_mats:
+            ax.axis("off")
+            continue
+
+        # Panel-specific parameters (scalar or sequence allowed)
+        res_i = resolution[i] if isinstance(resolution, (list, np.ndarray)) else resolution
+        cmap_i = cmap[i] if isinstance(cmap, (list, np.ndarray)) else cmap
+        vmax_i = vmax[i] if isinstance(vmax, (list, np.ndarray)) else vmax
+        vcenter_i = vcenter[i] if isinstance(vcenter, (list, np.ndarray)) else vcenter
+
+        # If using a shared scale, override per-panel limits
+        if standardize_cbar:
+            vmax_i = global_vmax
+            vmin_i = global_vmin
+        else:
+            vmin_i = vmin[i] if isinstance(vmin, (list, np.ndarray)) else vmin
+            if vmin_i is None:
+                vmin_i = np.nanmin(H[i])
+
+        # 
+        # Draw image (handling centred vs. linear colour scales)
+        # 
+        if vcenter_i is None:
+            im = ax.imshow(
+                H[i],
+                interpolation="none",
+                cmap=cmap_i,
+                vmax=vmax_i,
+                vmin=vmin_i,
+                **_kwargs_without_limits(kwargs),
+            )
+        elif vmin_i > vcenter_i:
+            print('Warning: vmin is greater than vcenter. Since vcenter is specified, we will default the cmap to only include the positive half')
+
+            # Data lie entirely above the centre: use only the positive
+            # (upper) half of the divergent colormap, spanning [vcenter, vmax]
+            # so colours remain consistent with the divergent centre.
+            norm = colors.Normalize(vmin=vcenter_i, vmax=vmax_i)
+            im = ax.imshow(
+                H[i],
+                interpolation="none",
+                cmap=_upper_half_cmap(cmap_i),
+                norm=norm,
+                **_kwargs_without_limits(kwargs),
+            )
+
+        else:
+            # Use TwoSlopeNorm for a symmetric / centred scale.  Remove any
+            # vmin/vmax from kwargs to avoid conflicts with `norm`.
+            norm = colors.TwoSlopeNorm(
+                vcenter=vcenter_i,
+                vmax=vmax_i,
+                vmin=vmin_i,
+            )
+            im = ax.imshow(
+                H[i],
+                interpolation="none",
+                cmap=cmap_i,
+                norm=norm,
+                **_kwargs_without_limits(kwargs),
+            )
+
+        # Keep first image handle for a potential global colourbar
+        if first_im is None:
+            first_im = im
+
+        # Panel pixel dimensions (used by both jet points and boxes)
+        ny, nx = H[i].shape[:2]
+
+        # jet line overlay (scatter)  
+        if jet_points is not None:
+            jp = np.asarray(jet_points[i], dtype=float)
+            if jp.size:
+                jp = jp.copy()
+                jp[:, 0] = jp[:, 0] * nx - 0.5   # x (columns)
+                jp[:, 1] = jp[:, 1] * ny - 0.5   # y (rows)
+
+                # allow a per-panel list of colour specs (parallel to jet_points)
+                jc = jet_color
+                if isinstance(jc, list) and len(jc) == n_mats:
+                    jc = jc[i]
+                # is this a 1-D numeric array (one value per point)?
+                jc_arr = None if (jc is None or isinstance(jc, str)) else np.asarray(jc)
+                jc_is_values = (
+                    jc_arr is not None
+                    and jc_arr.ndim == 1
+                    and jc_arr.size == jp.shape[0]
+                    and np.issubdtype(jc_arr.dtype, np.number)
+                )
+                if jc_is_values:
+                    sc_kwargs = dict(
+                        s=jet_size,
+                        c=jc_arr.astype(float),
+                        cmap=jet_cmap,
+                        linewidths=0,
+                        alpha=0.9,
+                        zorder=10,
+                    )
+                    if jet_norm is not None:
+                        sc_kwargs["norm"] = jet_norm          # vmin/vmax come from the norm
+                    else:
+                        sc_kwargs["vmin"] = jet_vmin
+                        sc_kwargs["vmax"] = jet_vmax
+                    sc = ax.scatter(jp[:, 0], jp[:, 1], **sc_kwargs)
+                    jcbar = fig.colorbar(sc, ax=ax, fraction=0.046, pad=0.04)
+                    if jet_cmap_label is not None:
+                        jcbar.set_label(jet_cmap_label, rotation=270, labelpad=12)
+                    jcbar.ax.tick_params(labelsize=cbar_fontsize)
+                else:
+                    ax.scatter(
+                        jp[:, 0], jp[:, 1],
+                        s=jet_size,
+                        c=jc,
+                        linewidths=0,
+                        alpha=0.9,
+                        zorder=10,
+                    )
+
+        # jet width-box overlay (polylines)  
+        if jet_box_coords is not None:
+            _draw_boxes(ax, jet_box_coords[i], nx, ny, jet_box_color, label="Center box")
+        if jet_box_left_coords is not None:
+            _draw_boxes(ax, jet_box_left_coords[i], nx, ny, jet_box_left_color, label="Left box")
+        if jet_box_right_coords is not None:
+            _draw_boxes(ax, jet_box_right_coords[i], nx, ny, jet_box_right_color, label="Right box")
+
+        # Individual colourbar unless a shared one is requested
+        if show_cbar and not standardize_cbar:
+            cbar = fig.colorbar(im, ax=ax)
+            cbar.set_label(cmap_label, rotation=270)
+            _uniformly_space_cbar(cbar, im, num_ticks)
+            cbar.ax.tick_params(labelsize=cbar_fontsize)
+
+        # 
+        # Axis labelling
+        # 
+        ax.set_title(titles[i], fontsize=fig_fontsize)
+
+        def_xticks = np.arange(0, H[i].shape[1], np.ceil(H[i].shape[1] / num_ticks).astype(int))
+        def_yticks = np.arange(0, H[i].shape[0], np.ceil(H[i].shape[0] / num_ticks).astype(int))
+
+        gshift = genomic_shift[i] if isinstance(genomic_shift, (list, np.ndarray)) else genomic_shift
+
+        if resolution is not None and not hide_axis:
+
+            if center_window:
+                # Centred-window mode: the middle bin is genomic
+                # coordinate 0.  Ticks fan out symmetrically, negative
+                # to the left/top and positive to the right/bottom.
+                # ``genomic_shift`` is ignored.  H[i] is assumed square,
+                # so x and y share the same ticks/labels.
+                m = H[i].shape[1]
+                center_px = m // 2
+                step = max(int(np.ceil(m / num_ticks)), 1)
+                offsets = np.arange(0, center_px + 1, step)
+                cw_ticks = np.unique(np.concatenate([center_px - offsets, center_px + offsets]))
+                cw_labels = _centered_axis_labels(cw_ticks, center_px, res_i)
+                ax.set_xticks(cw_ticks)
+                ax.set_xticklabels(cw_labels, fontsize=tick_fontsize, rotation=45)
+                ax.set_yticks(cw_ticks)
+                ax.set_yticklabels(cw_labels, fontsize=tick_fontsize)
+            else:
+                ticks_bp_x = [genomic_labels2(gshift + x * res_i, N=1) for x in def_xticks]
+                ticks_bp_y = [genomic_labels2(gshift + y * res_i, N=1) for y in def_yticks]
+
+                ax.set_xticks(def_xticks)
+                ax.set_xticklabels(ticks_bp_x, fontsize=tick_fontsize, rotation=45)
+                ax.set_yticks(def_yticks)
+                ax.set_yticklabels(ticks_bp_y, fontsize=tick_fontsize)
+
+        if hide_axis:
+            ax.axis("off")
+
+        # 
+        # Optional resolution annotation
+        # 
+        if add_res is not None:
+            _positions = {
+                "bottom right": (0.97, 0.03, "right", "bottom"),
+                "bottom left":  (0.03, 0.03, "left",  "bottom"),
+                "top right":    (0.97, 0.97, "right", "top"),
+                "top left":     (0.03, 0.97, "left",  "top"),
+            }
+            _key = add_res.lower() if isinstance(add_res, str) else "bottom right"
+            _x, _y, _ha, _va = _positions.get(_key, _positions["bottom right"])
+            ax.text(
+                _x, _y,
+                genomic_labels2(res_i, add_res=True),
+                transform=ax.transAxes,
+                color="black",
+                fontsize=23,
+                ha=_ha, va=_va,
+            )
+
+    
+    # Draw a single shared colourbar if requested
+    
+    if show_cbar and standardize_cbar and first_im is not None:
+        cbar = fig.colorbar(first_im, ax=axs.ravel().tolist(), shrink=0.6)
+        cbar.set_label(cmap_label, rotation=270)
+        _uniformly_space_cbar(cbar, first_im, num_ticks)
+        cbar.ax.tick_params(labelsize=cbar_fontsize)
+
+    
+    # Figure-level titles / labels & I/O
+    
+    fig.suptitle(suptitle, fontsize=fig_fontsize)
+    fig.set_constrained_layout_pads(h_pad=0.05, w_pad=0.05, hspace=0.05)
+
+    if supxlabel:
+        fig.supxlabel(supxlabel)
+    if supylabel:
+        fig.supylabel(supylabel)
+
+    if savepath:
+        plt.savefig(savepath, dpi=400, bbox_inches="tight")
+    if show:
+        plt.show()
+    else:
+        plt.close(fig)

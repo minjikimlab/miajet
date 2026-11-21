@@ -194,7 +194,65 @@ def remove_and_resize_square_stacks(stack, stack_positions, expected_stack_size)
 
     return stack_resized, stack_positions_filtered
 
+def remove_stacks(stack, stack_positions, resolution, fixed_window_size, verbose=False):
+    """
+    Filters out any arrays in `stack` that aren't square
 
+    Parameters
+    ----------
+    stack : Sequence of 2D numpy arrays
+        Each array should represent a Hi-C window.
+    stack_positions : pandas.DataFrame
+        Positions corresponding to each entry in `stack`.
+
+    Returns
+    -------
+    (np.ndarray, pandas.DataFrame)
+        - stack_resized: Array of shape (n_retained, expected_stack_size, expected_stack_size)
+        - stack_positions_filtered: DataFrame of length n_retained
+    """
+    if stack_positions.empty:
+        return stack, stack_positions
+
+    expected_arr_size = fixed_window_size // resolution + 1
+
+    if verbose:
+        print(f"Expected array size: {expected_arr_size} (fixed_window_size={fixed_window_size}, resolution={resolution})")
+
+    stack_uniform = []
+    bad_indices = []
+
+    for i, arr in enumerate(stack):
+        # check it's 2D and square
+        if arr.ndim != 2 or arr.shape[0] != arr.shape[1] or arr.shape[0] == 0 or arr.shape[0] != expected_arr_size:
+            bad_indices.append(i)
+
+            if verbose:
+                # Print some diagnostics like the index and chrom, start, end and shape of the array
+                print(f"Removing stack at index {i} with shape {arr.shape}. Region: {stack_positions.iloc[i]['chrom']}:{stack_positions.iloc[i]['start']}-{stack_positions.iloc[i]['end']}")
+
+            continue
+
+
+        stack_uniform.append(arr)
+
+    # build numpy array of resized windows
+    stack_resized = np.array(stack_uniform)
+
+    # drop bad rows from positions, reset index
+    stack_positions_filtered = (
+        stack_positions
+        .drop(index=bad_indices, errors='ignore')
+        .reset_index(drop=True)
+    )
+
+    # sanity check
+    assert stack_resized.shape[0] == len(stack_positions_filtered), (
+        f"Number of retained stacks ({stack_resized.shape[0]}) "
+        f"does not match positions ({len(stack_positions_filtered)})"
+    )
+
+    return stack_resized, stack_positions_filtered
 
 
 

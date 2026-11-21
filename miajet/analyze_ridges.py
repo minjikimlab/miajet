@@ -2233,7 +2233,7 @@ def format_summary_table(df_agg_in, df_features_in, chromosome, resolution, rank
     * Keeps: angle_mean, input_mean, `ranking`, ks, p-val
     """
     keep = ["unique_id", "Label", "chrom", "start", "end", "s_imagej", "length", "dist_diag", 
-            "saliency", "ridge_strength_turbulence",
+            "saliency", "ridge_strength_turbulence", "avg_ridge_strength",
             "angle_turbulence", "angle_satisfied",  
             "consistency", "sum_consistency", "sum_consistency_im", "blobness", 
             "p-val", "q-val_white", "q-val", 
@@ -2255,6 +2255,13 @@ def format_summary_table(df_agg_in, df_features_in, chromosome, resolution, rank
     # Instead, use the minimal point of jet to the main diagonal as start and end coordinates
     key = df_features_in.groupby('unique_id')["dist_diag"].idxmin()
     df_agg[["start", "end"]] = df_features_in.iloc[df_agg["unique_id"].map(key)][["x (bp)", "y (bp)"]].reset_index(drop=True)
+
+    df_agg['start_new'] = np.minimum(df_agg['start'], df_agg['end'])
+    df_agg['end_new'] = np.maximum(df_agg['start'], df_agg['end'])
+    df_agg['start'] = df_agg['start_new'].astype(int)
+    df_agg['end'] = df_agg['end_new'].astype(int)
+    df_agg.drop(columns=['start_new', 'end_new'], inplace=True)
+    
     df_agg["chrom"] = chromosome
 
     df_agg["unique_id"] = df_agg["chrom"] + "_" + df_agg["unique_id"]

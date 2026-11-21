@@ -10,7 +10,6 @@
 !environment.yml
 !environment_macOS.yml
 
-!demo_data/**
 !imagej_macros/**
 !localfiji/**
 !miajet/**
@@ -25,3 +24,8 @@ notebooks/dev_*
 
 utils/__pycache__/
 job*_gs*.sbat
+
+# release notebooks
+!notebooks-release/
+!notebooks-release/*.ipynb
+!notebooks-release/*.py

@@ -175,7 +175,7 @@ def add_side_stats(ax, stats, xpos=-0.35, ystart=0.95, dy=0.05, fontsize=10):
                 transform=ax.transAxes, fontsize=fontsize,
                 ha='left', va='top')
 
-def add_pairwise_sig(ax, positions, groups, y_pad=0.05, fontsize=8):
+def add_pairwise_sig(ax, positions, groups, y_pad=0.05, fontsize=8, pad_from_max=0, pairs_to_compare=None):
     """
     Draws significance bars for every pair of groups.
     For crowded plots keep only selected pairs 
@@ -188,19 +188,28 @@ def add_pairwise_sig(ax, positions, groups, y_pad=0.05, fontsize=8):
         return
 
     # Compute min/max on just the non-empty slices
-    y_max = max(max(groups[i]) for i in non_empty_idx)
+    y_max = max(max(groups[i]) for i in non_empty_idx) 
     y_min = min(min(groups[i]) for i in non_empty_idx)
     h = (y_max - y_min) * y_pad
 
-    # Only compare non-empty groups
-    pairs = list(itertools.combinations(non_empty_idx, 2))
+    # 75th percentile
+    y_75 = max(np.percentile(groups[i], 75) for i in non_empty_idx)
+
+    if pairs_to_compare is None:
+        # Only compare non-empty groups
+        pairs = list(itertools.combinations(non_empty_idx, 2))
+    else:
+        pairs = pairs_to_compare
+
+    y_max += pad_from_max
 
     for k, (i, j) in enumerate(pairs):
         # now i and j are guaranteed non-empty indexes
         p = ranksums(groups[i], groups[j]).pvalue
 
         x1, x2 = positions[i], positions[j]
-        y = y_max + h * (k + 1)
+        y = y_max + h * (k + 1) 
+        # y = y_75 + h * (k + 1)  # start above the 75th percentile to avoid outliers
 
         ax.plot([x1, x1, x2, x2],
                 [y,   y + h/3, y + h/3, y],

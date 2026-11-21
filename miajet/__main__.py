@@ -181,6 +181,7 @@ def main():
                                                                 sum_consistency_im=config.sum_consistency_im,
                                                                 ridge_strength_turbulence=config.ridge_strength_turbulence,
                                                                 angle_satisfied=config.angle_satisfied,
+                                                                use_avg_saliency=config.use_avg_saliency,
                                                                 verbose=config.verbose)
     diagnostic_filter_plot(df_agg, df_features, individual_masks, config.diagnostic_plots, im_orig,
                            save_path=f"{config.save_sub_dir}/", im_vmax=99.5,

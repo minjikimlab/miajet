@@ -66,7 +66,7 @@ h = HiCFile("$hic")
 print(min(h.getResolutions()))
 PYCODE
 )
-  echo "  Selected resolution: ${res} bp"
+  echo "  Selected resolution: ${res} bp"
 
   prefix="${tmp_dir}/${sample}.cool" 
   tmp="${tmp_dir}/${sample}_${res}.cool" # hic2cool will automatically add the resolution suffix

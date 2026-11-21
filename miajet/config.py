@@ -76,6 +76,7 @@ class Config:
     consistency: Optional[float] = None  # TODO: confirm type
     sum_consistency: Optional[float] = None  # TODO: confirm type
     sum_consistency_im: Optional[str] = None  # TODO: confirm type
+    use_avg_saliency: Optional[str] = None  # TODO: confirm type
 
     ridge_strength_turbulence: Optional[float] = None  # TODO: confirm type
     angle_satisfied: Optional[float] = None  # TODO: confirm type
@@ -108,6 +109,7 @@ def assign_defaults(args: argparse.Namespace) -> argparse.Namespace:
             "angle_turbulence": 0.325, # Filter param
             "consistency": 0.6,
             "sum_consistency_im": "False",
+            "use_avg_saliency": "False",
         },
         "replihic": {
             "normalization": "VC_SQRT",
@@ -124,6 +126,7 @@ def assign_defaults(args: argparse.Namespace) -> argparse.Namespace:
             "angle_turbulence": None, # Filter param
             "consistency": None,
             "sum_consistency_im": "True",
+            "use_avg_saliency": "False",
         }
     }
     # Assign defaults
@@ -187,6 +190,7 @@ def process_args(args: argparse.Namespace) -> Config:
         consistency=args.consistency,
         sum_consistency=args.sum_consistency,
         sum_consistency_im=args.sum_consistency_im,
+        use_avg_saliency=args.use_avg_saliency,
         ridge_strength_turbulence=args.ridge_strength_turbulence,
         angle_satisfied=args.angle_satisfied,
         length=args.length,
@@ -326,6 +330,13 @@ def process_args(args: argparse.Namespace) -> Config:
         config.ang_frac = False
     else:        
         raise ValueError("ang_frac parameter must be 'True' or 'False'")    
+    
+    if args.use_avg_saliency.lower() == "true":
+        config.use_avg_saliency = True
+    elif args.use_avg_saliency.lower() == "false":
+        config.use_avg_saliency = False
+    else:        
+        raise ValueError("use_avg_saliency parameter must be 'True' or 'False'")
 
     # Sub directory (level 2): all results
     config.save_sub_dir = os.path.join(config.save_dir, f"{config.root}_results_all")
@@ -404,6 +415,7 @@ def print_parameters(config: Config):
         print("* Ridge strength turbulence:", config.ridge_strength_turbulence)
         print("* Angle satisfied:", config.angle_satisfied)
         print("* Length:", config.length)
+        print("* Use average saliency:", config.use_avg_saliency)
 
         # Fixed/Advanced Parameters
         print("\nFixed/Advanced Parameters")

@@ -176,6 +176,9 @@ def parse_args():
                         "(default: 0.3)")
     parser.add_argument("--length", type=none_or_float, required=False, default=5,
                         help="Filters according to minimum length of jet. (default: 5)")
+    parser.add_argument("--use_avg_saliency", type=str, default=_MISSING, choices=["True", "False"],
+                        help="Uses the average or the sum (default) for saliency computation. ")
+
 
 
     # Debug parameters

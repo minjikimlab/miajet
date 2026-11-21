@@ -271,7 +271,7 @@ def simulate_filter_ridges(df_agg, df_features, rmse, entropy_thresh, c0_filter,
 def filter_ridges(df_agg, df_features, resolution,
                   root_within=None, length=None, angle_turbulence=None, blobness=None, consistency=None, 
                   sum_consistency=None, sum_consistency_im=None,
-                  ridge_strength_turbulence=None, angle_satisfied=None,
+                  ridge_strength_turbulence=None, angle_satisfied=None, use_avg_saliency=False,
                   verbose=False):
     """
     Filter ridges based on various conditions (if None then no filtering is applied)
@@ -364,12 +364,21 @@ def filter_ridges(df_agg, df_features, resolution,
         if verbose: print(f"\tsum_consistency_im filtered (yen threshold {thresh:.3g}): {filtered_counts['sum_consistency_im']}")
 
     _before = int(mask.sum())
-    thresh = threshold_triangle(df_agg["saliency"].values)
-    m = df_agg["saliency"] > thresh
-    individual_masks[f"saliency > {thresh:.3g} (triangle)"] = m
-    mask &= m
-    filtered_counts["saliency"] = _before - int(mask.sum())
-    if verbose: print(f"\tsaliency filtered (triangle threshold {thresh:.3g}): {filtered_counts['saliency']}")
+    
+    if use_avg_saliency:
+        thresh = threshold_triangle(df_agg["avg_ridge_strength"].values)
+        m = df_agg["avg_ridge_strength"] > thresh
+        individual_masks[f"avg_ridge_strength > {thresh:.3g} (triangle)"] = m
+        mask &= m
+        filtered_counts["avg_ridge_strength"] = _before - int(mask.sum())
+        if verbose: print(f"\tavg_ridge_strength filtered (triangle threshold {thresh:.3g}): {filtered_counts['avg_ridge_strength']}")
+    else:
+        thresh = threshold_triangle(df_agg["saliency"].values)
+        m = df_agg["saliency"] > thresh
+        individual_masks[f"saliency > {thresh:.3g} (triangle)"] = m
+        mask &= m
+        filtered_counts["saliency"] = _before - int(mask.sum())
+        if verbose: print(f"\tsaliency filtered (triangle threshold {thresh:.3g}): {filtered_counts['saliency']}")
 
     df_agg_thresholded = df_agg.loc[mask].reset_index(drop=True)
 
@@ -1277,18 +1286,25 @@ def _process_ridge(args, agg_pval, scale_range, adj_nondec, ang_frac,
     dbscan_s_idx = rec["dbscan_s_idx"]
     n_pos = D_curves.shape[1]
 
+    # Old code v2.0.3 (bug)
     ridge_strength = D_curves[s_idx, np.arange(n_pos)]
     angle_mask = A_bool[s_idx, np.arange(n_pos)]
+
+    # Replace s_idx with dbscan_s_idx (bug fix v2.0.4)
+    # ridge_strength = D_curves[dbscan_s_idx, np.arange(n_pos)]
+    # angle_mask = A_bool[dbscan_s_idx, np.arange(n_pos)]
+
     angle_fraction = A_bool.mean(axis=0).astype(float) if ang_frac else 1.0
 
     if adj_nondec:
         adj = detect_adjacent_nondecreasing_local_maxima_memory(
-            dbscan_s_idx, protection=False, N=3, use_memory=True) # CHANGED TO FALSE
+            dbscan_s_idx, protection=False, N=3, use_memory=True) 
     else:
         adj = np.ones(n_pos, dtype=float)
 
     saliency_values = ridge_strength * adj * angle_fraction
     jet_saliency = float(np.sum(saliency_values[angle_mask]))
+    avg_jet_saliency = float(np.mean(saliency_values[angle_mask])) if np.sum(angle_mask) > 0 else 0
 
     # v2.0.2
     # perc_satisfied = np.mean(adj)
@@ -1359,6 +1375,7 @@ def _process_ridge(args, agg_pval, scale_range, adj_nondec, ang_frac,
     df_ridge["width"] = dbscan_widths
     df_ridge["avg_width"] = np.mean(dbscan_widths)
     df_ridge["saliency"] = jet_saliency
+    df_ridge["avg_saliency"] = avg_jet_saliency
     df_ridge["angle_turbulence"] = A_curves_cv
     df_ridge["consistency"] = perc_satisfied
     df_ridge["sum_consistency"] = sum_consistency
@@ -1368,6 +1385,7 @@ def _process_ridge(args, agg_pval, scale_range, adj_nondec, ang_frac,
     df_ridge["p-val_white"] = enrich_p_val2
     df_ridge["ridge_strength_turbulence"] = cv_ddbscan
     df_ridge["angle_satisfied"] = jetness
+    df_ridge["avg_ridge_strength"] = np.mean(ridge_strength)
 
     return df_ridge
 

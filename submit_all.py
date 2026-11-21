@@ -20,12 +20,16 @@ CHROMS = {
 }
 
 FIXED_ARGS = [
-    # "--save_dir_root", "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v2.0.3",
-    "--save_dir_root", "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v2.0.3_runtime", 
+    "--save_dir_root", "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v2.0.3",
+    # "--save_dir_root", "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v2.0.3_c-elegans",
+    # "--save_dir_root", "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v2.0.3_B_cell_angle_range",
+    # "--save_dir_root", "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v2.0.3_ESC_angle_trim_0.25",
+    # "--save_dir_root", "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v2.0.3_runtime", 
     # "--save_dir_root", "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v2.0.3_mESC_angle_range", 
     # "--save_dir_root", "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v2.0.3_mESC_pval", 
     # "--save_dir_root", "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v2.0.3_gm12878", 
     # "--save_dir_root", "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v2.0.3_white2", 
+    # "--save_dir_root", "/nfs/turbo/umms-minjilab/sionkim/miajet_revision/miajet/output_v2.0.4",
     "--num_cores", "4",
     "--verbose",
 ]
@@ -71,8 +75,8 @@ for sample, params in config["samples"].items():
             "--account=minjilab99",
             "--partition=standard",
             "--cpus-per-task=4",
-            "--mem=60g",
-            "--time=6:00:00",
+            "--mem=30g",
+            "--time=3:00:00",
             "--mail-type=FAIL",
             "--output=slurm_out/slurm-%j.out",
             "--wrap", " ".join(cmd),
