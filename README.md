@@ -144,7 +144,7 @@ These parameters control low-level algorithmic behavior and typically do not nee
 
 ## Examples
 
-To run the demo, please download the demo data files from this [link](https://www.dropbox.com/scl/fo/zsbxf0qukq9h9lrs8pvpa/AG9YHhFgy6usmiuycRhQ1SU?rlkey=z94uyhz42b0zjf8ez2s3yxsbt&st=dyzv3ugo&dl=0). Alternatively, these files are in [https://doi.org/10.5281/zenodo.24429571](https://doi.org/10.5281/zenodo.24429571). 
+To run the demo, please download the demo data files from this [link](https://www.dropbox.com/scl/fo/zsbxf0qukq9h9lrs8pvpa/AG9YHhFgy6usmiuycRhQ1SU?rlkey=z94uyhz42b0zjf8ez2s3yxsbt&st=dyzv3ugo&dl=0). Alternatively, these files are in [https://doi.org/10.5281/zenodo.24429571](https://doi.org/10.5281/zenodo.24429571). The output of the demo can be referenced [here](https://www.dropbox.com/scl/fo/8a0c2zkun3gq6cymnkp5f/AHpgdEGEHMhVYU1QV2o_Yic?rlkey=zcvjxb6v2bwii7dwfkt30n8u8&st=j447xgml&dl=0).
 
 ```bash
 python -m miajet demo_data/GSE199059_CD69negDPWTR1R2R3R4_merged.ice_small_chr3_.hic \

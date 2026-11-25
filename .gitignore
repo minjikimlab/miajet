@@ -27,3 +27,7 @@ job*_gs*.sbat
 !notebooks-release/
 !notebooks-release/*.ipynb
 !notebooks-release/*.py
+!notebooks-release/*.yaml
+
+notebooks-release/single_contact_map.ipynb
+notebooks-release/single_contact_map_config.yaml
